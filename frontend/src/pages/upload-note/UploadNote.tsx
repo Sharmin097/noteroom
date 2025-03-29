@@ -624,7 +624,7 @@ const UploadNote: React.FC = () => {
       </nav>
 
       <div className="form-group">
-        <label htmlFor="noteTitle">Title*</label>
+        <span className="char-count">{noteTitle.length}/300</span>
         <input
           type="text"
           id="noteTitle"
@@ -635,17 +635,15 @@ const UploadNote: React.FC = () => {
           value={noteTitle}
           onChange={(e) => setNoteTitle(e.target.value)}
         />
-        <span className="char-count">{noteTitle.length}/300</span>
       </div>
 
       <div className="form-group description-group">
-        <label>Description</label>
-        <div className="text-editor-wrapper">
-          <div ref={editorRef} />
-        </div>
         <span className="char-count">
           {(quillRef.current?.getText().trim().length || 0)}/5000
         </span>
+        <div className="text-editor-wrapper">
+          <div ref={editorRef} />
+        </div>
         <div className="math-editor-container">
           <label className="math-label">Add Mathematical Expression</label>
           <button
