@@ -81,7 +81,7 @@ body {
 }
 
 .form-group label {
-  margin-top: -10px;
+  margin-top: 0px;
   font-size: clamp(0.8rem, 2vw, 1rem);
   font-weight: 500;
   color: var(--squid-ink);
@@ -185,16 +185,27 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   position: relative;
   padding: 0 clamp(50px, 5vw, 60px);
+  background-color: transparent;
+  margin: 10px 0;
 }
 
 .carousel-actions {
   position: absolute;
-  top: -40px;
+  top: 0;
   left: 0;
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 10px;
+  gap: clamp(5px, 1vw, 10px);
+}
+.carousel-right-actions{
+  display: flex;
+  align-items: center;
   gap: clamp(5px, 1vw, 10px);
 }
 
@@ -202,12 +213,12 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 20px;
+  background: #f2f4f7;
+  border: none;
+  border-radius: 7px;
   padding: clamp(5px, 1vw, 8px) clamp(8px, 1.5vw, 12px);
   font-size: clamp(0.7rem, 1.8vw, 0.9rem);
-  color: #666;
+  color: #000;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -241,10 +252,10 @@ body {
 }
 
 .carousel-btn {
-  position: absolute;
+  /* position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-50%); */
+  background: #e2e5e9;
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -254,15 +265,7 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.carousel-btn.prev {
-  left: 0;
-}
-
-.carousel-btn.next {
-  right: 0;
+  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); */
 }
 
 .carousel-btn:disabled {
@@ -272,7 +275,7 @@ body {
 
 .carousel-btn:hover:not(:disabled) {
   background: var(--neon-blue);
-  transform: translateY(-50%) scale(1.1);
+  transform: scale(1.1);
 }
 
 .carousel-btn:hover:not(:disabled) svg path {
@@ -280,12 +283,8 @@ body {
 }
 
 .delete-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgb(255, 255, 255);
   border: none;
-  border-radius: 50%;
   width: 30px;
   height: 30px;
   display: flex;
@@ -293,7 +292,6 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .delete-btn:hover {
@@ -538,7 +536,7 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 0; 
+  margin: 8px; 
   padding: 0; 
 }
 
