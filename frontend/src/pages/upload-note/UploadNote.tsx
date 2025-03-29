@@ -17,6 +17,12 @@ interface MathfieldElement extends HTMLElement {
   textContent: string;
 }
 
+interface MCQ {
+  question: string;
+  options: string[];
+  correctAnswer: string | null;
+}
+
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -46,6 +52,7 @@ const UploadNote: React.FC = () => {
   const [youtubeLink, setYoutubeLink] = useState<string>("");
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [mcqs, setMcqs] = useState<MCQ[]>([]);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
@@ -275,7 +282,7 @@ const UploadNote: React.FC = () => {
     });
 
     if (validFiles.length > 0) {
-      setStackPdfs([validFiles[0]]); // Only allow one PDF for now
+      setStackPdfs([validFiles[0]]);
     }
 
     if (pdfInputRef.current) pdfInputRef.current.value = "";
@@ -340,7 +347,7 @@ const UploadNote: React.FC = () => {
       });
 
       if (validFiles.length > 0) {
-        setStackPdfs([validFiles[0]]); // Only allow one PDF for now
+        setStackPdfs([validFiles[0]]);
       }
     }
   };
@@ -410,6 +417,40 @@ const UploadNote: React.FC = () => {
     setYoutubeVideoId(videoId);
   };
 
+  const handleAddMcq = () => {
+    if (mcqs.length >= 30) {
+      ReactSwal.fire({
+        icon: "error",
+        title: "Limit Reached",
+        text: "You can only add up to 30 MCQs.",
+      });
+      return;
+    }
+    setMcqs([...mcqs, { question: "", options: ["", "", "", ""], correctAnswer: null }]);
+  };
+
+  const handleMcqChange = (index: number, field: keyof MCQ, value: string | string[] | null) => {
+    setMcqs((prev) =>
+      prev.map((mcq, i) =>
+        i === index ? { ...mcq, [field]: value } : mcq
+      )
+    );
+  };
+
+  const handleOptionChange = (mcqIndex: number, optionIndex: number, value: string) => {
+    setMcqs((prev) =>
+      prev.map((mcq, i) =>
+        i === mcqIndex
+          ? { ...mcq, options: mcq.options.map((opt, j) => (j === optionIndex ? value : opt)) }
+          : mcq
+      )
+    );
+  };
+
+  const handleDeleteMcq = (index: number) => {
+    setMcqs((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handlePublish = async () => {
     const descriptionText = quillRef.current?.getText().trim() || "";
     const noteDescription = quillRef.current?.root.innerHTML || "";
@@ -441,6 +482,32 @@ const UploadNote: React.FC = () => {
       return;
     }
 
+    if (activeTab === "MCQ" && mcqs.length === 0) {
+      ReactSwal.fire({
+        icon: "error",
+        title: "No MCQs Added",
+        text: "Please add at least one MCQ before publishing.",
+      });
+      return;
+    }
+
+    if (activeTab === "MCQ") {
+      const invalidMcq = mcqs.find(
+        (mcq) =>
+          !mcq.question.trim() ||
+          mcq.options.some((opt) => !opt.trim()) ||
+          !mcq.correctAnswer
+      );
+      if (invalidMcq) {
+        ReactSwal.fire({
+          icon: "error",
+          title: "Incomplete MCQ",
+          text: "Please fill in all questions, options, and select a correct answer for each MCQ.",
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     const formData = new FormData();
@@ -452,6 +519,8 @@ const UploadNote: React.FC = () => {
       formData.append("youtubeLink", `https://www.youtube.com/watch?v=${youtubeVideoId}`);
     } else if (activeTab === "File" && stackPdfs.length > 0) {
       formData.append("pdf", stackPdfs[0]);
+    } else if (activeTab === "MCQ") {
+      formData.append("mcqs", JSON.stringify(mcqs));
     }
     formData.append("postSubject", noteSubject);
     formData.append("postTitle", noteTitle);
@@ -478,6 +547,7 @@ const UploadNote: React.FC = () => {
           setYoutubeLink("");
           setYoutubeVideoId(null);
           setPdfPreviewUrl(null);
+          setMcqs([]);
 
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
@@ -544,12 +614,17 @@ const UploadNote: React.FC = () => {
           >
             File
           </span>
-          <span>MCQ</span>
+          <span
+            className={activeTab === "MCQ" ? "active" : ""}
+            onClick={() => setActiveTab("MCQ")}
+          >
+            MCQ
+          </span>
         </div>
       </nav>
 
       <div className="form-group">
-        <label htmlFor="noteTitle">Title*</label>
+        <span className="char-count">{noteTitle.length}/300</span>
         <input
           type="text"
           id="noteTitle"
@@ -560,62 +635,15 @@ const UploadNote: React.FC = () => {
           value={noteTitle}
           onChange={(e) => setNoteTitle(e.target.value)}
         />
-        <span className="char-count">{noteTitle.length}/300</span>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="noteSubject">Subject</label>
-        <select
-          name="noteSubject"
-          id="noteSubject"
-          className="note-subject"
-          value={noteSubject}
-          onChange={(e) => setNoteSubject(e.target.value)}
-          required
-        >
-          <option value="" disabled>
-            Select a Subject
-          </option>
-          {[
-            "Bangla",
-            "English",
-            "ICT",
-            "Physics 1st Paper",
-            "Physics 2nd Paper",
-            "Chemistry 1st Paper",
-            "Chemistry 2nd Paper",
-            "Biology 1st Paper",
-            "Biology 2nd Paper",
-            "Higher Mathematics 1st Paper",
-            "Higher Mathematics 2nd Paper",
-            "Statistics",
-            "History",
-            "Geography",
-            "Logic",
-            "Philosophy",
-            "Political Science",
-            "Sociology",
-            "Economics",
-            "Islamic History & Culture",
-            "Social Work",
-            "Psychology",
-            "Islamic Studies",
-          ].map((subject) => (
-            <option key={subject} value={subject}>
-              {subject}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="form-group description-group">
-        <label>Description</label>
-        <div className="text-editor-wrapper">
-          <div ref={editorRef} />
-        </div>
         <span className="char-count">
           {(quillRef.current?.getText().trim().length || 0)}/5000
         </span>
+        <div className="text-editor-wrapper">
+          <div ref={editorRef} />
+        </div>
         <div className="math-editor-container">
           <label className="math-label">Add Mathematical Expression</label>
           <button
@@ -694,7 +722,6 @@ const UploadNote: React.FC = () => {
                         strokeLinejoin="round"
                       />
                     </svg>
-
                     Add
                   </button>
                   <button className="action-btn edit-btn">
@@ -706,7 +733,6 @@ const UploadNote: React.FC = () => {
                         strokeLinejoin="round"
                       />
                     </svg>
-
                     Edit
                   </button>
                   <input
@@ -756,7 +782,6 @@ const UploadNote: React.FC = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-
               </button>
               <div className="carousel-image-wrapper">
                 <img
@@ -785,7 +810,6 @@ const UploadNote: React.FC = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-
               </button>
             </div>
           )
@@ -866,6 +890,88 @@ const UploadNote: React.FC = () => {
               </div>
             </div>
           )
+        ) : activeTab === "MCQ" ? (
+          <div className="mcq-container">
+            {mcqs.length === 0 ? (
+              <div className="mcq-placeholder">
+                <span>No MCQs added yet. Click below to add a question.</span>
+              </div>
+            ) : (
+              mcqs.map((mcq, index) => (
+                <div key={index} className="mcq-item">
+                  <div className="mcq-header">
+                    <h3>Question {index + 1}</h3>
+                    <button
+                      className="mcq-delete-btn"
+                      onClick={() => handleDeleteMcq(index)}
+                      title="Delete Question"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5" stroke="#FF0000" stroke-width="1.72881" stroke-linecap="round"/>
+                      <path d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5" stroke="#FF0000" stroke-width="1.72881" stroke-linecap="round"/>
+                      <path d="M9.50244 16.5V10.5" stroke="#FF0000" stroke-width="1.72881" stroke-linecap="round"/>
+                      <path d="M14.4976 16.5V10.5" stroke="#FF0000" stroke-width="1.72881" stroke-linecap="round"/>
+                      </svg>
+
+                    </button>
+                  </div>
+                  <div className="mcq-question">
+                    <textarea
+                      placeholder="Enter your question here"
+                      value={mcq.question}
+                      onChange={(e) =>
+                        handleMcqChange(index, "question", e.target.value)
+                      }
+                      maxLength={500}
+                    />
+                    <span className="char-count">
+                      {mcq.question.length}/500
+                    </span>
+                  </div>
+                  <div className="mcq-options">
+                    {mcq.options.map((option, optIndex) => (
+                      <div key={optIndex} className="mcq-option">
+                        <label>{String.fromCharCode(65 + optIndex)}.</label>
+                        <input
+                          type="text"
+                          placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                          value={option}
+                          onChange={(e) =>
+                            handleOptionChange(index, optIndex, e.target.value)
+                          }
+                          maxLength={200}
+                        />
+                        <span className="char-count">
+                          {option.length}/200
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mcq-correct-answer">
+                    <label>Correct Answer:</label>
+                    <select
+                      value={mcq.correctAnswer || ""}
+                      onChange={(e) =>
+                        handleMcqChange(index, "correctAnswer", e.target.value || null)
+                      }
+                    >
+                      <option value="" disabled>
+                        Select correct answer
+                      </option>
+                      {mcq.options.map((_, optIndex) => (
+                        <option key={optIndex} value={String.fromCharCode(65 + optIndex)}>
+                          {String.fromCharCode(65 + optIndex)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ))
+            )}
+            <button className="add-mcq-btn" onClick={handleAddMcq}>
+              Add Question
+            </button>
+          </div>
         ) : null}
       </div>
 
