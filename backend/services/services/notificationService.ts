@@ -25,7 +25,7 @@ export function NotificationSender(io: Server, options?: { ownerStudentID: strin
                 }
 
                 let notification_db = isInteraction ? { ...baseDocument, fromUserSudentDocID } : baseDocument 
-                let notification_document = isInteraction ? await addInteractionNoti(notification_db) : await addNoti(baseDocument)
+                let notification_document = isInteraction ? await addInteractionNoti(notification_db) : await addNoti(notification_db)
 
                 let notification_io = {
                     notiID: notification_document["_id"].toString(),

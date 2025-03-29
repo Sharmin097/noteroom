@@ -6,11 +6,14 @@ import Swal from "sweetalert2"
 import withReactContent from "sweetalert2-react-content"
 import { Link } from "react-router-dom"
 import { useAppData } from "../../context/AppDataContext"
+import Toki from "../../assets/toki_nocomments.png"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
 function Comment({ feedbackData, children }: any) {
-    const { controller: [openReplyEditor] } = useContext(CommentsControllerContext)
+    const { controller: [openReplyEditor, upvoteComment] } = useContext(CommentsControllerContext)
+    const [isUpVoted, setIsUpVoted] = useState<boolean>(feedbackData?.isUpVoted)
+    const [upvoteCount, setUpvoteCount] = useState<number>(feedbackData?.upvoteCount)
 
     return (
         <div className='main-cmnt-container'>
@@ -32,13 +35,22 @@ function Comment({ feedbackData, children }: any) {
                     </div>
                     <div className="main__reply-msg reply-msg" dangerouslySetInnerHTML={{ __html: feedbackData?.feedbackContents }}></div>
                     <div className="main__engagement-opts engagement-opts">
-                        <div className="like-wrapper">
+                        <div className="like-wrapper" onClick={() => upvoteComment({
+                            upvoteCount: [upvoteComment, setUpvoteCount],
+                            isUpVoted: [isUpVoted, setIsUpVoted],
+                            feedbackID: feedbackData?._id
+                        })}>
                             <svg className="like-icon" width="20" height="22" viewBox="0 0 115 117" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M107.498 49.9985C107.998 49.9985 109.994 52.6188 109.494 70.581C108.994 88.5431 93.5 110.998 88.993 110.998C84.4861 110.998 28.4996 112 28.493 110.455C28.4863 108.91 28.4938 47.5373 28.4938 47.5373L49.9956 32.4996C49.9956 32.4996 53.0332 25.5652 57.9956 8.99958C62.958 -7.56607 78.4744 33.916 66 49.9982M107.498 49.9985C106.998 49.9985 66 49.9982 66 49.9982M107.498 49.9985L66 49.9982" stroke="#606770" strokeWidth="10" strokeLinecap="round" />
-                            </svg>
-                            <span className="like-count">{feedbackData?.upvoteCount}</span>
-                        </div>
+                                {
+                                    isUpVoted ? 
+                                        <path className='like-icon-fill' d='M28.4938 47.5373C28.4938 47.5373 28.4863 108.91 28.493 110.455C28.4996 112 84.4861 110.998 88.993 110.998C93.5 110.998 108.994 88.5431 109.494 70.581C109.994 52.6188 107.998 49.9985 107.498 49.9985L66 49.9982C78.4744 33.916 62.958 -7.56607 57.9956 8.99958C53.0332 25.5652 49.9956 32.4996 49.9956 32.4996L28.4938 47.5373Z' fill='black'/>
+                                        :
+                                        <path d="M107.498 49.9985C107.998 49.9985 109.994 52.6188 109.494 70.581C108.994 88.5431 93.5 110.998 88.993 110.998C84.4861 110.998 28.4996 112 28.493 110.455C28.4863 108.91 28.4938 47.5373 28.4938 47.5373L49.9956 32.4996C49.9956 32.4996 53.0332 25.5652 57.9956 8.99958C62.958 -7.56607 78.4744 33.916 66 49.9982M107.498 49.9985C106.998 49.9985 66 49.9982 66 49.9982M107.498 49.9985L66 49.9982" stroke="#606770" strokeWidth="10" strokeLinecap="round" />
+                                }
 
+                            </svg>
+                            <span className="like-count">{upvoteCount}</span>
+                        </div>
                         <svg
                             className="reply-icon thread-opener"
                             onClick={() => openReplyEditor(
@@ -115,7 +127,11 @@ function CommentSection({ comments: [comments, setComments] }: any) {
                             })
                         }
                     </div>
-                    : <div>No Feedbacks yet. Be the first to provide</div>
+                    : <div className="no-comments">
+                        <img src={Toki} style={{width: "100px", marginLeft: "40%"}} />
+                        <p style={{fontSize: "20px"}}>No comments yet. Be the first one!</p>
+                    </div>
+                    
             }
         </>
     )
@@ -195,6 +211,24 @@ export default function CommentsContainer() {
         }
     }
 
+    async function upvoteComment({ upvoteCount: [upvoteCount, setUpvoteCount], isUpVoted: [isUpVoted, setIsUpVoted], feedbackID }: any) {
+        try {
+            setUpvoteCount((prev: number) => prev + (isUpVoted ? -1 : +1))
+            setIsUpVoted((prev: boolean) => !prev)
+
+            const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/feedbacks/${feedbackID}/vote?type=${isUpVoted ? 'downvote' : 'upvote'}`, {
+                method: "post",
+                credentials: "include"
+            })
+            if (response.ok) {
+                const data = await response.json()
+                console.log(data)
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
     function openReplyEditor(replyToText: string, openedThreadID: string, replyToUsername: string, replyToDisplayname: string) {
         setShowEditor(prev => !prev)
         setOpenedThreadID(openedThreadID)
@@ -220,14 +254,13 @@ export default function CommentsContainer() {
         async function getComments() {
             try {
                 setLoadingComments(true)
-                if (postID) {
-                    const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/comments`, { credentials: 'include' })
-                    const data = await response.json()
-                    if (data && data.ok) {
-                        setComments(prev => [...prev, ...data.comments])
-                    }
-                    setLoadingComments(false)
+                setComments([])
+                const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/comments`, { credentials: 'include' })
+                const data = await response.json()
+                if (data && data.ok) {
+                    setComments(prev => [...prev, ...data.comments])
                 }
+                setLoadingComments(false)
             } catch (error) {
                 console.error(error)
             } finally {
@@ -240,7 +273,7 @@ export default function CommentsContainer() {
 
     return (
         <div className="comment-section">
-            {loadingComments ? <h3>Loading...</h3> : <CommentsControllerContext.Provider value={{ controller: [openReplyEditor] }}>
+            {loadingComments ? <div className="search-loading-indicator" style={{margin: "20px 50%"}}></div> : <CommentsControllerContext.Provider value={{ controller: [openReplyEditor, upvoteComment], postID: postID }}>
                 <JoinConversation fireToast={fireToast} loading={[loading, setLoading]} comments={[comments, setComments]}></JoinConversation>
                 <CommentSection comments={[comments, setComments]}></CommentSection>
 

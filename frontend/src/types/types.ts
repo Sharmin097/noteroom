@@ -4,18 +4,11 @@ export interface SavedNoteObject {
 	noteThumbnail: string
 }
 
-export class RequestObject {
-    recID: string;
-    senderDisplayName: string;
-    createdAt: string;
-    message: string;
-
-    constructor(request: any) {
-        this.recID = request._id
-        this.senderDisplayName = request.senderDocID.displayname
-        this.createdAt = request.createdAt
-        this.message = request.message
-    }
+export interface RequestObject {
+	recID: string,
+	senderDisplayName: string,
+	createdAt: string,
+	message: string
 }
 
 export interface IONotification {

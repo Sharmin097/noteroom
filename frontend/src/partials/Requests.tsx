@@ -39,23 +39,25 @@ function Request({
         })
         if (result.isConfirmed) {
             const postID = result.value
-            const requestForm = new FormData()
-            requestForm.append("postID", postID)
-            const response = await fetch(`${API_SERVER_URL}/api/requests/${request.recID}/accept`, {
-                method: "post",
-                credentials: "include",
-                body: requestForm
-            })
-            if (response.ok) {
-                const data = await response.json()
-                if (data.ok) {
-                    fireToast("Resource sent!", "success")
-                    dispatchRequest({ type: RequestsActions.DELETE, payload: { recID: request.recID } })
+            if (postID && postID.trim().length !== 0) {
+                const requestForm = new FormData()
+                requestForm.append("postID", postID)
+                const response = await fetch(`${API_SERVER_URL}/api/requests/${request.recID}/accept`, {
+                    method: "post",
+                    credentials: "include",
+                    body: requestForm
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    if (data.ok) {
+                        fireToast("Resource sent!", "success")
+                        dispatchRequest({ type: RequestsActions.DELETE, payload: { recID: request.recID } })
+                    } else {
+                        fireToast(data.message || "Couldn't send the resource! Please try again a bit later", "error")
+                    }
                 } else {
-                    fireToast(data.message || "Couldn't send the resource! Please try again a bit later", "error")
+                    fireToast("Something went wrong! Please try again a bit later", "error")
                 }
-            } else {
-                fireToast("Something went wrong! Please try again a bit later", "error")
             }
         }
     }, [])

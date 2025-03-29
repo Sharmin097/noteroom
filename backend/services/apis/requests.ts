@@ -13,9 +13,7 @@ export default function requestsApiRouter(io: Server) {
             const requestID = req.params.requestID
             const response = await getRequest(requestID)
             if (response.ok) {
-                const extentedRequestData = response.request
-                const receiverDocID = extentedRequestData["receiverDocID"]["_id"]
-                const senderStudentID = extentedRequestData["senderDocID"]["studentID"]
+                const { receiverDocID, senderStudentID } = response.data
 
                 await NotificationSender(io, {
                     ownerStudentID: senderStudentID,
@@ -43,9 +41,7 @@ export default function requestsApiRouter(io: Server) {
             const message = req.body.message
             const response = await getRequest(requestID)
             if (response.ok) {
-                const extentedRequestData = response.request
-                const receiverDocID = extentedRequestData["receiverDocID"]["_id"]
-                const senderStudentID = extentedRequestData["senderDocID"]["studentID"]
+                const { receiverDocID, senderStudentID } = response.data
 
                 await NotificationSender(io, {
                     ownerStudentID: senderStudentID,
@@ -97,15 +93,8 @@ export default function requestsApiRouter(io: Server) {
     
                 const response = await addRequest(requestData)
                 if (response.ok) {
-                    const extentedRequestData = response.requestData
-                    const receiverStudentID = extentedRequestData["receiverDocID"]["studentID"]
-
-                    io.to(userSocketMap.get(receiverStudentID)).emit('request-object', {
-                        recID: extentedRequestData["_id"],
-                        senderDisplayName: extentedRequestData["senderDocID"]["displayname"],
-                        createdAt: extentedRequestData["createdAt"],
-                        message: extentedRequestData["message"]
-                    })
+                    const { requestData, receiverStudentID } = response.data
+                    io.to(userSocketMap.get(receiverStudentID)).emit('request-object', requestData)
 
                     await NotificationSender(io, {
                         ownerStudentID: receiverStudentID,

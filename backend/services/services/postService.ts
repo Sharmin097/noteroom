@@ -3,6 +3,12 @@ import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
 
+interface SavedNoteObject {
+    noteID: string,
+    noteTitle: string,
+	noteThumbnail: string
+}
+
 export async function addPost(noteData: any) {
     let note = await Notes.create(noteData)
     await Students.findByIdAndUpdate(
@@ -168,26 +174,16 @@ export async function deleteSavedPost({ studentDocID, noteDocID }) {
 export async function getSavedPosts(studentID: string) {
     try {
         let student = await Students.findOne({ studentID: studentID }, { saved_notes: 1 })
-        let notes_ids = student.saved_notes
-        let notes = await Notes.aggregate([
-            { $match: { _id: { $in: notes_ids } } },
-            { $lookup: {
-                from: 'students',
-                localField: 'ownerDocID',
-                foreignField: '_id',
-                as: 'ownerDocID'
-            } },
-            { $unwind: {
-                path: '$ownerDocID'
-            } },
+        let postsIDs = student.saved_notes
+        let posts: SavedNoteObject[] = await Notes.aggregate([
+            { $match: { _id: { $in: postsIDs } } },
             { $project: {
-                title: 1,
-                thumbnail: { $first: '$content' },
-                "ownerDocID.displayname": 1,
-                "ownerDocID.username": 1,
+                noteID: "$_id",
+                noteTitle: "$title",
+                noteThumbnail: { $first: '$content' },
             } }
         ])
-        return { ok: true, posts: notes }
+        return { ok: true, posts }
     } catch (error) {
         return { ok: false }
     }

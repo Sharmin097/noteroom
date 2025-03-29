@@ -37,13 +37,11 @@ export default function AppDataProvider({ children }: { children: ReactNode | Re
                     if (data.ok && data.posts.length !== 0) {
                         setSavedNotes([
                             ...savedNotes,
-                            ...data.posts.map((note: any) => {
-                                //FIXME: send pre-modified saved notes object just like owned_posts
-                                return {
-                                    noteID: note._id,
-                                    noteTitle: note.title.length > 30 ? note.title.slice(0, 30) + "..." : note.title,
-                                    noteThumbnail: note.thumbnail
+                            ...data.posts.map((note: SavedNoteObject) => {
+                                if (note.noteTitle.length > 30) {
+                                    return { ...note, noteTitle: note.noteTitle.slice(0, 30) + "..." }
                                 }
+                                return note
                             })
                         ])
                     } else {
@@ -87,8 +85,7 @@ export default function AppDataProvider({ children }: { children: ReactNode | Re
                 if (response.ok) {
                     let data = await response.json()
                     if (data.ok && data.requests.length !== 0) {
-                        //FIXME: send pre-modified requests object
-                        dispatchRequest({ type: RequestsActions.ADD, payload: { requests: data.requests.map((request: any) => new RequestObject(request)) } })
+                        dispatchRequest({ type: RequestsActions.ADD, payload: { requests: data.requests } })
                     }
                 }
             } catch (error) {

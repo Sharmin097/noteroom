@@ -1,5 +1,6 @@
 import Votes, { CommentVotes } from "../../schemas/votes"
 import Notes from "../../schemas/notes"
+import { feedbacksModel } from "../../schemas/comments"
 export async function isUpVoted({ noteDocID, voterStudentDocID }) {
     let upvote_doc = await Votes.findOne({ 
         $and: [ 
@@ -21,31 +22,50 @@ export async function isCommentUpVoted({ feedbackDocID, voterStudentDocID }) {
 }
 
 
-export async function deleteVote({ noteDocID, voterStudentDocID }) {
+export async function deleteVote({ noteDocID, voterStudentDocID }, on: "post" | "comment", feedbackDocID?: any) {
     try {
-        let deleteResult = await Votes.deleteOne({ $and: [{ noteDocID: noteDocID }, { voterStudentDocID: voterStudentDocID }] })
-        if (deleteResult.deletedCount !== 0) {
-            await Notes.updateOne({ _id: noteDocID }, { $inc: { upvoteCount: -1 } })
-        } 
-        let upvoteCount = (await Notes.findOne({ _id: noteDocID }, { upvoteCount: 1 })).upvoteCount
-        return { ok: true, upvoteCount }
+        if (on === "post") {
+            const deleteResult = await Votes.deleteOne({ noteDocID, voterStudentDocID })
+            if (deleteResult.deletedCount !== 0) {
+                await Notes.updateOne({ _id: noteDocID }, { $inc: { upvoteCount: -1 } })
+                return { ok: true }
+            } else {
+                return { ok: false }
+            }
+        } else {
+            const deleteResult = await Votes.deleteOne({ noteDocID, voterStudentDocID, docType: "feedback" })
+            if (deleteResult.deletedCount !== 0) {
+                await feedbacksModel.updateOne({ _id: feedbackDocID }, { $inc: { upvoteCount: -1 } })
+                return { ok: true }
+            } else {
+                return { ok: false }
+            }
+        }
     } catch (error) {
         return { ok: false }
     }
 }
 
-export async function addVote({ noteDocID, voterStudentDocID, voteType }) {
-    let existingVoteData = await Votes.findOne({
-        noteDocID: noteDocID,
-        voterStudentDocID: voterStudentDocID,
-        docType: { $ne: 'feedback' }
-    })
-    if (!existingVoteData) {
-        let voteData = await Votes.create({noteDocID, voterStudentDocID, voteType})
-        await Notes.findByIdAndUpdate(noteDocID, { $inc: { upvoteCount : 1 } })
-        let vote = await voteData.populate('noteDocID', 'title upvoteCount postType')
-        return { ok: true, vote: vote }
-    } else {
+export async function addVote({ noteDocID, voterStudentDocID, voteType }, on: "post" | "comment", feedbackDocID?: any) {
+    try {
+        if (on === "post") {
+            const voteData = await Votes.create({noteDocID, voterStudentDocID, voteType})
+            if (voteData) {
+                await Notes.findByIdAndUpdate(noteDocID, { $inc: { upvoteCount : 1 } })
+                return { ok: true }
+            } else {
+                return { ok: false }
+            }
+        } else {
+            const voteData = await CommentVotes.create({noteDocID, voterStudentDocID, voteType, feedbackDocID})
+            if (voteData) {
+                await feedbacksModel.updateOne({ _id: feedbackDocID }, { $inc: { upvoteCount: 1 } })
+                return { ok: true }
+            } else {
+                return { ok: false }
+            }
+        }
+    } catch (error) {
         return { ok: false }
     }
 }

@@ -8,6 +8,7 @@ import { NotificationEvent, NotificationSender } from "../services/notificationS
 
 const router = Router()
 export default function postApiRouter(io: Server) {
+    //TODO: vote should send notifications
 
     router.get("/:postID/metadata", async (req, res) => {
         try {
@@ -110,6 +111,24 @@ export default function postApiRouter(io: Server) {
         }
     })
 
+    router.post("/:postID/feedbacks/:feedbackID/vote", async (req, res) => {
+        try {
+            const postID = req.params.postID
+            const feedbackID = req.params.feedbackID
+            const voterStudentDocID = await Convert.getDocumentID_studentid(req.session["stdid"])
+            const voteType = <"upvote" | "downvote">req.query["type"]
+            if (voteType === "upvote") {
+                const response = await addVote({ voteType, noteDocID: postID, voterStudentDocID: voterStudentDocID }, "comment", feedbackID)
+                res.json({ ok: response.ok })
+            } else {
+                const response = await deleteVote({ noteDocID: postID, voterStudentDocID }, "comment", feedbackID)
+                res.json({ ok: response.ok })
+            }
+        } catch (error) {
+            res.json({ ok: false })
+        }
+    })
+
     router.post("/:postID/feedbacks/:feedbackID/replies", async (req, res) => {
         try {
             const postID = req.params.postID
@@ -162,10 +181,10 @@ export default function postApiRouter(io: Server) {
             const voteType = <"upvote" | "downvote">req.query["type"]
             
             if (!action) {
-                let response = await addVote({ voteType, noteDocID: postID, voterStudentDocID: voterStudentDocID })
+                let response = await addVote({ voteType, noteDocID: postID, voterStudentDocID: voterStudentDocID }, "post")
                 res.json({ ok: response.ok })
             } else {
-                let response = await deleteVote({ noteDocID: postID, voterStudentDocID })
+                let response = await deleteVote({ noteDocID: postID, voterStudentDocID }, "post")
                 res.json({ ok: response.ok })
             }
 
