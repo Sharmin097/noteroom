@@ -5,10 +5,10 @@ import { addPost } from "../services/postService";
 import { processBulkCompressUpload } from "../services/utils";
 import Notes from "../../schemas/notes";
 import logger from "../logger";
-
 const router = Router() 
 
 export default function uploadApiRouter(io: Server) {
+
 
     router.post("/", async (req, res) => {
         try {
@@ -69,7 +69,7 @@ const MAX_FILE_COUNT = 5;  // Max 5 files
 
 router.post("/content", async (req, res:any) => {
     try {
-        const studentID = req.session["stdid"] || "1";
+        const studentID = req.session["stdid"] ;
         if (!studentID) {
             return res.json({ ok: false, message: "Student ID is required." });
         }
@@ -93,7 +93,7 @@ router.post("/content", async (req, res:any) => {
         logger.info(`(/upload/content): Received post data from studentID=${studentID}, postTitle=${postTitle}`);
 
         // Retrieve the student document ID
-        const studentDocID = "1";//(await Convert.getDocumentID_studentid(studentID)).toString()
+        const studentDocID = (await Convert.getDocumentID_studentid(studentID)).toString();
 
         // Attempt to create the post in the database
         const post = await addPost({
@@ -142,8 +142,6 @@ router.post("/content", async (req, res:any) => {
         res.json({ ok: false, message: "An error occurred while uploading the post. Please try again later." });
     }
 });
-    
-
     
 
     return router
