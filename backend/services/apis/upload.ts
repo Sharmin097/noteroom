@@ -5,6 +5,7 @@ import { addPost } from "../services/postService";
 import { processBulkCompressUpload } from "../services/utils";
 import Notes from "../../schemas/notes";
 import logger from "../logger";
+import fileUpload from "express-fileupload";
 const router = Router() 
 
 export default function uploadApiRouter(io: Server) {
@@ -61,68 +62,70 @@ export default function uploadApiRouter(io: Server) {
     })
 
 
-
-
     // Max size for each image (5MB) and max image count (5 images)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;  // 5MB
-const MAX_FILE_COUNT = 5;  // Max 5 files
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;  // 5MB
+    const MAX_FILE_COUNT = 5;  // Max 5 files
 
-router.post("/content", async (req, res:any) => {
-    try {
-        const studentID = "1" ;
-        if (!studentID) {
-            return res.json({ ok: false, message: "Student ID is required." });
-        }
+    router.post("/content", async (req: any, res: any) => {
+        try {
+            const studentID = req.session["stdid"] || "--studentid--" ;
+            if (!studentID) return
 
-        // Extract title, description, and files from the request
-        const { postTitle, postDescription } = req.body;
-        const files = req.files ? req.files.image : undefined;
+            // Extract title, description, and files from the request
+            const { postTitle, postDescription } = req.body;
+            const files = req.files ? req.files : null
+            let fileArray: fileUpload.UploadedFile[] | null = null
 
-        // 1. Title is required
-        if (!postTitle) {
-            return res.json({ ok: false, message: "Title is required." });
-        }
+            // 1. Title is required
+            if (!postTitle) {
+                return res.json({ ok: false, message: "Title is required." });
+            }
 
-        // 2. Description validation (optional, up to 500 characters)
-        if (postDescription && postDescription.length > 500) {
-            return res.json({ ok: false, message: "Description cannot exceed 500 characters." });
-        }
-
- 
-        // Log the received data
-        logger.info(`(/upload/content): Received post data from studentID=${studentID}, postTitle=${postTitle}`);
-
-       
-        if (files) {
-            // 3. Image handling (validate size and quantity)
-            const fileArray = Array.isArray(files) ? files : [files];
+            // 2. Description validation (optional, up to 500 characters)
+            if (postDescription && postDescription.length > 500) {
+                return res.json({ ok: false, message: "Description cannot exceed 500 characters." });
+            }
             
-            if (fileArray.length > MAX_FILE_COUNT) {
-                return res.json({ ok: false, message: `You can upload a maximum of ${MAX_FILE_COUNT} images.` });
-            }
+            // Log the received data
+            logger.info(`(/upload/content): Received post data from studentID=${studentID}, postTitle=${postTitle}`);
 
-            // Validate each file
-            for (let file of fileArray) {
-                if (file.size > MAX_FILE_SIZE) {
-                    return res.json({ ok: false, message: "One or more images exceed the maximum allowed size of 5MB." });
-                }
-                if (!file.mimetype.startsWith("image/")) {
-                    return res.json({ ok: false, message: "Only image files are allowed." });
-                }
-            }
+            if (files) {
+                // Image handling (validate size and quantity)
+                fileArray = <fileUpload.UploadedFile[]>Object.values(files)
 
-        } else {
-            // If no files, just mark as completed
-            logger.info(`(/upload/content): Post updated without files, studentID=${studentID}, postTitle=${postTitle}`);
+                if (fileArray.length > MAX_FILE_COUNT) {
+                    return res.json({ ok: false, message: `You can upload a maximum of ${MAX_FILE_COUNT} images.` });
+                }
+
+                // Validate each file
+                for (let file of fileArray) {
+                    if (file.size > MAX_FILE_SIZE) {
+                        return res.json({ ok: false, message: "One or more images exceed the maximum allowed size of 5MB." });
+                    }
+                    if (!file.mimetype.startsWith("image/")) {
+                        return res.json({ ok: false, message: "Only image files are allowed." });
+                    }
+                }
+            } else {
+                // If no files, just mark as completed
+                logger.info(`(/upload/content): Post updated without files, studentID=${studentID}, postTitle=${postTitle}`);
+            }
+            
+            const uploadedData = {
+                title: postTitle,
+                description: postDescription,
+                contents: fileArray //FIXME: contents will be the public links, after processing the images
+            }
+            console.log(uploadedData)
+
+            res.json({ ok: true, message: "Post uploaded successfully!" });
+
+        } catch (error) {
+            console.error(error)
+            logger.error(`(/upload/content): Error uploading post, studentID=${req.session["stdid"]}, error=${error}`);
+            res.json({ ok: false, message: "An error occurred while uploading the post. Please try again later." });
         }
-
-        res.json({ ok: true, message: "Post uploaded successfully!" });
-
-    } catch (error) {
-        logger.error(`(/upload/content): Error uploading post, studentID=${req.session["stdid"]}, error=${error}`);
-        res.json({ ok: false, message: "An error occurred while uploading the post. Please try again later." });
-    }
-});
+    });
     
 
     return router
