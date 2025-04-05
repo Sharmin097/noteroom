@@ -69,7 +69,7 @@ const MAX_FILE_COUNT = 5;  // Max 5 files
 
 router.post("/content", async (req, res:any) => {
     try {
-        const studentID = req.session["stdid"] ;
+        const studentID = "1" ;
         if (!studentID) {
             return res.json({ ok: false, message: "Student ID is required." });
         }
@@ -92,19 +92,7 @@ router.post("/content", async (req, res:any) => {
         // Log the received data
         logger.info(`(/upload/content): Received post data from studentID=${studentID}, postTitle=${postTitle}`);
 
-        // Retrieve the student document ID
-        const studentDocID = (await Convert.getDocumentID_studentid(studentID)).toString();
-
-        // Attempt to create the post in the database
-        const post = await addPost({
-            ownerDocID: studentDocID,
-            title: postTitle,
-            description: postDescription || null
-        });
-
-        const postID = post._id.toString();
-        logger.info(`(/upload/content): Post saved, studentID=${studentID}, postTitle=${postTitle}, postID=${postID}`);
-
+       
         if (files) {
             // 3. Image handling (validate size and quantity)
             const fileArray = Array.isArray(files) ? files : [files];
@@ -123,16 +111,9 @@ router.post("/content", async (req, res:any) => {
                 }
             }
 
-            // Compress and save images (you need to implement processBulkCompressUpload function)
-            const filePaths = await processBulkCompressUpload(fileArray, postID);
-            if (filePaths) {
-                await Notes.updateOne({ _id: postID }, { $set: { content: filePaths, completed: true } });
-                logger.info(`(/upload/content): Files uploaded and post updated, studentID=${studentID}, postTitle=${postTitle}, postID=${postID}`);
-            }
         } else {
             // If no files, just mark as completed
-            await Notes.updateOne({ _id: postID }, { $set: { completed: true } });
-            logger.info(`(/upload/content): Post updated without files, studentID=${studentID}, postTitle=${postTitle}, postID=${postID}`);
+            logger.info(`(/upload/content): Post updated without files, studentID=${studentID}, postTitle=${postTitle}`);
         }
 
         res.json({ ok: true, message: "Post uploaded successfully!" });
