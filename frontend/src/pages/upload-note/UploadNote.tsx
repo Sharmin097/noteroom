@@ -115,7 +115,7 @@ const UploadNote: React.FC = () => {
       quillRef.current = new Quill(editorRef.current, {
         theme: "snow",
         placeholder:
-          "Describe your note's key insights, unique takeaways, or how it aids learning.",
+          "Body",
         modules: {
           toolbar: "#custom-toolbar",
         },
@@ -152,7 +152,7 @@ const UploadNote: React.FC = () => {
       Quill.register("formats/math", MathBlot);
 
       if (editorRef.current) {
-        editorRef.current.style.height = "250px";
+        editorRef.current.style.height = "128px";
       }
     }
 
@@ -626,7 +626,7 @@ const UploadNote: React.FC = () => {
           type="text"
           id="noteTitle"
           className="note-title"
-          placeholder="Enter a concise title (max 300 characters)"
+          placeholder="Title*"
           name="noteTitle"
           maxLength={300}
           value={noteTitle}
@@ -865,26 +865,105 @@ const UploadNote: React.FC = () => {
             </div>
           ) : (
             <div className="pdf-preview-container">
-              <div className="pdf-preview-wrapper">
-                <canvas ref={pdfCanvasRef} className="pdf-preview-canvas" />
-                <button className="pdf-delete-btn" onClick={handleDeletePdf}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                      fill="#d9534f"
-                    />
-                  </svg>
-                </button>
-              </div>
+              <div className="addButton">             
+              <button className="pdfAddBtn">
+              <div
+              className={`upload-placeholder-pdf ${isDragging ? "dragging" : ""}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                id="pdfInput"
+                className="file-input"
+                name="pdf"
+                ref={pdfInputRef}
+                onChange={handlePdfChange}
+                accept="application/pdf"
+              />
+              <label htmlFor="pdfInput" className="upload-label ">
+              <svg 
+              version="1.1" 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="14" 
+              height="14">
+              <path d="M0 0 C0.66 0 1.32 0 2 0 C2 1.98 2 3.96 2 6 C3.98 6 5.96 6 8 6 C8 6.66 8 7.32 8 8 C6.02 8 4.04 8 2 8 C2 9.98 2 11.96 2 14 C1.34 14 0.68 14 0 14 C0 12.02 0 10.04 0 8 C-1.98 8 -3.96 8 -6 8 C-6 7.34 -6 6.68 -6 6 C-4.02 6 -2.04 6 0 6 C0 4.02 0 2.04 0 0 Z " 
+              fill="#494949" 
+              transform="translate(6,0)"
+              />
+              </svg>
+              </label>
+            </div>
+            Add
+              </button>
+              </div>       
+              
               <div className="pdf-file-name">
-                {stackPdfs[0].name}
-              </div>
+      <div className="pdf-Icon-Name">
+        <svg
+          className="PdfIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.006 1.349-.444 1.349-1.396.006-.83-.479-1.268-1.255-1.268z"
+          ></path>
+          <path
+          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H7v-3.936A7.558 7.558 0 0 1 8.219 14c.557 0 .953.106 1.22.319.254.202.426.533.426.923-.001.392-.131.723-.367.948zm3.807 1.355c-.42.349-1.059.515-1.84.515-.468 0-.799-.03-1.024-.06v-3.917A7.947 7.947 0 0 1 11.66 14c.757 0 1.249.136 1.633.426.415.308.675.799.675 1.504 0 .763-.279 1.29-.663 1.615zM17 14.77h-1.532v.911H16.9v.734h-1.432v1.604h-.906V14.03H17v.74zM14 9h-1V4l5 5h-4z"
+          fill="#d9534f"
+        ></path>
+      </svg>
+      <div className="File-Name">{stackPdfs[0].name.split('.')[0]}</div>
+    </div>
+    <div>
+      <small>{(Math.round((stackPdfs[0].size / 1024 / 1024) * 100) / 100)} MB</small>
+    </div>
+    <div>
+      <progress  className="Progress-Bar" value={1} />
+    </div>
+    <div>
+      <button className="pdf-Delete-Btn">
+        <svg
+          onClick={handleDeletePdf}
+          width="21"
+          height="21"
+          viewBox="0 0 21 21"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+          d="M16.9747 5.4375L16.4661 13.6655C16.3361 15.7677 16.2711 16.8188 15.7442 17.5745C15.4836 17.9481 15.1483 18.2635 14.7593 18.5004C13.9725 18.9797 12.9194 18.9797 10.8131 18.9797C8.70418 18.9797 7.64968 18.9797 6.86238 18.4995C6.47314 18.2621 6.13762 17.9462 5.87719 17.572C5.35044 16.8151 5.28689 15.7625 5.1598 13.6574L4.66357 5.4375"
+          stroke="#FF0000"
+          strokeWidth="1.41891"
+          strokeLinecap="round"
+        />
+        <path
+          d="M3.43262 5.439H18.206M14.148 5.439L13.5877 4.28317C13.2155 3.5154 13.0294 3.1315 12.7084 2.89208C12.6372 2.83897 12.5618 2.79173 12.4829 2.75083C12.1275 2.56641 11.7008 2.56641 10.8476 2.56641C9.97294 2.56641 9.53565 2.56641 9.17426 2.75856C9.09417 2.80115 9.01774 2.8503 8.94577 2.90551C8.62104 3.15463 8.43965 3.55257 8.07687 4.34845L7.57975 5.439"
+          stroke="#FF0000"
+          strokeWidth="1.41891"
+          strokeLinecap="round"
+        />
+        <path
+          d="M8.76562 14.4655V9.54102"
+          stroke="#FF0000"
+          strokeWidth="1.41891"
+          strokeLinecap="round"
+        />
+        <path
+          d="M12.8726 14.4655V9.54102"
+          stroke="#FF0000"
+          strokeWidth="1.41891"
+          strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div> 
+
+
             </div>
           )
         ) : activeTab === "MCQ" ? (
