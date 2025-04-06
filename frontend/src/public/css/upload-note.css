@@ -26,11 +26,11 @@ body {
 .middle-section-upload {
   width: 100%;
   max-width: 1400px;
-  padding: clamp(20px, 3vw, 40px);
+  min-height: calc(100vh - 41px);
+  padding: clamp(40px, 7vw, 80px) clamp(15px, 2vw, 20px);
   display: flex;
   flex-direction: column;
   gap: clamp(20px, 2.5vw, 30px);
-  margin: clamp(20px, 5vw, 40px) 0;
 }
 
 .upload-nav {
