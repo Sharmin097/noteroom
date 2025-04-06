@@ -12,6 +12,13 @@ import Notes from "../../schemas/notes";
 import logger from "../logger";
 const router = Router()
 
+// Rate limiting to prevent excessive requests
+const uploadLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 5, // Allow only 5 requests per minute
+    message: "Too many requests, please try again later."
+});
+
 export default function uploadApiRouter(io: Server) {
 
 
@@ -65,25 +72,16 @@ export default function uploadApiRouter(io: Server) {
         }
     })
 
-
-
-    // Configurable limits
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    const MAX_FILE_COUNT = 5;
-    const MAX_TITLE_LENGTH = 100;
-    const MAX_DESCRIPTION_LENGTH = 500;
-    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
-
-    // Rate limiting to prevent excessive requests
-    const uploadLimiter = rateLimit({
-        windowMs: 60 * 1000, // 1 minute
-        max: 5, // Allow only 5 requests per minute
-        message: "Too many requests, please try again later."
-    });
-
     router.post("/content", uploadLimiter, async (req, res: any) => {
+        // Configurable limits
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const MAX_FILE_COUNT = 5;
+        const MAX_TITLE_LENGTH = 100;
+        const MAX_DESCRIPTION_LENGTH = 500;
+        const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
+
         try {
-            const studentID = req.session?.['stdid']; // Secure session access
+            const studentID = req.session?.['stdid'] || "--studentid--"
 
             if (!studentID) {
                 return res.status(401).json({ ok: false, message: "Unauthorized. Please login." });
@@ -109,9 +107,7 @@ export default function uploadApiRouter(io: Server) {
                 });
             }
 
-            logger.info(
-                `(/upload/content): Received post from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`
-            );
+            logger.info(`(/upload/content): Received post from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`);
 
             // Handle file uploads
             if (req.files && Object.keys(req.files).length > 0) {
