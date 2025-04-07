@@ -171,12 +171,13 @@ export default function uploadApiRouter(io: Server) {
     });
 
     router.post("/mcq", uploadLimiter, async (req, res:any) => {
+        // Configurable limits
         const MAX_TITLE_LENGTH = 300;
         const MAX_MCQ_LIMIT = 30;  // Limit for the number of MCQs
     
         try {
             // Get student ID from session cookie (or mock for testing purposes)
-            const studentID = "1";
+            const studentID = req.session?.['stdid'];
     
             // Ensure the student is logged in
             if (!studentID) {
@@ -269,7 +270,7 @@ export default function uploadApiRouter(io: Server) {
             });
     
         } catch (error) {
-            logger.error(`/upload/mcq: Error for studentID=1, error=${error.message || error}`);
+            logger.error(`/upload/mcq: Error for studentID=${req.session?.['stdid']}, error=${error.message || error}`);
     
             return res.status(500).json({
                 ok: false,
