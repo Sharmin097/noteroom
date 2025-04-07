@@ -18,38 +18,37 @@ export default function FileContainer({
             }
         }
     };
-
     const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files ? Array.from(e.target.files) : [];
-        const validTypes = ["application/pdf"];
-
-        const validFiles = files.filter((file) => {
-            if (!validTypes.includes(file.type)) {
-            ReactSwal.fire({
-                icon: "error",
-                title: "Invalid File Type",
-                text: `${file.name} is not a supported format (PDF only).`,
-            });
-            return false;
-            }
-
-            if (file.size > 10 * 1024 * 1024) {
-            ReactSwal.fire({
-                icon: "error",
-                title: "File Too Large",
-                text: `${file.name} exceeds the 10MB limit.`,
-            });
-            return false;
-            }
-
-            return true;
-        });
-
-        if (validFiles.length > 0) {
-            setStackPdfs([validFiles[0]]);
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      const validTypes = ["application/pdf"];
+    
+      const validFiles = files.filter((file) => {
+        if (!validTypes.includes(file.type)) {
+          ReactSwal.fire({
+            icon: "error",
+            title: "Invalid File Type",
+            text: `${file.name} is not a supported format (PDF only).`,
+          });
+          return false;
         }
-
-        if (pdfInputRef.current) pdfInputRef.current.value = "";
+    
+        if (file.size > 10 * 1024 * 1024) {
+          ReactSwal.fire({
+            icon: "error",
+            title: "File Too Large",
+            text: `${file.name} exceeds the 10MB limit.`,
+          });
+          return false;
+        }
+    
+        return true;
+      });
+    
+      if (validFiles.length > 0) {
+        setStackPdfs((prev) => [...prev, ...validFiles]);
+      }
+    
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
     };
 
     return (
@@ -60,14 +59,15 @@ export default function FileContainer({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
               >
-                <input
-                  type="file"
-                  id="pdfInput"
-                  className="file-input"
-                  name="pdf"
-                  ref={pdfInputRef}
-                  onChange={handlePdfChange}
-                  accept="application/pdf"
+               <input
+                 type="file"
+                 id="pdfInput"
+                 className="file-input"
+                 name="pdf"
+                 ref={pdfInputRef}
+                 onChange={handlePdfChange}
+                 accept="application/pdf"
+                 multiple // ← This enables selecting multiple files
                 />
                 <label htmlFor="pdfInput" className="upload-label">
                   <span>Drag and Drop or Upload DOC/DOCX/PDF</span>
@@ -85,17 +85,19 @@ export default function FileContainer({
                 className={`upload-placeholder-pdf ${isDragging ? "dragging" : ""}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-              >
-                <input
-                  type="file"
-                  id="pdfInput"
-                  className="file-input"
-                  name="pdf"
-                  ref={pdfInputRef}
-                  onChange={handlePdfChange}
-                  accept="application/pdf"
-                />
-                <label htmlFor="pdfInput" className="upload-label ">
+                >
+             <input
+               type="file"
+               id="pdfInput"
+               className="file-input"
+               name="pdf"
+               ref={pdfInputRef}
+               onChange={handlePdfChange}
+               accept="application/pdf"
+               multiple // ← This enables selecting multiple files
+             />
+
+            <label htmlFor="pdfInput" className="upload-label ">
                 <svg 
                 version="1.1" 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -109,12 +111,13 @@ export default function FileContainer({
                 </label>
               </div>
               Add
-                </button>
-                </div>       
+              </button>
+              </div>       
                 
-                <div className="pdf-file-name">
-        <div className="pdf-Icon-Name">
-          <svg
+              {stackPdfs.map((file, idx) => (
+              <div key={idx} className="pdf-file-name">
+       <div className="pdf-Icon-Name">
+         <svg
             className="PdfIcon"
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -129,56 +132,60 @@ export default function FileContainer({
             fill="#d9534f"
           ></path>
         </svg>
-        <div className="File-Name">{stackPdfs[0].name.split('.')[0]}</div>
+         <div className="File-Name">{file.name.split('.')[0]}</div>
       </div>
+       <div>
+        <small>{(Math.round((file.size / 1024 / 1024) * 100) / 100)} MB</small>
+       </div>
       <div>
-        <small>{(Math.round((stackPdfs[0].size / 1024 / 1024) * 100) / 100)} MB</small>
-      </div>
-      <div>
-        <progress  className="Progress-Bar" value={1} />
-      </div>
-      <div>
-        <button className="pdf-Delete-Btn">
-          <svg
-            onClick={handleDeletePdf}
-            width="21"
-            height="21"
-            viewBox="0 0 21 21"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-            d="M16.9747 5.4375L16.4661 13.6655C16.3361 15.7677 16.2711 16.8188 15.7442 17.5745C15.4836 17.9481 15.1483 18.2635 14.7593 18.5004C13.9725 18.9797 12.9194 18.9797 10.8131 18.9797C8.70418 18.9797 7.64968 18.9797 6.86238 18.4995C6.47314 18.2621 6.13762 17.9462 5.87719 17.572C5.35044 16.8151 5.28689 15.7625 5.1598 13.6574L4.66357 5.4375"
-            stroke="#FF0000"
-            strokeWidth="1.41891"
-            strokeLinecap="round"
-          />
-          <path
-            d="M3.43262 5.439H18.206M14.148 5.439L13.5877 4.28317C13.2155 3.5154 13.0294 3.1315 12.7084 2.89208C12.6372 2.83897 12.5618 2.79173 12.4829 2.75083C12.1275 2.56641 11.7008 2.56641 10.8476 2.56641C9.97294 2.56641 9.53565 2.56641 9.17426 2.75856C9.09417 2.80115 9.01774 2.8503 8.94577 2.90551C8.62104 3.15463 8.43965 3.55257 8.07687 4.34845L7.57975 5.439"
-            stroke="#FF0000"
-            strokeWidth="1.41891"
-            strokeLinecap="round"
-          />
-          <path
-            d="M8.76562 14.4655V9.54102"
-            stroke="#FF0000"
-            strokeWidth="1.41891"
-            strokeLinecap="round"
-          />
-          <path
-            d="M12.8726 14.4655V9.54102"
-            stroke="#FF0000"
-            strokeWidth="1.41891"
-            strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        </div>
-      </div> 
-  
-  
-              </div>
-            )}
-      </>
+        <progress className="Progress-Bar" value={1} />
+     </div>
+   <div>
+     <button
+       className="pdf-Delete-Btn"
+       onClick={() => {
+       setStackPdfs((prev) => prev.filter((_, i) => i !== idx));
+       }}
+        >
+       <svg
+       width="21"
+       height="21"
+       viewBox="0 0 21 21"
+       fill="none"
+       xmlns="http://www.w3.org/2000/svg"
+      >
+    <path
+       d="M16.9747 5.4375L16.4661 13.6655C16.3361 15.7677 16.2711 16.8188 15.7442 17.5745C15.4836 17.9481 15.1483 18.2635 14.7593 18.5004C13.9725 18.9797 12.9194 18.9797 10.8131 18.9797C8.70418 18.9797 7.64968 18.9797 6.86238 18.4995C6.47314 18.2621 6.13762 17.9462 5.87719 17.572C5.35044 16.8151 5.28689 15.7625 5.1598 13.6574L4.66357 5.4375"
+       stroke="#FF0000"
+       strokeWidth="1.41891"
+       strokeLinecap="round"
+    />
+    <path
+       d="M3.43262 5.439H18.206M14.148 5.439L13.5877 4.28317C13.2155 3.5154 13.0294 3.1315 12.7084 2.89208C12.6372 2.83897 12.5618 2.79173 12.4829 2.75083C12.1275 2.56641 11.7008 2.56641 10.8476 2.56641C9.97294 2.56641 9.53565 2.56641 9.17426 2.75856C9.09417 2.80115 9.01774 2.8503 8.94577 2.90551C8.62104 3.15463 8.43965 3.55257 8.07687 4.34845L7.57975 5.439"
+       stroke="#FF0000"
+       strokeWidth="1.41891"
+       strokeLinecap="round"
+    />
+    <path
+       d="M8.76562 14.4655V9.54102"
+       stroke="#FF0000"
+       strokeWidth="1.41891"
+       strokeLinecap="round"
+    />
+    <path
+       d="M12.8726 14.4655V9.54102"
+       stroke="#FF0000"
+       strokeWidth="1.41891"
+       strokeLinecap="round"
+      />
+      </svg>
+     </button>
+    </div>
+  </div>
+  ))}
+</div>
+)}
+</>
+
     )
   }
