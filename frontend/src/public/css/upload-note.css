@@ -26,11 +26,11 @@ body {
 .middle-section-upload {
   width: 100%;
   max-width: 1400px;
-  padding: clamp(20px, 3vw, 40px);
+  min-height: calc(100vh - 41px);
+  padding: clamp(40px, 7vw, 80px) clamp(15px, 2vw, 20px);
   display: flex;
   flex-direction: column;
   gap: clamp(20px, 2.5vw, 30px);
-  margin: clamp(20px, 5vw, 40px) 0;
 }
 
 .upload-nav {
@@ -65,7 +65,6 @@ body {
   border-bottom: 4px solid var(--neon-blue);
   padding-bottom: 2px;
 }
-
 
 
 .form-group {
@@ -173,9 +172,8 @@ body {
   border: 1px solid #ddd;
   border-radius: 20px;
   transition: border-color 0.3s ease;
+  position: relative;
 }
-
-
 
 .upload-placeholder {
   width: 100%;
@@ -312,6 +310,89 @@ body {
   stroke: #fff;
 }
 
+.edit-options {
+  position: absolute;
+  top: 150px;
+  left: 50%;
+  width: 100%;
+  transform: translateX(-50%);
+  padding: 10px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.rotate-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--squid-ink);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 25px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rotate-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.3s ease;
+}
+
+.rotate-btn svg path {
+  stroke: white;
+}
+
+.rotate-btn:hover {
+  background: var(--neon-blue);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(4, 219, 246, 0.3);
+}
+
+.rotate-btn.rotate-left:hover svg {
+  transform: rotate(-30deg);
+}
+
+.rotate-btn.rotate-right:hover svg {
+  transform: rotate(30deg);
+}
+
+.action-btn.close-btn {
+  background: #ffebec;
+  color: #d32f2f;
+}
+
+.action-btn.close-btn svg {
+  stroke: #d32f2f;
+}
+
+.action-btn.close-btn:hover {
+  background: #ffd5d5;
+}
+
+.action-btn.add-btn:disabled {
+  cursor: not-allowed;
+  background: #eaeaea;
+  color: #999;
+  opacity: 0.7;
+  border: 1px solid #ddd;
+  transform: none;
+}
+
+.action-btn.add-btn:disabled svg {
+  opacity: 0.5;
+}
+
+.action-btn.add-btn:disabled path,
+.action-btn.add-btn:disabled rect {
+  stroke: #999;
+}
+
 .delete-btn {
   background: rgb(255, 255, 255);
   border: none;
@@ -426,6 +507,7 @@ body {
 .pdf-preview-wrapper:hover {
   transform: scale(1.02);
 }
+
 .addButton{
   text-align: left;
   width: 100%;
@@ -438,6 +520,7 @@ body {
   height: 100%;
   object-fit: cover;
 }
+
 .pdfAddBtn{
   border: none;
   background: var(--light-gray);
@@ -448,6 +531,7 @@ body {
   display: flex;
   justify-content: space-between;
 }
+
 .pdfAddBtn:hover {
   background-color: #e8e6e6;
   
@@ -495,10 +579,12 @@ body {
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .pdf-delete-btn:hover {
   background: rgba(255, 220, 220, 0);
   transform: scale(1.1);
 }
+
 .pdf-file-name {
   font-size: clamp(0.8rem, 2vw, 1rem);
   color: #333;
@@ -514,9 +600,11 @@ body {
   justify-content: space-between;
   padding-bottom: 5px;
 }
+
 .pdf-Icon-Name{
   display: flex;
 }
+
 .File-Name{
  
   overflow: hidden;
@@ -525,10 +613,12 @@ body {
 .pdf-Delete-Btn{
   border: none;
 }
+
 .pdf-Delete-Btn:hover {
   
   transform: scale(1.1);
 }
+
 .PdfIcon{
   margin-top: -3px;
  margin-right: 5px;
@@ -658,7 +748,6 @@ body {
   border-radius: 0 0 12px 12px;
   font-family: inherit;
 }
-
 
 .math-editor-container {
   display: flex;
@@ -1250,4 +1339,86 @@ margin-top: -10px;
     font-size: clamp(0.6rem, 1.5vw, 0.8rem);
     padding: clamp(5px, 1vw, 6px);
   }
+}
+
+.edit-options {
+  position: absolute;
+  top: 150px;
+  left: 50%;
+  width: 100%;
+  transform: translateX(-50%);
+  padding: 10px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.rotate-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--squid-ink);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 25px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rotate-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.3s ease;
+}
+
+.rotate-btn svg path {
+  stroke: white;
+}
+
+.rotate-btn:hover {
+  background: var(--neon-blue);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(4, 219, 246, 0.3);
+}
+
+.rotate-btn.rotate-left:hover svg {
+  transform: rotate(-30deg);
+}
+
+.rotate-btn.rotate-right:hover svg {
+  transform: rotate(30deg);
+}
+
+.action-btn.close-btn {
+  background: #ffebec;
+  color: #d32f2f;
+}
+
+.action-btn.close-btn svg {
+  stroke: #d32f2f;
+}
+
+.action-btn.close-btn:hover {
+  background: #ffd5d5;
+}
+
+.action-btn.add-btn:disabled {
+  cursor: not-allowed;
+  background: #eaeaea;
+  color: #999;
+  opacity: 0.7;
+  border: 1px solid #ddd;
+}
+
+.action-btn.add-btn:disabled svg {
+  opacity: 0.5;
+}
+
+.action-btn.add-btn:disabled path,
+.action-btn.add-btn:disabled rect {
+  stroke: #999;
 }
