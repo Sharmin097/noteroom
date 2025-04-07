@@ -56,7 +56,7 @@ body {
 
 .nav-options {
   display: flex;
-  gap: clamp(10px, 2vw, 20px);
+  gap: clamp(10px, 10vw, 60px);
 }
 
 .nav-options span {
@@ -123,6 +123,43 @@ body {
   background-repeat: no-repeat;
   background-position: right clamp(8px, 1.5vw, 15px) center;
   background-size: clamp(8px, 1.5vw, 12px) clamp(4px, 1vw, 6px);
+}
+.Note-Title {
+  margin:20px 0;
+  position:relative;
+  display:inline-block;
+
+}
+  
+.Title-placeholder {
+  
+  padding:20px 30px;
+  pointer-events: none;
+  position:absolute;
+  left:0;
+
+  transition: 0.2s;
+  transition-timing-function: ease;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  opacity:0.5;
+ 
+}
+
+.note-title {
+  padding:20px;
+}
+
+.note-title:focus + .Title-placeholder, .note-title:not(:placeholder-shown) + .Title-placeholder {
+  opacity:1;
+  transform: scale(0.75) translateY(-40%) translateX(-20px);
+  font-weight: bold;
+  color: #a0a0a0;
+}
+
+/* For IE Browsers*/
+.note-title:focus + .Title-placeholder, .note-title:not(:-ms-input-placeholder) + .Title-placeholder {
+  opacity:1;
+  transform: scale(0.75) translateY(-100%) translateX(-10px);
 }
 
 .char-count {
@@ -505,6 +542,32 @@ body {
 .pdfAddBtn:hover {
   background-color: #e8e6e6;
   
+}
+.Progress-Bar {
+  width: 150px;
+  height: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #e0e0e0; /* Light gray background */
+}
+
+/* Chrome, Safari, Opera */
+.Progress-Bar::-webkit-progress-bar {
+  background-color: #00DF80;
+  border-radius: 4px;
+}
+
+.Progress-Bar::-webkit-progress-value {
+  background-color: #00DF80; /* Light green */
+  border-radius: 4px;
+}
+
+/* Firefox */
+.Progress-Bar::-moz-progress-bar {
+  background-color: #00DF80; /* Light green */
 }
 
 .pdf-delete-btn {
@@ -1193,6 +1256,21 @@ math-field:focus-within {
     max-width: 95%;
     padding: clamp(10px, 2vw, 15px);
   }
+  .Title-placeholder {
+margin-top: -10px;
+   font-weight: bold;
+    transition: 0.2s;
+    transition-timing-function: ease;
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+    opacity:0.5;
+  }
+  .note-title:focus + .Title-placeholder, .note-title:not(:placeholder-shown) + .Title-placeholder {
+    opacity:1;
+    transform: scale(0.75) translateY(-70%) translateX(-20px);
+    font-weight: bold;
+    color: #a0a0a0;
+ 
+  }
 
   .upload-nav h2 {
     font-size: clamp(1rem, 2.2vw, 1.2rem);
@@ -1241,6 +1319,7 @@ math-field:focus-within {
   }
   .Progress-Bar{
     width: 40px;
+    
   }
   .add-math-btn svg {
     width: clamp(12px, 2vw, 16px);
