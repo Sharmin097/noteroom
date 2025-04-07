@@ -81,7 +81,7 @@ export default function uploadApiRouter(io: Server) {
         const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
 
         try {
-            const studentID = req.session?.['stdid'] || "--studentid--"
+            const studentID = req.session?.['stdid']
 
             if (!studentID) {
                 return res.status(401).json({ ok: false, message: "Unauthorized. Please login." });
@@ -170,6 +170,100 @@ export default function uploadApiRouter(io: Server) {
         }
     });
 
+
+
+
+    // router.post("/mcq", uploadLimiter, async (req, res) => {
+
+    //     // Configurable limits
+    //     const MAX_TITLE_LENGTH = 100;
+    //     const MAX_QUESTION_LENGTH = 300;
+    //     const MAX_OPTION_LENGTH = 150;
+    //     const MAX_QUESTIONS = 10;
+    //     const ALLOWED_OPTIONS = ["A", "B", "C", "D"];
+
+    //     try {
+    //         const studentID = req.session?.["stdid"];
+
+    //         if (!studentID) {
+    //             res.status(401).json({ ok: false, message: "Unauthorized. Please login." });
+    //         }
+
+    //         const { title, questions } = req.body;
+    //         const sanitizedTitle = sanitizeHtml(title || "");
+
+    //         if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+    //             res.status(400).json({
+    //                 ok: false,
+    //                 message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`,
+    //             });
+    //         }
+
+    //         if (!Array.isArray(questions) || questions.length === 0) {
+    //             res.status(400).json({
+    //                 ok: false,
+    //                 message: "At least one question is required.",
+    //             });
+    //         }
+
+    //         if (questions.length > MAX_QUESTIONS) {
+    //             res.status(400).json({
+    //                 ok: false,
+    //                 message: `You can add a maximum of ${MAX_QUESTIONS} questions.`,
+    //             });
+    //         }
+
+    //         for (let i = 0; i < questions.length; i++) {
+    //             const { question, options, correctAnswer } = questions[i];
+
+    //             const sanitizedQuestion = sanitizeHtml(question || "");
+
+    //             if (!sanitizedQuestion || typeof sanitizedQuestion !== "string" || sanitizedQuestion.length > MAX_QUESTION_LENGTH) {
+    //                 res.status(400).json({
+    //                     ok: false,
+    //                     message: `Question ${i + 1} must be a string and less than ${MAX_QUESTION_LENGTH} characters.`,
+    //                 });
+    //             }
+
+    //             if (
+    //                 !options ||
+    //                 typeof options !== "object" ||
+    //                 Object.keys(options).length !== 4 ||
+    //                 !ALLOWED_OPTIONS.every(
+    //                     (key) =>
+    //                         typeof options[key] === "string" &&
+    //                         options[key].trim() !== "" &&
+    //                         options[key].length <= MAX_OPTION_LENGTH
+    //                 )
+    //             ) {
+    //                 res.status(400).json({
+    //                     ok: false,
+    //                     message: `Each question must have exactly 4 non-empty options (A-D) under ${MAX_OPTION_LENGTH} characters. Error at question ${i + 1}`,
+    //                 });
+    //             }
+
+    //             if (!ALLOWED_OPTIONS.includes(correctAnswer)) {
+    //                 res.status(400).json({
+    //                     ok: false,
+    //                     message: `Correct answer must be A, B, C, or D. Error at question ${i + 1}`,
+    //                 });
+    //             }
+
+          
+    //             logger.info(`(/mcq/create): Q${i + 1} logged for studentID=${studentID}`);
+    //         }
+
+    //         // Example: save MCQ to DB here
+    //         res.status(200).json({ ok: true, message: "MCQ created successfully." });
+
+    //     } catch (error) {
+    //         logger.error(`(/mcq): Error for studentID=${req.session?.["stdid"]}, error=${error}`);
+    //         res.status(500).json({
+    //             ok: false,
+    //             message: "An unexpected error occurred. Please try again later.",
+    //         });
+    //     }
+    // });
 
 
     return router
