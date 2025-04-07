@@ -60,16 +60,20 @@ function PostTitle({ postTitle: [postTitle, setPostTitle] }: any) {
   return (
     <div className="form-group">
         <span className="char-count">{postTitle.length}/300</span>
+        <label className="Note-Title">
         <input
           type="text"
           id="noteTitle"
           className="note-title"
-          placeholder="Title*"
+          placeholder=""
           name="noteTitle"
           maxLength={300}
           value={postTitle}
           onChange={(e) => setPostTitle(e.target.value)}
         />
+        <span className="Title-placeholder">Title*</span>
+        </label>
+
       </div>
   )
 }
