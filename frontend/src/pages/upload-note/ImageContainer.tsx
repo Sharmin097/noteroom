@@ -3,14 +3,37 @@ import { useState } from "react";
 export default function ImageUploadContainer({ 
     refs: [fileInputRef],
     stackFiles: [stackFiles, setStackFiles],
-    handleDrag: [isDragging, handleDragOver, handleDragLeave]
+    handleDrag: [isDragging, handleDragOver, handleDragLeave, handleDrop]
 }: any) {
 
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+    const [imageRotations, setImageRotations] = useState<number[]>([]);
+    const [showEditOptions, setShowEditOptions] = useState<boolean>(false);
+
+    const rotateClockwise = () => {
+        setImageRotations((prev) => {
+            const newRotations = [...prev];
+            newRotations[currentImageIndex] = (newRotations[currentImageIndex] + 90) % 360;
+            return newRotations;
+        });
+    };
+
+    const rotateCounterClockwise = () => {
+        setImageRotations((prev) => {
+            const newRotations = [...prev];
+            newRotations[currentImageIndex] = (newRotations[currentImageIndex] - 90 + 360) % 360;
+            return newRotations;
+        });
+    };
+
+    const toggleEditOptions = () => {
+        setShowEditOptions(!showEditOptions);
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files ? Array.from(e.target.files) : [];
         setStackFiles((prev) => [...prev, ...files]);
+        setImageRotations(prev => [...prev, ...Array(files.length).fill(0)]);
         setCurrentImageIndex(0);
 
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -54,7 +77,7 @@ export default function ImageUploadContainer({
               <div className="carousel-container">
                 <div className="carousel-actions">
                   <div className="carousel-right-actions">
-                    <button className="action-btn add-btn" onClick={() => fileInputRef.current?.click()}>
+                    <button className="action-btn add-btn" onClick={() => fileInputRef.current?.click()} disabled={showEditOptions}>
                       <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="0.5" y="1.35156" width="16.5" height="16.5" rx="2" stroke="black" />
                         <path
@@ -75,16 +98,30 @@ export default function ImageUploadContainer({
                       </svg>
                       Add
                     </button>
-                    <button className="action-btn edit-btn">
-                      <svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M12.75 2.75023C12.947 2.55324 13.1808 2.39699 13.4382 2.29038C13.6956 2.18378 13.9714 2.12891 14.25 2.12891C14.5286 2.12891 14.8044 2.18378 15.0618 2.29038C15.3192 2.39699 15.553 2.55324 15.75 2.75023C15.947 2.94721 16.1032 3.18106 16.2098 3.43843C16.3165 3.6958 16.3713 3.97165 16.3713 4.25023C16.3713 4.5288 16.3165 4.80465 16.2098 5.06202C16.1032 5.31939 15.947 5.55324 15.75 5.75023L5.625 15.8752L1.5 17.0002L2.625 12.8752L12.75 2.75023Z"
-                          stroke="#1E1E1E"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      Edit
+                    <button
+                      className={`action-btn ${showEditOptions ? 'close-btn' : 'edit-btn'}`}
+                      onClick={toggleEditOptions}
+                    >
+                      {showEditOptions ? (
+                        <>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          Close
+                        </>
+                      ) : (
+                        <>
+                          <svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M12.75 2.75023C12.947 2.55324 13.1808 2.39699 13.4382 2.29038C13.6956 2.18378 13.9714 2.12891 14.25 2.12891C14.5286 2.12891 14.8044 2.18378 15.0618 2.29038C15.3192 2.39699 15.553 2.55324 15.75 2.75023C15.947 2.94721 16.1032 3.18106 16.2098 3.43843C16.3165 3.6958 16.3713 3.97165 16.3713 4.25023C16.3713 4.5288 16.3165 4.80465 16.2098 5.06202C16.1032 5.31939 15.947 5.55324 15.75 5.75023L5.625 15.8752L1.5 17.0002L2.625 12.8752L12.75 2.75023Z"
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          Edit
+                        </>
+                      )}
                     </button>
                     <input
                       type="file"
@@ -139,6 +176,7 @@ export default function ImageUploadContainer({
                     src={URL.createObjectURL(stackFiles[currentImageIndex])}
                     alt={`Uploaded Image ${currentImageIndex + 1}`}
                     className="carousel-image"
+                    style={{ transform: `rotate(${imageRotations[currentImageIndex] || 0}deg)` }}
                     onLoad={(e) => URL.revokeObjectURL(e.currentTarget.src)}
                   />
                   <div className="carousel-indicators">
@@ -165,6 +203,26 @@ export default function ImageUploadContainer({
               </div>
             ) }
         </div>
+        {showEditOptions && (
+          <div className="edit-options">
+            <button className="rotate-btn rotate-left" onClick={rotateCounterClockwise}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 14L4 9L9 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M20 20v-7h-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M16 9V4H4v12h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Rotate Left
+            </button>
+            <button className="rotate-btn rotate-right" onClick={rotateClockwise}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 4l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 20v-7h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M8 9V4h12v12h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Rotate Right
+            </button>
+          </div>
+        )}
       </>
     )
   }
