@@ -15,6 +15,9 @@ import pkg from 'connect-mongo';
 const { create } = pkg;
 import chalk from 'chalk';
 
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swaggers/swaggerOptions';
+
 import postApiRouter from './services/apis/post.js';
 import feedApiRouter from './services/apis/feed.js';
 import seacrhApiRouter from './services/apis/search.js';
@@ -46,6 +49,7 @@ app.use(cors({
     origin: allowedHosts,
     credentials: true
 }))
+app.use(express.json()); 
 app.use(express.static(staticPath))
 app.use(urlencoded({ extended: true })) 
 app.use(session({
@@ -65,6 +69,8 @@ app.use(session({
 
 app.use(cookieParser()) 
 app.use(fileUpload()) 
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/users', profileApiRouter(io))
 app.use('/api/posts', postApiRouter(io))

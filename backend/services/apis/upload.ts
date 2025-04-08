@@ -81,7 +81,7 @@ export default function uploadApiRouter(io: Server) {
         const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
 
         try {
-            const studentID = req.session?.['stdid'] || "--studentid--"
+            const studentID = req.session?.['stdid']
 
             if (!studentID) {
                 return res.status(401).json({ ok: false, message: "Unauthorized. Please login." });
@@ -170,7 +170,115 @@ export default function uploadApiRouter(io: Server) {
         }
     });
 
+    router.post("/mcq", uploadLimiter, async (req, res:any) => {
+        // Configurable limits
+        const MAX_TITLE_LENGTH = 300;
+        const MAX_MCQ_LIMIT = 30;  // Limit for the number of MCQs
+    
+        try {
+            // Get student ID from session cookie (or mock for testing purposes)
+            const studentID = req.session?.['stdid'];
+    
+            // Ensure the student is logged in
+            if (!studentID) {
+                return res.status(401).json({
+                    ok: false,
+                    message: "Unauthorized. Please login."
+                });
+            }
+    
+            const { title, mcqs } = req.body;
 
+            // Validate Title
+            if (!title || typeof title !== "string" || title.trim() === "") {
+                return res.status(400).json({
+                    ok: false,
+                    message: "Title is required and must be a non-empty string."
+                });
+            }
+            
+    
+            // Sanitize Title (ensure no HTML tags, but don't trim the length)
+            const sanitizedTitle = sanitizeHtml(title);
+    
+            // Validate sanitized Title length
+            if (sanitizedTitle.length > MAX_TITLE_LENGTH) {
+                return res.status(400).json({
+                    ok: false,
+                    message: `Title must be less than ${MAX_TITLE_LENGTH} characters.`
+                });
+            }
+    
+            // Validate MCQs list
+            if (!Array.isArray(mcqs) || mcqs.length === 0 || mcqs.length > MAX_MCQ_LIMIT) {
+                return res.status(400).json({
+                    ok: false,
+                    message: `MCQs are required, and the limit is ${MAX_MCQ_LIMIT} questions.`
+                });
+            }
+    
+            // Validate each MCQ object
+            for (const mcq of mcqs) {
+                const { question, questionID, options, correctAnswer } = mcq;
+    
+                // Validate question field
+                if (!question || typeof question !== 'string') {
+                    return res.status(400).json({ ok: false, message: "Each question must be a string." });
+                }
+    
+                // Validate questionID field
+                if (!questionID || typeof questionID !== 'string') {
+                    return res.status(400).json({ ok: false, message: "Each question must have a valid questionID." });
+                }
+                
+    
+                // Validate options array and ensure there are exactly 4 options
+                if (!Array.isArray(options) || options.length !== 4) {
+                    return res.status(400).json({ ok: false, message: "Each MCQ must have exactly 4 options." });
+                }
+    
+                // Validate each option
+                for (const option of options) {
+                    if (!option.optionType || !['A', 'B', 'C', 'D'].includes(option.optionType)) {
+                        return res.status(400).json({ ok: false, message: "Each option must have a valid option type (A/B/C/D)." });
+                    }
+    
+                    if (!option.optionText || typeof option.optionText !== 'string') {
+                        return res.status(400).json({ ok: false, message: "Each option must have valid option text." });
+                    }
+    
+                    if (!option.optionID || typeof option.optionID !== 'string') {
+                        return res.status(400).json({ ok: false, message: "Each option must have a valid optionID." });
+                    }
+                }
+    
+                // Validate correct answer field
+                if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+                    return res.status(400).json({ ok: false, message: "Correct answer must be one of the options (A/B/C/D)." });
+                }
+            }
+    
+            // Log sanitized title and MCQs for debugging
+            logger.info(`/upload/mcq: Received MCQs from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`);
+    
+            // Save the MCQ data to the database (or another storage solution)
+            // Example: await saveMCQsToDB(studentID, sanitizedTitle, sanitizedMCQs);
+    
+            return res.status(200).json({
+                ok: true,
+                message: "MCQs uploaded successfully!"
+            });
+    
+        } catch (error) {
+            logger.error(`/upload/mcq: Error for studentID=${req.session?.['stdid']}, error=${error.message || error}`);
+    
+            return res.status(500).json({
+                ok: false,
+                message: "An error occurred while uploading MCQs. Please try again later."
+            });
+        }
+    });
+    
 
     return router
 }
