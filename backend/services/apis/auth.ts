@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { Server } from 'socket.io';
+import { OAuth2Client } from 'google-auth-library';
 import { addUserProfile, getUserAuth, getUserVarification } from '../services/authService';
 import { generateRandomUsername } from '../services/utils';
 import { capitalize, sample } from "lodash"
 import logger from '../logger';
 
 
+
 const router = Router()
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 export default function authApiRouter(io: Server) {
     router.post("/signup", async (req, res) => {
@@ -114,6 +118,108 @@ export default function authApiRouter(io: Server) {
             res.json({ ok: false });
         }
     })
+    
+    router.post('/google', async (req, res:any) => {
+        try {
+            const { credential } = req.body; // ID Token from frontend
+    
+            if (!credential) {
+                return res.status(400).json({ ok: false, message: "No credential provided." });
+            }
+    
+            const ticket = await googleClient.verifyIdToken({
+                idToken: credential,
+                audience: GOOGLE_CLIENT_ID,
+            });
+    
+            const payload = ticket.getPayload();
+            const email = payload.email;
+            const displayName = payload.name;
+    
+            // Check email is verified
+            if (!payload.email_verified) {
+                return res.status(401).json({ ok: false, message: "Email is not verified by Google." });
+            }
+    
+            // Check token expiration
+            const exp = payload.exp;
+            if (Date.now() >= exp * 1000) {
+                return res.status(401).json({ ok: false, message: "ID token has expired." });
+            }
+    
+            logger.info(`(/auth/google): Google login attempt - email=${email}`);
+    
+            const existingUser = await getUserVarification(email);
+    
+            if (existingUser.ok) {
+                const student = existingUser.data;
+    
+                if (student.authProvider !== "google") {
+                    return res.status(400).json({
+                        ok: false,
+                        message: "This email is registered with another method. Try normal login.",
+                    });
+                }
+    
+                // Regenerate session to prevent session fixation
+                req.session.regenerate(() => {
+                    req.session["stdid"] = student["studentID"];
+                    return res.json({
+                        ok: true,
+                        userAuth: {
+                            studentID: student["studentID"],
+                            username: student["username"],
+                        },
+                    });
+                });
+                return;
+            }
+    
+            // Create new user
+            const identifier = generateRandomUsername(displayName.trim());
+            const newUser = {
+                displayname: displayName,
+                email: email,
+                password: null,
+                studentID: identifier.userID,
+                username: identifier.username,
+                authProvider: "google",
+                onboarded: false,
+            };
+    
+            const response = await addUserProfile(newUser);
+    
+            if (response.ok) {
+                const user = response.data;
+    
+                req.session.regenerate(() => {
+                    req.session["stdid"] = user["studentID"];
+                    logger.info(`(/auth/google): Created & logged in user: ${email}`);
+    
+                    res.json({
+                        ok: true,
+                        userAuth: {
+                            studentID: user["studentID"],
+                            username: user["username"],
+                        },
+                    });
+                });
+            } else {
+                logger.error(`(/auth/google): Failed to create user ${email}: ${response.error}`);
+                res.status(500).json({
+                    ok: false,
+                    message: "Something went wrong while creating your account.",
+                });
+            }
+        } catch (error) {
+            logger.error(`(/auth/google): Login failed: ${error}`);
+            res.status(401).json({
+                ok: false,
+                message: "Google authentication failed. Please try again.",
+            });
+        }
+    });
+    
     
 
     return router
