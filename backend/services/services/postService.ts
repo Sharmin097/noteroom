@@ -1,7 +1,8 @@
-import Notes from "../../schemas/notes"
+import Notes, { contentsModel } from "../../schemas/notes"
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
+import { PostType } from "../../schemas/notes"
 
 interface SavedNoteObject {
     noteID: string,
@@ -9,14 +10,22 @@ interface SavedNoteObject {
 	noteThumbnail: string
 }
 
-export async function addPost(noteData: any) {
-    let note = await Notes.create(noteData)
-    await Students.findByIdAndUpdate(
-        noteData.ownerDocID,
-        { $push: { owned_notes: note._id } },
-        { upsert: true, new: true }
-    )
-    return note
+export async function addPost(postData: any, postType?: PostType) {
+    try {
+        switch (postType) {
+            case PostType.CONTENT:
+                const post = await contentsModel.create(postData)
+                await Students.findByIdAndUpdate(
+                    postData.ownerDocID,
+                    { $push: { owned_notes: post._id } },
+                    { upsert: true, new: true }
+                )
+                return { ok: true, postID: post._id }
+        }
+    } catch (error) {
+        console.error(error)
+        return { ok: false, error: error }
+    }
 }
 
 async function isSaved({ studentDocID, noteDocID }) {
@@ -135,8 +144,8 @@ export async function getSinglePost(noteDocID: string, studentDocID: string, opt
         
             return { ok: true, noteData: { ...note, isUpvoted, isSaved: _isSaved } }
         } else {
-            let images = (await Notes.findById(noteDocID, { content: 1 })).content
-            return { ok: true, images: images }
+            // let images = (await Notes.findById(noteDocID, { content: 1 })).content
+            return { ok: true, images: [] }
         }
     } catch (error) {
         return { ok: false }
