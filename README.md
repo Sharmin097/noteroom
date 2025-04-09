@@ -1,6 +1,6 @@
 # NoteRoom
 
-**NoteRoom** is a collaborative note-sharing platform designed to help students share, organize, and access study materials effortlessly.
+**NoteRoom** is a social media for the curious allowing you develop yourself in a social network of the intellectuals.
 
 ## Features
 
