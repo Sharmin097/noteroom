@@ -61,7 +61,7 @@ export async function getPosts(studentDocID: string, options?: any) {
         X_n = seed
     */
     let notes = await Notes.aggregate([
-        { $match: { completed: { $eq: true }, type_: "public" } },
+        { $match: { completed: { $eq: true }, visibility: "public" } },
         { $lookup: {
             from: 'students',
             localField: 'ownerDocID',
@@ -90,7 +90,7 @@ export async function getPosts(studentDocID: string, options?: any) {
             title: 1, description: 1,  
             feedbackCount: 1, upvoteCount: 1, 
             postType: 1, content: 1, randomSort: 1,
-            createdAt: 1, pinned: 1,
+            createdAt: 1, pinned: 1, postID: 1,
             "ownerDocID._id": 1,
             "ownerDocID.profile_pic": 1,
             "ownerDocID.displayname": 1,
@@ -135,7 +135,7 @@ export async function getSinglePost(noteDocID: string, studentDocID: string, opt
                     title: 1, description: 1,  
                     feedbackCount: 1, upvoteCount: 1, 
                     postType: 1, content: 1, randomSort: 1, //FIXME: content is only needed for content counting. so send content count instead of content
-                    createdAt: 1, pinned: 1,
+                    createdAt: 1, pinned: 1, postID: 1,
                     "ownerDocID._id": 1,
                     "ownerDocID.profile_pic": 1,
                     "ownerDocID.displayname": 1,
@@ -157,8 +157,14 @@ export async function getSinglePost(noteDocID: string, studentDocID: string, opt
         
             return { ok: true, noteData: { ...note, isUpvoted, isSaved: _isSaved } }
         } else {
-            // let images = (await Notes.findById(noteDocID, { content: 1 })).content
-            return { ok: true, images: [] }
+            let post = (await Notes.findById(noteDocID))?.toObject()
+            if (post) {
+                if (post["content"] && post["content"].length !== 0) {
+                    return { ok: true, images: post["content"] }
+                } else {
+                    return { ok: true, images: [] }
+                }
+            }
         }
     } catch (error) {
         return { ok: false }
@@ -200,7 +206,7 @@ export async function getSavedPosts(studentID: string) {
         let posts: SavedNoteObject[] = await Notes.aggregate([
             { $match: { _id: { $in: postsIDs } } },
             { $project: {
-                noteID: "$_id",
+                noteID: "$postID",
                 noteTitle: "$title",
                 noteThumbnail: { $first: '$content' },
             } }

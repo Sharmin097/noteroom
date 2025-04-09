@@ -9,7 +9,7 @@ export enum PostType {
 
 const baseOptions = {
     discriminatorKey: 'postType',
-    collection: 'notes'
+    collection: 'posts'
 }
 
 const notesSchema = new Schema({
@@ -57,7 +57,7 @@ const notesSchema = new Schema({
         default: false
     }
 }, baseOptions)
-const notesModel = model('notes', notesSchema)
+const notesModel = model('posts', notesSchema)
 
 const contentSchema = new Schema({
     content: {
