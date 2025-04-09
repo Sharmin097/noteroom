@@ -3,6 +3,7 @@ import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
 import { PostType } from "../../schemas/notes"
+import { deleteFile } from "./firebaseService"
 
 interface SavedNoteObject {
     noteID: string,
@@ -23,7 +24,19 @@ export async function addPost(postData: any, postType?: PostType) {
                 return { ok: true, postID: post._id }
         }
     } catch (error) {
-        console.error(error)
+        return { ok: false, error: error }
+    }
+}
+
+export async function deletePost(postID: string, postType: PostType) {
+    try {
+        switch(postType) {
+            case PostType.CONTENT:
+                await Notes.deleteOne({ postID: postID })
+                const fileDeleteResponse = await deleteFile(postID)
+                return { ok: fileDeleteResponse.ok, code: !fileDeleteResponse.ok ? "FILE_DELETE_FAIL" : null } 
+        }
+    } catch (error) {
         return { ok: false, error: error }
     }
 }

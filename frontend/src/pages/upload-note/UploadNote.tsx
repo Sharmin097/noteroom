@@ -110,6 +110,15 @@ const UploadNote: React.FC = () => {
     try {
       switch(activeTab) {
         case SubNav.TEXT_IMAGES:
+          if (postTitle.trim().length === 0) {
+            ReactSwal.fire({
+              icon: "question",
+              title: "Uh oh! Something went wrong",
+              text: "Title is required, must be a string, and less than 100 characters.",
+            })
+            return
+          }
+
           setIsLoading(true)
           const postData = new FormData()
           postData.append("postTitle", postTitle)

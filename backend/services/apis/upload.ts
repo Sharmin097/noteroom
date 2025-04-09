@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { Server } from "socket.io";
 import { Convert } from "../services/userService";
-import { addPost } from "../services/postService";
+import { addPost, deletePost } from "../services/postService";
 import path from 'path';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
 import rateLimit from 'express-rate-limit';
-import Notes, { contentsModel, PostType } from "../../schemas/notes";
+import Notes, { PostType } from "../../schemas/notes";
 import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
@@ -36,6 +36,7 @@ export default function uploadApiRouter(io: Server) {
         const MAX_TITLE_LENGTH = 100;
         const MAX_DESCRIPTION_LENGTH = 500;
         const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
+        const postID = uuidv4()
 
         try {
             const studentID = req.session?.['stdid'] || "--studentid--"
@@ -47,7 +48,7 @@ export default function uploadApiRouter(io: Server) {
             const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
 
             const postData: ContentPost = {
-                postID: uuidv4(),
+                postID: postID,
                 ownerDocID: ownerDocID,
                 title: null,
                 description: null,
@@ -58,14 +59,14 @@ export default function uploadApiRouter(io: Server) {
             let fileObjects: fileUpload.UploadedFile[] = []
 
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
-                return res.status(400).json({
+                return res.json({
                     ok: false,
                     message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`
                 });
             }
 
             if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
-                return res.status(400).json({
+                return res.json({
                     ok: false,
                     message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`
                 });
@@ -78,33 +79,30 @@ export default function uploadApiRouter(io: Server) {
                 const fileArray = Object.values(req.files).flat();
 
                 if (fileArray.length > MAX_FILE_COUNT) {
-                    return res.status(400).json({
+                    return res.json({
                         ok: false,
                         message: `You can upload a maximum of ${MAX_FILE_COUNT} images.`
                     });
                 }
 
                 for (const file of fileArray) {
-                    // File size validation
                     if (file.size > MAX_FILE_SIZE) {
-                        return res.status(400).json({
+                        return res.json({
                             ok: false,
                             message: "One or more files exceed the maximum allowed size of 5MB."
                         });
                     }
 
-                    // File type validation
                     if (!file.mimetype.startsWith("image/")) {
-                        return res.status(400).json({
+                        return res.json({
                             ok: false,
                             message: "Only image files are allowed."
                         });
                     }
 
-                    // Validate file extension
                     const fileExtension = path.extname(file.name).toLowerCase();
                     if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-                        return res.status(400).json({
+                        return res.json({
                             ok: false,
                             message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(', ')} are allowed.`
                         });
@@ -133,16 +131,16 @@ export default function uploadApiRouter(io: Server) {
             if (response.ok) {
                 logger.info(`(/upload/content): Added post document of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}`)
                 await Notes.updateOne({ _id: response.postID }, { completed: true })
-                return res.status(200).json({ ok: true, message: "Post uploaded successfully!" })
+                return res.json({ ok: true, message: "Post uploaded successfully!" })
             } else {
-                //FIXME: delete post
+                await deletePost(postData.postID, PostType.CONTENT)
                 logger.error(`(/upload/content): Couldn't post document of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${response.error}`)
-                return res.status(200).json({ ok: false, message: "Post couldn't get uploaded. Please try again a bit later." })
+                return res.json({ ok: false, message: "Post couldn't get uploaded. Please try again a bit later." })
             }
         } catch (error) {
-            //FIXME: delete post
+            await deletePost(postID, PostType.CONTENT)
             logger.error(`(/upload/content): Error for studentID=${req.session?.['stdid'] || "--studentid--"}: ${error}`);
-            return res.status(500).json({
+            return res.json({
                 ok: false,
                 message: "An error occurred while uploading. Please try again later."
             });
@@ -170,7 +168,7 @@ export default function uploadApiRouter(io: Server) {
 
             // Validate Title
             if (!title || typeof title !== "string" || title.trim() === "") {
-                return res.status(400).json({
+                return res.json({
                     ok: false,
                     message: "Title is required and must be a non-empty string."
                 });
@@ -243,7 +241,7 @@ export default function uploadApiRouter(io: Server) {
             // Save the MCQ data to the database (or another storage solution)
             // Example: await saveMCQsToDB(studentID, sanitizedTitle, sanitizedMCQs);
     
-            return res.status(200).json({
+            return res.json({
                 ok: true,
                 message: "MCQs uploaded successfully!"
             });
