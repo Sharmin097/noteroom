@@ -7,14 +7,14 @@ const handlePreviewPdf = async (file: File) => {
   const fileURL = URL.createObjectURL(file);
 
   const canvas = document.createElement("canvas");
-  canvas.width = 600;
-  canvas.height = 800;
+  canvas.width = 450;
+  canvas.height = 600;
 
 
   try {
     const pdf = await pdfjsLib.getDocument(fileURL).promise;
     const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 1.0 });
+    const viewport = page.getViewport({ scale: 1.5 });
 
     canvas.height = viewport.height;
     canvas.width = viewport.width;
@@ -29,7 +29,8 @@ const handlePreviewPdf = async (file: File) => {
       ReactSwal.fire({
         title: file.name,
         html: `<canvas id="pdf-preview-canvas" width="${canvas.width}" height="${canvas.height}"></canvas>`,
-        width: `${canvas.width + 40}px`,
+        // width: `${canvas.width + 50}px`,
+        width: `450px`,
         showCloseButton: true,
         showConfirmButton: false,
         didOpen: () => {
@@ -188,7 +189,7 @@ export default function FileContainer({
         </svg>
         <div  key={idx} 
               onClick={() => handlePreviewPdf(file)} 
-              style={{ cursor: "pointer" }} // Optional for visual feedback
+              style={{ cursor: "pointer" }}
               className="File-Name">{file.name.split('.')[0]}</div>
         </div>
        <div>
