@@ -44,6 +44,10 @@ export default function ImageUploadContainer({
         if (currentImageIndex >= stackFiles.length - 1) {
             setCurrentImageIndex(Math.max(0, stackFiles.length - 2));
         }
+        if(stackFiles.length <= 1){
+            setShowEditOptions(false);
+
+        }
     };
 
     return (

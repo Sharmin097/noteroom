@@ -20,24 +20,22 @@ body {
   justify-content: center;
   padding: clamp(10px, 2vw, 20px);
   min-height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar{
+  display: none;
 }
 
 .middle-section-upload {
   width: 100%;
   max-width: 1400px;
-  height: calc(100vh - 41px);
+  min-height: calc(100vh - 41px);
   padding: clamp(40px, 7vw, 80px) clamp(15px, 2vw, 20px);
   display: flex;
   flex-direction: column;
   gap: clamp(20px, 2.5vw, 30px);
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.middle-section-upload::-webkit-scrollbar {
-  display: none;
 }
 
 .upload-nav {
