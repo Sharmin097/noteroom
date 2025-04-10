@@ -1,7 +1,9 @@
-import Notes from "../../schemas/notes"
+import Notes, { contentsModel, mcqsModel } from "../../schemas/notes"
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
+import { PostType } from "../../schemas/notes"
+import { deleteFile } from "./firebaseService"
 
 interface SavedNoteObject {
     noteID: string,
@@ -9,14 +11,41 @@ interface SavedNoteObject {
 	noteThumbnail: string
 }
 
-export async function addPost(noteData: any) {
-    let note = await Notes.create(noteData)
-    await Students.findByIdAndUpdate(
-        noteData.ownerDocID,
-        { $push: { owned_notes: note._id } },
-        { upsert: true, new: true }
-    )
-    return note
+export async function addPost(postData: any, postType?: PostType) {
+    try {
+        let post = null
+        if (postType === PostType.CONTENT) {
+            post = await contentsModel.create(postData)
+        } else if (postType === PostType.MCQ) {
+            post = await mcqsModel.create(postData)  
+        } 
+        
+        if (post) {
+            await Students.findByIdAndUpdate(
+                postData.ownerDocID,
+                { $push: { owned_notes: post._id } },
+                { upsert: true, new: true }
+            )
+            return { ok: true, postID: post._id }
+        } else {
+            return { ok: false }
+        }
+    } catch (error) {
+        return { ok: false, error: error }
+    }
+}
+
+export async function deletePost(postID: string, postType: PostType) {
+    try {
+        switch(postType) {
+            case PostType.CONTENT:
+                await Notes.deleteOne({ postID: postID })
+                const fileDeleteResponse = await deleteFile(postID)
+                return { ok: fileDeleteResponse.ok, code: !fileDeleteResponse.ok ? "FILE_DELETE_FAIL" : null } 
+        }
+    } catch (error) {
+        return { ok: false, error: error }
+    }
 }
 
 async function isSaved({ studentDocID, noteDocID }) {
@@ -39,7 +68,7 @@ export async function getPosts(studentDocID: string, options?: any) {
         X_n = seed
     */
     let notes = await Notes.aggregate([
-        { $match: { completed: { $eq: true }, type_: "public" } },
+        { $match: { completed: { $eq: true }, visibility: "public", postType: PostType.CONTENT } },
         { $lookup: {
             from: 'students',
             localField: 'ownerDocID',
@@ -68,7 +97,7 @@ export async function getPosts(studentDocID: string, options?: any) {
             title: 1, description: 1,  
             feedbackCount: 1, upvoteCount: 1, 
             postType: 1, content: 1, randomSort: 1,
-            createdAt: 1, pinned: 1,
+            createdAt: 1, pinned: 1, postID: 1,
             "ownerDocID._id": 1,
             "ownerDocID.profile_pic": 1,
             "ownerDocID.displayname": 1,
@@ -113,7 +142,7 @@ export async function getSinglePost(noteDocID: string, studentDocID: string, opt
                     title: 1, description: 1,  
                     feedbackCount: 1, upvoteCount: 1, 
                     postType: 1, content: 1, randomSort: 1, //FIXME: content is only needed for content counting. so send content count instead of content
-                    createdAt: 1, pinned: 1,
+                    createdAt: 1, pinned: 1, postID: 1,
                     "ownerDocID._id": 1,
                     "ownerDocID.profile_pic": 1,
                     "ownerDocID.displayname": 1,
@@ -135,8 +164,14 @@ export async function getSinglePost(noteDocID: string, studentDocID: string, opt
         
             return { ok: true, noteData: { ...note, isUpvoted, isSaved: _isSaved } }
         } else {
-            let images = (await Notes.findById(noteDocID, { content: 1 })).content
-            return { ok: true, images: images }
+            let post = (await Notes.findById(noteDocID))?.toObject()
+            if (post) {
+                if (post["content"] && post["content"].length !== 0) {
+                    return { ok: true, images: post["content"] }
+                } else {
+                    return { ok: true, images: [] }
+                }
+            }
         }
     } catch (error) {
         return { ok: false }
@@ -178,7 +213,7 @@ export async function getSavedPosts(studentID: string) {
         let posts: SavedNoteObject[] = await Notes.aggregate([
             { $match: { _id: { $in: postsIDs } } },
             { $project: {
-                noteID: "$_id",
+                noteID: "$postID",
                 noteTitle: "$title",
                 noteThumbnail: { $first: '$content' },
             } }

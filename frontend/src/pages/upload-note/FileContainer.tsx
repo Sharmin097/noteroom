@@ -1,7 +1,12 @@
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import * as pdfjsLib from "pdfjs-dist";
-import "pdfjs-dist/build/pdf.worker.entry";
+import "pdfjs-dist/build/pdf.worker.mjs";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).toString();
 
 const handlePreviewPdf = async (file: File) => {
   const fileURL = URL.createObjectURL(file);

@@ -9,7 +9,7 @@ const CommentsSchema = new Schema({
     noteDocID: { // The noteDocID on which the comment is given
         type: Schema.Types.ObjectId,
         required: true,
-        ref: 'notes'
+        ref: 'posts'
     },
     feedbackContents: {
         type: String, 

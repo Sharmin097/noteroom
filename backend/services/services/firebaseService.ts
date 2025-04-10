@@ -33,5 +33,20 @@ async function uploadImage(fileObject: any, fileName: any) {
     }    
 }
 
+async function deleteImage(postID: string) {
+    try {
+        const [files] = await bucket.getFiles({ prefix: `posts/${postID}/contents/` })
+        if (files.length === 0) return { ok: true }
+
+        const deletePromise = files.map(file => file.delete())
+        await Promise.all(deletePromise)
+
+        return { ok: true }
+    } catch (error) {
+        return { ok: false, error: error }
+    }
+}
+
 
 export const upload = uploadImage;
+export const deleteFile = deleteImage
