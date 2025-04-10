@@ -23,7 +23,7 @@ export async function addPost(postData: any, postType?: PostType) {
         if (post) {
             await Students.findByIdAndUpdate(
                 postData.ownerDocID,
-                // { $push: { owned_notes: post._id } },
+                { $push: { owned_notes: post._id } },
                 { upsert: true, new: true }
             )
             return { ok: true, postID: post._id }
