@@ -1,4 +1,4 @@
-import Notes, { contentsModel } from "../../schemas/notes"
+import Notes, { contentsModel, mcqsModel } from "../../schemas/notes"
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
@@ -13,15 +13,22 @@ interface SavedNoteObject {
 
 export async function addPost(postData: any, postType?: PostType) {
     try {
-        switch (postType) {
-            case PostType.CONTENT:
-                const post = await contentsModel.create(postData)
-                await Students.findByIdAndUpdate(
-                    postData.ownerDocID,
-                    { $push: { owned_notes: post._id } },
-                    { upsert: true, new: true }
-                )
-                return { ok: true, postID: post._id }
+        let post = null
+        if (postType === PostType.CONTENT) {
+            post = await contentsModel.create(postData)
+        } else if (postType === PostType.MCQ) {
+            post = await mcqsModel.create(postData)  
+        } 
+        
+        if (post) {
+            await Students.findByIdAndUpdate(
+                postData.ownerDocID,
+                // { $push: { owned_notes: post._id } },
+                { upsert: true, new: true }
+            )
+            return { ok: true, postID: post._id }
+        } else {
+            return { ok: false }
         }
     } catch (error) {
         return { ok: false, error: error }
@@ -61,7 +68,7 @@ export async function getPosts(studentDocID: string, options?: any) {
         X_n = seed
     */
     let notes = await Notes.aggregate([
-        { $match: { completed: { $eq: true }, visibility: "public" } },
+        { $match: { completed: { $eq: true }, visibility: "public", postType: PostType.CONTENT } },
         { $lookup: {
             from: 'students',
             localField: 'ownerDocID',
