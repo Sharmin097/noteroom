@@ -23,6 +23,17 @@ interface ContentPost {
     postID: string
 }
 
+interface MCQ {
+    question: string;
+    questionID: string,
+    options: {
+      optionType: string,
+      optionText: string,
+      optionID: string
+    }[],
+    correctAnswer: string | null;
+}
+
 export default function uploadApiRouter(io: Server) {
     router.use(rateLimit({
         windowMs: 60 * 1000, // 1 minute
@@ -148,108 +159,102 @@ export default function uploadApiRouter(io: Server) {
     });
 
     router.post("/mcq", async (req, res:any) => {
-        // Configurable limits
         const MAX_TITLE_LENGTH = 300;
-        const MAX_MCQ_LIMIT = 30;  // Limit for the number of MCQs
+        const MAX_MCQ_LIMIT = 30; 
+        const OPTIONS_LENGTH = 4;
+        const postID = uuidv4()
     
         try {
-            // Get student ID from session cookie (or mock for testing purposes)
-            const studentID = req.session?.['stdid'];
+            const studentID = req.session?.['stdid'];    
+            if (!studentID) return
     
-            // Ensure the student is logged in
-            if (!studentID) {
-                return res.status(401).json({
-                    ok: false,
-                    message: "Unauthorized. Please login."
-                });
-            }
-    
-            const { title, mcqs } = req.body;
+            const { postTitle: title, mcqStrings } = req.body;
+            const mcqs = JSON.parse(mcqStrings)
+            const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
 
-            // Validate Title
             if (!title || typeof title !== "string" || title.trim() === "") {
                 return res.json({
                     ok: false,
                     message: "Title is required and must be a non-empty string."
                 });
             }
-            
-    
-            // Sanitize Title (ensure no HTML tags, but don't trim the length)
-            const sanitizedTitle = sanitizeHtml(title);
-    
-            // Validate sanitized Title length
+                
+            const sanitizedTitle = sanitizeHtml(title);    
             if (sanitizedTitle.length > MAX_TITLE_LENGTH) {
-                return res.status(400).json({
+                return res.json({
                     ok: false,
                     message: `Title must be less than ${MAX_TITLE_LENGTH} characters.`
                 });
             }
     
-            // Validate MCQs list
             if (!Array.isArray(mcqs) || mcqs.length === 0 || mcqs.length > MAX_MCQ_LIMIT) {
-                return res.status(400).json({
+                return res.json({
                     ok: false,
                     message: `MCQs are required, and the limit is ${MAX_MCQ_LIMIT} questions.`
                 });
             }
     
-            // Validate each MCQ object
             for (const mcq of mcqs) {
-                const { question, questionID, options, correctAnswer } = mcq;
+                const { question, options, correctAnswer } = mcq;
     
-                // Validate question field
                 if (!question || typeof question !== 'string') {
-                    return res.status(400).json({ ok: false, message: "Each question must be a string." });
+                    return res.json({ ok: false, message: "Each question must be a string." });
+                }
+                    
+                if (!Array.isArray(options) || options.length !== OPTIONS_LENGTH) {
+                    return res.json({ ok: false, message: "Each MCQ must have exactly 4 options." });
                 }
     
-                // Validate questionID field
-                if (!questionID || typeof questionID !== 'string') {
-                    return res.status(400).json({ ok: false, message: "Each question must have a valid questionID." });
-                }
-                
-    
-                // Validate options array and ensure there are exactly 4 options
-                if (!Array.isArray(options) || options.length !== 4) {
-                    return res.status(400).json({ ok: false, message: "Each MCQ must have exactly 4 options." });
-                }
-    
-                // Validate each option
                 for (const option of options) {
                     if (!option.optionType || !['A', 'B', 'C', 'D'].includes(option.optionType)) {
-                        return res.status(400).json({ ok: false, message: "Each option must have a valid option type (A/B/C/D)." });
+                        return res.json({ ok: false, message: "Each option must have a valid option type (A/B/C/D)." });
                     }
     
                     if (!option.optionText || typeof option.optionText !== 'string') {
-                        return res.status(400).json({ ok: false, message: "Each option must have valid option text." });
-                    }
-    
-                    if (!option.optionID || typeof option.optionID !== 'string') {
-                        return res.status(400).json({ ok: false, message: "Each option must have a valid optionID." });
+                        return res.json({ ok: false, message: "Each option must have valid option text." });
                     }
                 }
     
-                // Validate correct answer field
                 if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
-                    return res.status(400).json({ ok: false, message: "Correct answer must be one of the options (A/B/C/D)." });
+                    return res.json({ ok: false, message: "Correct answer must be one of the options (A/B/C/D)." });
                 }
+
             }
     
-            // Log sanitized title and MCQs for debugging
             logger.info(`/upload/mcq: Received MCQs from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`);
-    
-            // Save the MCQ data to the database (or another storage solution)
-            // Example: await saveMCQsToDB(studentID, sanitizedTitle, sanitizedMCQs);
-    
-            return res.json({
-                ok: true,
-                message: "MCQs uploaded successfully!"
-            });
-    
+
+            const modifiedMQCs = mcqs.map((mcq: MCQ) => {
+                const questionID = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}`
+                const options = mcq.options.map(option => {
+                    const optionID = `${option.optionType}:${questionID}`
+                    return { ...option, optionID: optionID }
+                })
+                return { ...mcq, questionID: questionID, options: options }
+            })
+
+            const postData: { postID: string, ownerDocID: string, mcqs: MCQ[], title: string } = {
+                postID: postID,
+                ownerDocID: ownerDocID,
+                mcqs: modifiedMQCs,
+                title: sanitizedTitle
+            }
+            const response = await addPost(postData, PostType.MCQ)
+
+            if (response.ok) {
+                return res.json({
+                    ok: true,
+                    message: "MCQs uploaded successfully!"
+                });
+            } else {
+                return res.json({
+                    ok: false,
+                    message: "MCQs couldn't be uploaded successfully! Try again a bit later"
+                });
+            }
         } catch (error) {
             logger.error(`/upload/mcq: Error for studentID=${req.session?.['stdid']}, error=${error.message || error}`);
     
-            return res.status(500).json({
+            return res.json({
                 ok: false,
                 message: "An error occurred while uploading MCQs. Please try again later."
             });

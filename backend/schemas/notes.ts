@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose'
 
 export enum PostType {
-    CONTENT="notes",
+    CONTENT="note",
     FILE="file",
     LINK="link",
     MCQ="mcq"
@@ -71,5 +71,40 @@ const contentSchema = new Schema({
 })
 const contentsModel = notesModel.discriminator(PostType.CONTENT, contentSchema)
 
+const mcqsSchema = new Schema({
+    mcqs: [{
+        _id: false,
+        question: String,
+        questionID: {
+            type: String,
+            required: true
+        },
+        options: {
+            type: [{
+                _id: false,
+                optionType: String,
+                optionText: String,
+                optionID: {
+                    type: String,
+                    required: true
+                },
+                selectionCount: {
+                    type: Number,
+                    default: 0
+                }
+            }]
+        },
+        correctAnswer: [String]
+    }]
+})
+
+mcqsSchema.pre("save", function(next) {
+    const doc = this as any
+    doc.completed = true
+
+    next()
+})
+const mcqsModel = notesModel.discriminator(PostType.MCQ, mcqsSchema)
+
 export default notesModel
-export { contentsModel }
+export { contentsModel, mcqsModel }

@@ -113,57 +113,64 @@ const UploadNote: React.FC = () => {
   };
 
   async function handlePublish() {
+    async function handleFetch(api: string, formData: FormData) {
+      const response = await fetch(`${API_SERVER_URL}${api}`, {
+        credentials: "include",
+        method: "post",
+        body: formData
+      })
+      if (response.ok) {
+        const data = await response.json()
+        console.log(data)
+        setIsLoading(false)
+        if (data.ok) {
+          ReactSwal.fire({
+            icon: "success",
+            title: "You are good to go!",
+            text: data.message,
+          });
+        } else {
+          ReactSwal.fire({
+            icon: "error",
+            title: "Uh oh! Something went wrong",
+            text: data.message,
+          });
+        }
+      } else {
+        ReactSwal.fire({
+          icon: "error",
+          title: "Uh oh! Something went wrong",
+          text: "Couldn't upload! Please try again a bit later",
+        });
+      }
+    }
+
     try {
+      if (postTitle.trim().length === 0) {
+        ReactSwal.fire({
+          icon: "question",
+          title: "Uh oh! Something went wrong",
+          text: "Title is required, must be a string, and less than 100 characters.",
+        })
+        return
+      }
+
+      setIsLoading(true)
+      const postData = new FormData()
+
       switch(activeTab) {
         case SubNav.TEXT_IMAGES:
-          if (postTitle.trim().length === 0) {
-            ReactSwal.fire({
-              icon: "question",
-              title: "Uh oh! Something went wrong",
-              text: "Title is required, must be a string, and less than 100 characters.",
-            })
-            return
-          }
-
-          setIsLoading(true)
-          const postData = new FormData()
           postData.append("postTitle", postTitle)
           postData.append("postDescription", quillRef?.current?.getSemanticHTML() || "")
           for (let file of stackFiles) {
             postData.append(`file-${crypto.randomUUID()}`, file)
           }
-          const response = await fetch(`${API_SERVER_URL}/api/upload/content`, {
-            credentials: "include",
-            method: "post",
-            body: postData
-          })
-          if (response.ok) {
-            const data = await response.json()
-            setIsLoading(false)
-            if (data.ok) {
-              ReactSwal.fire({
-                icon: "success",
-                title: "You are good to go!",
-                text: data.message,
-              });
-            } else {
-              ReactSwal.fire({
-                icon: "error",
-                title: "Uh oh! Something went wrong",
-                text: data.message,
-              });
-            }
-          } else {
-            ReactSwal.fire({
-              icon: "error",
-              title: "Uh oh! Something went wrong",
-              text: "Couldn't upload! Please try again a bit later",
-            });
-          }
-          break
+          return await handleFetch('/api/upload/content', postData)
 
         case SubNav.MCQ:
-          console.log(mcqs)
+          postData.append("postTitle", postTitle)
+          postData.append("mcqStrings", JSON.stringify(mcqs))   
+          return await handleFetch("/api/upload/mcq", postData) 
       }
     } catch (error) {
       ReactSwal.fire({
