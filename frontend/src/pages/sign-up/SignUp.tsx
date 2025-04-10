@@ -7,6 +7,7 @@ import SignUpImage from "../../assets/signup_image.png"
 import "../../public/css/signup-login.css"
 import { useUserAuth } from '../../context/UserAuthContext';
 import slug from 'slug';
+import GoogleLogin from '../../partials/GoogleLogin';
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
@@ -105,9 +106,8 @@ const SignUp = () => {
                 </div>
 
                 <div className="acquisition-container flex-column-center">
-                    <div id="g_id_onload" data-client_id="325870811550-0c3n1c09gb0mncb0h4s5ocvuacdd935k.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
-                    <div className="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
-
+                    <GoogleLogin setUserAuth={setUserAuth} />
+                    
                     <div className="separator flex-center-evenly">
                         <span className="line"></span>
                         <span className="txt-gray-light-bold">Or</span>
