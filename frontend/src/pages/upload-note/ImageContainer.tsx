@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaRotateRight, FaRotateLeft } from "react-icons/fa6";
 
 export default function ImageUploadContainer({ 
     refs: [fileInputRef],
@@ -210,20 +211,10 @@ export default function ImageUploadContainer({
         {showEditOptions && (
           <div className="edit-options">
             <button className="rotate-btn rotate-left" onClick={rotateCounterClockwise}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 14L4 9L9 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M20 20v-7h-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M16 9V4H4v12h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Rotate Left
+              <FaRotateLeft />
             </button>
             <button className="rotate-btn rotate-right" onClick={rotateClockwise}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 4l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 20v-7h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M8 9V4h12v12h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Rotate Right
+              <FaRotateRight />
             </button>
           </div>
         )}
