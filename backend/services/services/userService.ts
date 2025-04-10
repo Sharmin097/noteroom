@@ -73,7 +73,7 @@ export async function getProfile(username: string) {
                 featuredNoteCount: { $size: "$featured_notes" }
             } },
             { $lookup: {
-                from: "notes",
+                from: "posts",
                 localField: "owned_notes",
                 foreignField: "_id",
                 as: "owned_posts"

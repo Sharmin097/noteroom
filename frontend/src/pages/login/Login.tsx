@@ -7,19 +7,21 @@ import ngLogo from "../../assets/ng_logo.png"
 import Swal from "sweetalert2"
 import withReactContent from "sweetalert2-react-content"
 import 'sweetalert2/dist/sweetalert2.min.css';
+import GoogleLogin from '../../partials/GoogleLogin';
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
+const ReactSwal = withReactContent(Swal)
+
 export default function Login() {
     const navigate = useNavigate();
     const { setUserAuth } = useUserAuth()!
-
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
     const [email, setEmail] = useState<string>("")
     const [password, setPassword] = useState<string>("")
     const [isBtnDisabled, setIsBtnDisabled] = useState<boolean>(true)
 
     function showSwal(text: any) {
-        return withReactContent(Swal).fire({
+        return ReactSwal.fire({
             title: "Unable to authenticate",
             html:
                 <>
@@ -55,6 +57,7 @@ export default function Login() {
                 } else {
                     showSwal(data.message || "Someting went wrong! Please try again a bit later")
                 }
+            } else {
             }
         } catch (error) {
             showSwal("Someting went wrong! Please try again a bit later")
@@ -76,8 +79,7 @@ export default function Login() {
                 </div>
 
                 <div className="acquisition-container flex-column-center">
-                    <div id="g_id_onload" data-client_id="325870811550-0c3n1c09gb0mncb0h4s5ocvuacdd935k.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
-                    <div className="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
+                    <GoogleLogin setUserAuth={setUserAuth} />
 
                     <div className="separator flex-center-evenly">
                         <span className="line"></span>

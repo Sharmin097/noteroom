@@ -1,30 +1,31 @@
 import { Schema, model } from 'mongoose'
 
+export enum PostType {
+    CONTENT="notes",
+    FILE="file",
+    LINK="link",
+    MCQ="mcq"
+}
+
+const baseOptions = {
+    discriminatorKey: 'postType',
+    collection: 'posts'
+}
+
 const notesSchema = new Schema({
     ownerDocID: {
         type: Schema.Types.ObjectId,
         required: true,
         ref: 'students'
     },
+    postID: {
+        type: String,
+        required: true,
+        unique: true
+    },
     title: {
         type: String,
         default: null
-    },
-    postType: {
-        type: String,
-        default: 'note' // or quick-post
-    },
-    content: {
-        type: [String], // The directory where all the images are placed
-        default: []
-    },
-    description: {
-        type: String,
-        required: true
-    },
-    subject: {
-        type: String,
-        default: ''
     },
     isFeatured: {
         type: Boolean,
@@ -43,7 +44,7 @@ const notesSchema = new Schema({
         required: true,
         default: Date.now
     },
-    type_: {
+    visibility: {
         type: String,
         default: "public"
     },
@@ -55,8 +56,20 @@ const notesSchema = new Schema({
         type: Boolean,
         default: false
     }
-})
+}, baseOptions)
+const notesModel = model('posts', notesSchema)
 
-const notesModel = model('notes', notesSchema)
+const contentSchema = new Schema({
+    content: {
+        type: [String],
+        default: []
+    },
+    description: {
+        type: String,
+        default: null
+    }
+})
+const contentsModel = notesModel.discriminator(PostType.CONTENT, contentSchema)
 
 export default notesModel
+export { contentsModel }
