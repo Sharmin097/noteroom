@@ -36,7 +36,7 @@ export default function LinkContainer({ youtubeLink: [youtubeLink, setYoutubeLin
         title: "Video Added!",
         text: "This video has been saved to your list.",
       });
-    } else if (videoList.includes(youtubeVideoId)) {
+    } else if (videoList.includes(youtubeVideoId!)) {
       ReactSwal.fire({
         icon: "error",
         title: "Already Exists",

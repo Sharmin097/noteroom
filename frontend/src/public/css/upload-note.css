@@ -470,13 +470,14 @@ body::-webkit-scrollbar{
 }
 
 .youtube-link-input {
-  width: 680px;
+  width: 630px;
   height: 55px;
   padding: 12px 15px;
   border: 1px solid #ccc;
   border-radius: 20px;
   font-size: 16px;
   box-sizing: border-box;
+  margin-left: 10px;
 }
 
 .youtube-link-input::placeholder {
@@ -1257,6 +1258,7 @@ math-field:focus-within {
     font-size: clamp(0.7rem, 1.8vw, 0.9rem);
     padding: clamp(9px, 1.2vw, 12px);
     border-radius: clamp(8px, 1.5vw, 12px);
+    margin-left: 0px;
   }
 
   .Title-placeholder{
