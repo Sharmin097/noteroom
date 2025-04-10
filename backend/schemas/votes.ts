@@ -9,7 +9,7 @@ const votesSchema = new Schema({
     noteDocID: {
         type: Schema.Types.ObjectId,
         required: true,
-        ref: "notes"
+        ref: "posts"
     },
     voterStudentDocID: {
         type: Schema.Types.ObjectId,

@@ -1,4 +1,3 @@
-import QuickPost from "./QuickPost";
 import FeedSection from "./FeedSection";
 import { useContext, useEffect, useRef } from "react";
 import { ScrollPositionContext } from "../../context/ScrollPosition";
@@ -42,7 +41,6 @@ export default function DashBoard() {
 
     return (
         <div className="middle-section" ref={middleSection}>
-            {/* <QuickPost></QuickPost> */}
             <FeedSection></FeedSection>
         </div>
     )

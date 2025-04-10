@@ -106,6 +106,67 @@ const UploadNote: React.FC = () => {
     setIsDragging(false);
   };
 
+  async function handlePublish() {
+    try {
+      switch(activeTab) {
+        case SubNav.TEXT_IMAGES:
+          if (postTitle.trim().length === 0) {
+            ReactSwal.fire({
+              icon: "question",
+              title: "Uh oh! Something went wrong",
+              text: "Title is required, must be a string, and less than 100 characters.",
+            })
+            return
+          }
+
+          setIsLoading(true)
+          const postData = new FormData()
+          postData.append("postTitle", postTitle)
+          postData.append("postDescription", quillRef?.current?.getSemanticHTML() || "")
+          for (let file of stackFiles) {
+            postData.append(`file-${crypto.randomUUID()}`, file)
+          }
+          const response = await fetch(`${API_SERVER_URL}/api/upload/content`, {
+            credentials: "include",
+            method: "post",
+            body: postData
+          })
+          if (response.ok) {
+            const data = await response.json()
+            setIsLoading(false)
+            if (data.ok) {
+              ReactSwal.fire({
+                icon: "success",
+                title: "You are good to go!",
+                text: data.message,
+              });
+            } else {
+              ReactSwal.fire({
+                icon: "error",
+                title: "Uh oh! Something went wrong",
+                text: data.message,
+              });
+            }
+          } else {
+            ReactSwal.fire({
+              icon: "error",
+              title: "Uh oh! Something went wrong",
+              text: "Couldn't upload! Please try again a bit later",
+            });
+          }
+          break
+      }
+    } catch (error) {
+      ReactSwal.fire({
+        icon: "success",
+        title: "Uh oh! Something went wrong",
+        text: "Couldn't upload! Please try again a bit later",
+      });
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="middle-section-upload">
       <SubNatigation activeTab={[activeTab, setActiveTab]} />
@@ -148,6 +209,7 @@ const UploadNote: React.FC = () => {
         <button
           className="publish-note-btn"
           disabled={isLoading}
+          onClick={handlePublish}
         >
           {isLoading ? "Publishing..." : "Publish"}
         </button>

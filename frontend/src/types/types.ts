@@ -27,7 +27,6 @@ export interface IONotification {
 	additional?: any
 }
 export class FeedNoteObject {
-	isQuickPost: boolean;
 	noteData: any;
 	contentData: any;
 	ownerData: any;
@@ -35,17 +34,15 @@ export class FeedNoteObject {
 	extras: any;
 
 	constructor(note: any) {
-		this.isQuickPost = note.postType === "quick-post";
 		this.noteData = {
-			noteID: note._id,
-			noteTitle: !this.isQuickPost ? note.title : null,
+			noteID: note.postID,
+			noteTitle: note.title,
 			description: note.description,
 			createdAt: note.createdAt,
 		};
 		this.contentData = {
-			content1:
-				this.isQuickPost || note.content.length > 1 ? note.content[0] : null,
-			content2: !this.isQuickPost ? note.content[1] : null,
+			content1: note.content.length >= 1 ? note.content[0] : null,
+			content2: note.content.length > 1 ? note.content[1] : null,
 			contentCount: note.content.length,
 		};
 		this.ownerData = {
@@ -62,7 +59,6 @@ export class FeedNoteObject {
 			isUpvoted: note.isUpvoted,
 		};
 		this.extras = {
-			quickPost: this.isQuickPost,
 			pinned: note.pinned,
 		};
 	}

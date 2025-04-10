@@ -54,16 +54,15 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
             <p className="fnc--note-desc">
               {(function () {
                 let body = new DOMParser()
-                  .parseFromString(note.noteData.description, "text/html")
+                  .parseFromString(note.noteData.description || note.noteData.noteTitle, "text/html")
                   .querySelector("body");
                 let description = body ? body.textContent?.trim() : "";
-                let charLimit = note.extras.quickPost ? 250 : 100;
                 if (description) {
                   return (
                     <>
-                      {description.length >= charLimit ? (
+                      {description.length >= 250 ? (
                         <>
-                          {description.slice(0, charLimit)}...
+                          {description.slice(0, 250)}...
                           <span className="note-desc-see-more-btn">
                             Read More
                           </span>
@@ -93,25 +92,24 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
 
 function FeedNoteSecondRow({ note }: { note: FeedNoteObject }) {
   const contentCount = note.contentData.contentCount;
-  const isQuickPost = note.extras.quickPost
 
   return (
     <Link to={`/post/${note.noteData.noteID}`}>
       <div className="fnc__second-row">
         {
-          isQuickPost ?
-            contentCount !== 0 ?
-              <div className="quickpost-thumbnail-wrapper">
-                <img className="quickpost-thumbnail" src={note.contentData.content1 || UnavailableImage} />
-              </div> : ''
-            :
-            <div className="thumbnail-grid">
-              <img className="thumbnail primary-img" src={note.contentData.content1 || UnavailableImage} />
-              <div className="thumbnail-secondary-wrapper">
-                <img className="thumbnail secondary-img" src={note.contentData.content2 || UnavailableImage} />
-                {contentCount > 2 ? <div className="thumbnail-overlay">+{contentCount - 2}</div> : ''}
-              </div>
-            </div>
+            contentCount !== 0 ? 
+              contentCount === 1 ?
+                <div className="quickpost-thumbnail-wrapper">
+                  <img className="quickpost-thumbnail" src={note.contentData.content1 || UnavailableImage} />
+                </div> :
+                <div className="thumbnail-grid">
+                  <img className="thumbnail primary-img" src={note.contentData.content1 || UnavailableImage} />
+                  <div className="thumbnail-secondary-wrapper">
+                    <img className="thumbnail secondary-img" src={note.contentData.content2 || UnavailableImage} />
+                    {contentCount > 2 ? <div className="thumbnail-overlay">+{contentCount - 2}</div> : ''}
+                  </div>
+                </div> 
+            : null
         }
 
       </div>
