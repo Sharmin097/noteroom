@@ -278,7 +278,107 @@ export default function uploadApiRouter(io: Server) {
             });
         }
     });
-    
-
+    // file upload and link section
+    router.post("/file", uploadLimiter, async (req, res: any) => {
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const MAX_TITLE_LENGTH = 100;
+        const MAX_DESCRIPTION_LENGTH = 500;
+        const ALLOWED_EXTENSIONS = [".pdf", ".docx"];
+        try {
+            const studentID = "1";
+            if (!studentID) {
+                return res.status(401).json({ ok: false, message: "Unauthorized. Please login." });
+            }
+            const { fileTitle, fileDescription } = req.body;
+            const sanitizedTitle = sanitizeHtml(fileTitle || "").trim();
+            const sanitizedDescription = sanitizeHtml(fileDescription || "").trim();
+            if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+                return res.status(400).json({
+                    ok: false,
+                    message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`
+                });
+            }
+            if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
+                return res.status(400).json({
+                    ok: false,
+                    message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`
+                });
+            }
+            logger.info(`(/upload/file): Received file postdata from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`);
+            if (!req.files || !req.files.file) {
+                return res.status(400).json({ ok: false, message: "A file must be uploaded." });
+            }
+            const file = Array.isArray(req.files.file) ? req.files.file[0] : req.files.file;
+            const fileExtension = path.extname(file.name).toLowerCase();
+            if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+                return res.status(400).json({ ok: false, message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(', ')} are allowed.` });
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                return res.status(400).json({ ok: false, message: "File exceeds the maximum allowed size of 5MB." });
+            }
+            const sanitizedFileName = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
+            logger.info(`(/upload/file): File uploaded and metadata saved for studentID=${studentID}, fileName=${sanitizedFileName}`);
+            return res.status(200).json({
+                ok: true,
+                message: "File uploaded successfully!",
+                preview: `/preview/${sanitizedFileName}`,
+                title: sanitizedTitle,
+                description: sanitizedDescription
+            });
+        } catch (error) {
+            logger.error(`(/upload/file): Error for studentID=1, error=${error}`);
+            return res.status(500).json({
+                ok: false,
+                message: "An error occurred while uploading. Please try again later."
+            });
+        }
+    });
+     //link section
+    router.post("/link", uploadLimiter, async (req, res: any) => {
+        const MAX_TITLE_LENGTH = 100;
+        const MAX_DESCRIPTION_LENGTH = 500;
+        try {
+            const studentID = "1";
+            if (!studentID) {
+                return res.status(401).json({ ok: false, message: "Unauthorized. Please login." });
+            }
+            const { postTitle, postDescription, link } = req.body;
+            const sanitizedTitle = sanitizeHtml(postTitle || "").trim();
+            const sanitizedDescription = sanitizeHtml(postDescription || "").trim();
+            const sanitizedLink = sanitizeHtml(link || "").trim();
+            if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+                return res.status(400).json({
+                    ok: false,
+                    message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`
+                });
+            }
+            if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
+                return res.status(400).json({
+                    ok: false,
+                    message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`
+                });
+            }
+            if (!sanitizedLink || !/^https?:\/\//i.test(sanitizedLink)) {
+                 res.status(400).json({
+                    ok: false,
+                    message: "A valid URL starting with http:// or https:// is required."
+                });
+            }
+            logger.info(`(/upload/link): Link saved for studentID=1, link=${sanitizedLink}`);
+             res.status(200).json({
+                ok: true,
+                message: "Link uploaded successfully!",
+                preview: sanitizedLink,
+                title: sanitizedTitle,
+                description: sanitizedDescription
+            });
+        } catch (error) {
+            logger.error(`(/upload/link): Error for studentID=1, error=${error}`);
+            res.status(500).json({
+                ok: false,
+                message: "An error occurred while uploading the link. Please try again later."
+            });
+        }
+    });
     return router
 }
