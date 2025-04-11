@@ -51,6 +51,7 @@ app.use(cors({
     origin: allowedHosts,
     credentials: true
 }))
+
 app.use(express.json()); 
 app.use(express.static(staticPath))
 app.use(urlencoded({ extended: true })) 

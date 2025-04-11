@@ -15,14 +15,6 @@ import { processBulkCompressUpload } from "../services/utils";
 
 const router = Router()
 
-interface ContentPost {
-    ownerDocID: string,
-    title: string | null,
-    description? : string | null,
-    content?: string[],
-    postID: string
-}
-
 interface MCQ {
     question: string;
     questionID: string,
@@ -32,6 +24,13 @@ interface MCQ {
       optionID: string
     }[],
     correctAnswer: string | null;
+}
+
+interface PostData {
+    ownerDocID: string,
+    postID: string,
+    title: string,
+    description?: string
 }
 
 export default function uploadApiRouter(io: Server) {
@@ -58,7 +57,7 @@ export default function uploadApiRouter(io: Server) {
             const sanitizedDescription = sanitizeHtml(postDescription || "");
             const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
 
-            const postData: ContentPost = {
+            const postData: PostData & { content?: string[] } = {
                 postID: postID,
                 ownerDocID: ownerDocID,
                 title: null,
@@ -232,7 +231,7 @@ export default function uploadApiRouter(io: Server) {
                 return { ...mcq, questionID: questionID, options: options }
             })
 
-            const postData: { postID: string, ownerDocID: string, mcqs: MCQ[], title: string } = {
+            const postData: PostData & { mcqs: MCQ[] } = {
                 postID: postID,
                 ownerDocID: ownerDocID,
                 mcqs: modifiedMQCs,
@@ -260,7 +259,135 @@ export default function uploadApiRouter(io: Server) {
             });
         }
     });
-    
+
+    router.post("/file", async (req, res: any) => {
+        const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024
+        const MAX_TITLE_LENGTH = 100;
+        const MAX_DESCRIPTION_LENGTH = 500;
+        const ALLOWED_EXTENSIONS = [".pdf"];
+
+        try {
+            const studentID = "9181e241-575c-4ef3-9d3c-2150eac4566d" // a valid studentid from mongodb, you can use that for testing
+            if (!studentID) return 
+
+            const { title, description } = req.body;
+            const sanitizedTitle = sanitizeHtml(title || "").trim();
+            const sanitizedDescription = sanitizeHtml(description || "").trim();
+
+            if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+                return res.json({
+                    ok: false,
+                    message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`
+                });
+            }
+
+            if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
+                return res.json({
+                    ok: false,
+                    message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`
+                });
+            }
+
+            logger.info(`(/upload/file): Received file postdata from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`);
+
+            // @saba instead of one file, a list of files will be uploaded just like images. you can replicate the validation and logics here also
+            if (!req.files || !req.files.file) {
+                return res.json({ ok: false, message: "A file must be uploaded." });
+            }
+
+            const file = Array.isArray(req.files.file) ? req.files.file[0] : req.files.file;
+            const fileExtension = path.extname(file.name).toLowerCase();
+
+            if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+                return res.json({ ok: false, message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(', ')} are allowed.` });
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                return res.json({ ok: false, message: "File exceeds the maximum allowed size of 5MB." });
+            }
+
+            const sanitizedFileName = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
+            logger.info(`(/upload/file): File uploaded and metadata saved for studentID=${studentID}, fileName=${sanitizedFileName}`);
+
+            return res.json({
+                ok: true,
+                message: "File uploaded successfully!",
+            });
+
+        } catch (error) {
+            logger.error(`(/upload/file): Error for studentID=1, error=${error}`);
+            return res.json({
+                ok: false,
+                message: "An error occurred while uploading. Please try again later."
+            });
+        }
+    });
+
+    router.post("/link", async (req, res: any) => {
+        const MAX_TITLE_LENGTH = 100;
+        const MAX_DESCRIPTION_LENGTH = 500;
+        const postID = uuidv4()
+
+        try {
+            const studentID = "9181e241-575c-4ef3-9d3c-2150eac4566d"; // this is a valid student id stored in mogodb so you can test with this
+            if (!studentID) return
+
+            const { postTitle, postDescription, links } = req.body;
+
+            const sanitizedTitle = sanitizeHtml(postTitle || "").trim();
+            const sanitizedDescription = sanitizeHtml(postDescription || "").trim();
+            const sanitizedLinks = JSON.parse(links || "[]").map((link: string) => sanitizeHtml(link || "").trim())
+            const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
+
+            if (sanitizedLinks.length === 0) {
+                return res.json({
+                    ok: false,
+                    message: `Links are required`
+                });
+            }
+            if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+                return res.json({
+                    ok: false,
+                    message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`
+                });
+            }
+            if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
+                return res.json({
+                    ok: false,
+                    message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`
+                });
+            }
+            for (const sanitizedLink of sanitizedLinks) {
+                if (!sanitizedLink || !/^https?:\/\//i.test(sanitizedLink)) {
+                     return res.json({
+                        ok: false,
+                        message: "A valid URL starting with http:// or https:// is required."
+                    });
+                }
+            }
+
+            const postData: { links: string[] } & PostData = {
+                ownerDocID: ownerDocID,
+                title: sanitizedTitle,
+                postID: postID,
+                links: sanitizedLinks
+            }
+            console.log(postData)
+
+            logger.info(`(/upload/link): Link saved for studentID=1, link=${sanitizedLinks}`);
+
+            res.status(200).json({
+                ok: true,
+                message: "Link uploaded successfully!",
+            });
+        } catch (error) {
+            console.error(error)
+            logger.error(`(/upload/link): Error for studentID=1, error=${error}`);
+            res.status(500).json({
+                ok: false,
+                message: "An error occurred while uploading the link. Please try again later."
+            });
+        }
+    });
 
     return router
 }
