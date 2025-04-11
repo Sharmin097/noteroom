@@ -106,5 +106,39 @@ mcqsSchema.pre("save", function(next) {
 })
 const mcqsModel = notesModel.discriminator(PostType.MCQ, mcqsSchema)
 
+const linksSchema = new Schema({
+    links: [{ // a list of urls which the user provides
+        _id: false,
+        type: String,
+        required: true 
+    }]
+})
+const linksModel = notesModel.discriminator(PostType.LINK, linksSchema)
+
+
+const filesSchema = new Schema({
+    files: [
+        {
+            _id: false,
+            name: String, // The file name taken from the file itself
+            mimeType: {
+                type: String,
+                enum: ["application/pdf"],
+                default: "application/pdf" 
+            },
+            storageUrl: { // The public url which will be given after uploading the file in firebase
+                type: String,
+                required: true
+            }
+        }
+    ],
+    desscription: {
+        type: String,
+        default: null
+    }
+})
+const filesModel = notesModel.discriminator(PostType.FILE, filesSchema)
+
+
 export default notesModel
-export { contentsModel, mcqsModel }
+export { contentsModel, mcqsModel, linksModel, filesModel }
