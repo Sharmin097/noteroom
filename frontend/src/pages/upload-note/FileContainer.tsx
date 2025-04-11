@@ -1,5 +1,64 @@
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import * as pdfjsLib from "pdfjs-dist";
+import "pdfjs-dist/build/pdf.worker.mjs";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).toString();
+
+const handlePreviewPdf = async (file: File) => {
+  const fileURL = URL.createObjectURL(file);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 450;
+  canvas.height = 600;
+
+
+  try {
+    const pdf = await pdfjsLib.getDocument(fileURL).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.5 });
+
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      await page.render({
+        canvasContext: ctx,
+        viewport,
+      }).promise;
+
+      ReactSwal.fire({
+        title: <span style={{ fontSize: '0.8rem', marginTop: "10px" }}>{file.name}</span>,
+        html: `<canvas id="pdf-preview-canvas" width="${canvas.width}" height="${canvas.height}"></canvas>`,
+        // width: `${canvas.width + 50}px`,
+        width: `450px`,
+        showCloseButton: true,
+        showConfirmButton: false,
+        didOpen: () => {
+          const modalCanvas = document.getElementById("pdf-preview-canvas") as HTMLCanvasElement;
+          if (modalCanvas) {
+            const modalCtx = modalCanvas.getContext("2d");
+            if (modalCtx) {
+              modalCtx.drawImage(canvas, 0, 0);
+            }
+          }
+        },
+      });
+    }
+  } catch (err) {
+    ReactSwal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Could not load the PDF preview.",
+    });
+    console.error(err);
+  }
+};
+
 
 const ReactSwal = withReactContent(Swal);
 
@@ -113,9 +172,10 @@ export default function FileContainer({
               Add
               </button>
               </div>       
-                
+
               {stackPdfs.map((file, idx) => (
-              <div key={idx} className="pdf-file-name">
+              <div  className="pdf-file-name">
+            
        <div className="pdf-Icon-Name">
          <svg
             className="PdfIcon"
@@ -132,15 +192,18 @@ export default function FileContainer({
             fill="#d9534f"
           ></path>
         </svg>
-         <div className="File-Name">{file.name.split('.')[0]}</div>
-      </div>
+        <div  key={idx} 
+              onClick={() => handlePreviewPdf(file)} 
+              style={{ cursor: "pointer" }}
+              className="File-Name">{file.name.split('.')[0]}</div>
+        </div>
        <div>
         <small>{(Math.round((file.size / 1024 / 1024) * 100) / 100)} MB</small>
        </div>
-      <div>
+     <div>
         <progress className="Progress-Bar" value={1} />
      </div>
-   <div>
+    <div>
      <button
        className="pdf-Delete-Btn"
        onClick={() => {

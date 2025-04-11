@@ -45,9 +45,6 @@ export default function QuillEditor({ quillRef, editorRef, rootClass, style }: Q
 
     return (
         <div className={rootClass} style={style}>
-            <span className="char-count">
-                {(quillRef.current?.getText().trim().length || 0)}/5000
-            </span>
             <div className="text-editor-wrapper">
                 <div ref={editorRef} />
             </div>

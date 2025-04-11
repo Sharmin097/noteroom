@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useReducer, act } from "react";
 import Quill, { QuillOptions } from "quill";
 import "quill/dist/quill.snow.css";
 import Swal from "sweetalert2";
@@ -9,12 +9,18 @@ import MCQContainer from "./MCQContainer";
 import FileContainer from "./FileContainer";
 import LinkContainer from "./YoutubeLinkContainer";
 import QuillEditor from "../../partials/QuillEditor";
+import mcqReducer from "../../reducers/mcqReducer";
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL;
 const ReactSwal = withReactContent(Swal);
-interface MCQ {
+export interface MCQ {
   question: string;
-  options: string[];
+  questionID: string,
+  options: {
+    optionType: string,
+    optionText: string,
+    optionID: string
+  }[],
   correctAnswer: string | null;
 }
 
@@ -86,7 +92,7 @@ const UploadNote: React.FC = () => {
   const [youtubeLink, setYoutubeLink] = useState<string>("");
   const [activeTab, setActiveTab] = useState<SubNav>(SubNav.TEXT_IMAGES);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [mcqs, setMcqs] = useState<MCQ[]>([]);
+  const [mcqs, dispatch] = useReducer(mcqReducer, []);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
@@ -105,6 +111,77 @@ const UploadNote: React.FC = () => {
     e.preventDefault();
     setIsDragging(false);
   };
+
+  async function handlePublish() {
+    async function handleFetch(api: string, formData: FormData) {
+      const response = await fetch(`${API_SERVER_URL}${api}`, {
+        credentials: "include",
+        method: "post",
+        body: formData
+      })
+      if (response.ok) {
+        const data = await response.json()
+        console.log(data)
+        setIsLoading(false)
+        if (data.ok) {
+          ReactSwal.fire({
+            icon: "success",
+            title: "You are good to go!",
+            text: data.message,
+          });
+        } else {
+          ReactSwal.fire({
+            icon: "error",
+            title: "Uh oh! Something went wrong",
+            text: data.message,
+          });
+        }
+      } else {
+        ReactSwal.fire({
+          icon: "error",
+          title: "Uh oh! Something went wrong",
+          text: "Couldn't upload! Please try again a bit later",
+        });
+      }
+    }
+
+    try {
+      if (postTitle.trim().length === 0) {
+        ReactSwal.fire({
+          icon: "question",
+          title: "Uh oh! Something went wrong",
+          text: "Title is required, must be a string, and less than 100 characters.",
+        })
+        return
+      }
+
+      setIsLoading(true)
+      const postData = new FormData()
+
+      switch(activeTab) {
+        case SubNav.TEXT_IMAGES:
+          postData.append("postTitle", postTitle)
+          postData.append("postDescription", quillRef?.current?.getSemanticHTML() || "")
+          for (let file of stackFiles) {
+            postData.append(`file-${crypto.randomUUID()}`, file)
+          }
+          return await handleFetch('/api/upload/content', postData)
+
+        case SubNav.MCQ:
+          postData.append("postTitle", postTitle)
+          postData.append("mcqStrings", JSON.stringify(mcqs))   
+          return await handleFetch("/api/upload/mcq", postData) 
+      }
+    } catch (error) {
+      ReactSwal.fire({
+        icon: "success",
+        title: "Uh oh! Something went wrong",
+        text: "Couldn't upload! Please try again a bit later",
+      });
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="middle-section-upload">
@@ -130,7 +207,7 @@ const UploadNote: React.FC = () => {
         /> }
 
         { activeTab === SubNav.MCQ && <MCQContainer 
-          mcqs={[mcqs, setMcqs]}
+          mcqs={[mcqs, dispatch]}
         /> }
       </div>
 
@@ -148,6 +225,7 @@ const UploadNote: React.FC = () => {
         <button
           className="publish-note-btn"
           disabled={isLoading}
+          onClick={handlePublish}
         >
           {isLoading ? "Publishing..." : "Publish"}
         </button>

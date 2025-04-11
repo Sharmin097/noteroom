@@ -21,6 +21,7 @@
     "lexical": "^0.27.0",
     "lodash": "^4.17.21",
     "mathlive": "^0.104.0",
+    "pdfjs-dist": "^5.1.91",
     "quill": "^2.0.3",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
@@ -29,6 +30,7 @@
     "react-infinite-scroll-component": "^6.1.0",
     "react-router-dom": "^7.2.0",
     "react-toastify": "^11.0.5",
+    "sharp": "^0.33.5",
     "sweetalert2": "^11.4.8",
     "sweetalert2-react-content": "^5.1.0"
   },

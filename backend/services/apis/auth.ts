@@ -82,6 +82,8 @@ export default function authApiRouter(io: Server) {
                         } else {
                             res.json({ ok: false, message: "Wrong Password!" })
                         }
+                    } else if (student["authProvider"] === "google") {
+                        res.json({ ok: false, message: "Invalid login method. Try using Google login" })
                     }
                 } else {
                     if (response.code === "NO_EMAIL") {
@@ -121,11 +123,8 @@ export default function authApiRouter(io: Server) {
     
     router.post('/google', async (req, res:any) => {
         try {
-            const { credential } = req.body; // ID Token from frontend
-    
-            if (!credential) {
-                return res.status(400).json({ ok: false, message: "No credential provided." });
-            }
+            const { credential } = req.body; 
+            if (!credential) return
     
             const ticket = await googleClient.verifyIdToken({
                 idToken: credential,
@@ -136,17 +135,6 @@ export default function authApiRouter(io: Server) {
             const email = payload.email;
             const displayName = payload.name;
     
-            // Check email is verified
-            if (!payload.email_verified) {
-                return res.status(401).json({ ok: false, message: "Email is not verified by Google." });
-            }
-    
-            // Check token expiration
-            const exp = payload.exp;
-            if (Date.now() >= exp * 1000) {
-                return res.status(401).json({ ok: false, message: "ID token has expired." });
-            }
-    
             logger.info(`(/auth/google): Google login attempt - email=${email}`);
     
             const existingUser = await getUserVarification(email);
@@ -155,13 +143,12 @@ export default function authApiRouter(io: Server) {
                 const student = existingUser.data;
     
                 if (student.authProvider !== "google") {
-                    return res.status(400).json({
+                    return res.json({
                         ok: false,
-                        message: "This email is registered with another method. Try normal login.",
+                        message: "This email is registered with another method. Try NoteRoom login",
                     });
                 }
     
-                // Regenerate session to prevent session fixation
                 req.session.regenerate(() => {
                     req.session["stdid"] = student["studentID"];
                     return res.json({
@@ -172,10 +159,10 @@ export default function authApiRouter(io: Server) {
                         },
                     });
                 });
+
                 return;
             }
     
-            // Create new user
             const identifier = generateRandomUsername(displayName.trim());
             const newUser = {
                 displayname: displayName,
@@ -206,21 +193,19 @@ export default function authApiRouter(io: Server) {
                 });
             } else {
                 logger.error(`(/auth/google): Failed to create user ${email}: ${response.error}`);
-                res.status(500).json({
+                res.json({
                     ok: false,
                     message: "Something went wrong while creating your account.",
                 });
             }
         } catch (error) {
             logger.error(`(/auth/google): Login failed: ${error}`);
-            res.status(401).json({
+            res.json({
                 ok: false,
                 message: "Google authentication failed. Please try again.",
             });
         }
     });
     
-    
-
     return router
 }

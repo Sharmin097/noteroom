@@ -35,9 +35,11 @@ const io = new SocketIOServer(server, { cors: { origin: '*' } });
 const url = (process.env.DEVELOPMENT && process.env.DEVELOPMENT === "true") ? process.env.MONGO_URI_DEV : process.env.MONGO_URI
 
 connect(url).then(() => {
+    console.log(chalk.cyan(`[-] development mode: ${chalk.yellow(process.env.DEVELOPMENT)}`))
     if (process.env.DEVELOPMENT && process.env.DEVELOPMENT === "true") {
-        console.log(chalk.cyan(`[-] development mode: ${chalk.yellow(process.env.DEVELOPMENT)}`))
         console.log(chalk.cyan(`[-] using local mongodb: ${chalk.yellow(url)}`))
+    } else {
+        console.log(chalk.cyan(`[-] using remote mongodb: ${chalk.yellow(url)}`))
     }
 })
 
@@ -49,6 +51,7 @@ app.use(cors({
     origin: allowedHosts,
     credentials: true
 }))
+
 app.use(express.json()); 
 app.use(express.static(staticPath))
 app.use(urlencoded({ extended: true })) 
@@ -71,7 +74,6 @@ app.use(cookieParser())
 app.use(fileUpload()) 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 app.use('/api/users', profileApiRouter(io))
 app.use('/api/posts', postApiRouter(io))
 app.use('/api/notifications', notificationApiRouter(io))
