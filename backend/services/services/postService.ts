@@ -1,4 +1,4 @@
-import Notes, { contentsModel, mcqsModel } from "../../schemas/notes"
+import Notes, { contentsModel, mcqsModel,linksModel } from "../../schemas/notes"
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
@@ -18,7 +18,9 @@ export async function addPost(postData: any, postType?: PostType) {
             post = await contentsModel.create(postData)
         } else if (postType === PostType.MCQ) {
             post = await mcqsModel.create(postData)  
-        } 
+        } else if (postType === PostType.LINK) {
+            post = await linksModel.create(postData);
+        }
         
         if (post) {
             await Students.findByIdAndUpdate(
@@ -42,6 +44,14 @@ export async function deletePost(postID: string, postType: PostType) {
                 await Notes.deleteOne({ postID: postID })
                 const fileDeleteResponse = await deleteFile(postID)
                 return { ok: fileDeleteResponse.ok, code: !fileDeleteResponse.ok ? "FILE_DELETE_FAIL" : null } 
+            
+            case PostType.LINK:
+                // Deleting link-related data (if any)
+                await Notes.deleteOne({ postID: postID });  // Assuming LinkPosts is the collection for link posts.
+                return { ok: true };  // Return success for link deletion
+    
+            default:
+                return { ok: false, error: "Unknown post type." };
         }
     } catch (error) {
         return { ok: false, error: error }
