@@ -1325,6 +1325,7 @@ body {
 
 /* Canvas */
 canvas {
+  backdrop-filter: blur(5px);
  place-items: center;
   object-fit: cover;
   top: 0;
