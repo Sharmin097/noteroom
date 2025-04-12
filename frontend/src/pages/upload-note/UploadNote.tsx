@@ -171,6 +171,14 @@ const UploadNote: React.FC = () => {
           postData.append("postTitle", postTitle)
           postData.append("mcqStrings", JSON.stringify(mcqs))   
           return await handleFetch("/api/upload/mcq", postData) 
+
+        case SubNav.FILE:
+          postData.append("postTitle", postTitle)
+          postData.append("postDescription", quillRef?.current?.getSemanticHTML() || "")
+          for (let file of stackPdfs) {
+            postData.append(`file-${crypto.randomUUID()}`, file)
+          }
+          return await handleFetch('/api/upload/file', postData)
       }
     } catch (error) {
       ReactSwal.fire({

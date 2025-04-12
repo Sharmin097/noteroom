@@ -284,12 +284,12 @@ export default function uploadApiRouter(io: Server) {
         const ALLOWED_EXTENSIONS = [".pdf"];
         const postID = uuidv4()
 
-        const studentID = "9181e241-575c-4ef3-9d3c-2150eac4566d";
+        const studentID = req.session?.["stdid"]
 
         try {
             if (!studentID) return res.status(400).json({ ok: false, message: "Invalid student ID." });
     
-            const { title, description } = req.body;
+            const { postTitle: title, postDescription: description } = req.body;
             const sanitizedTitle = sanitizeHtml(title || "").trim();
             const sanitizedDescription = sanitizeHtml(description || "").trim();
             const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()

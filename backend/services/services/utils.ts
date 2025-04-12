@@ -41,7 +41,6 @@ export async function processBuikPDFUpload(fileObjects: fileUpload.UploadedFile[
             const publicUrl = await upload(file, `posts/${postID}/contents/${file["fileName"]}`)
             if (publicUrl) {
                 const name = file.name
-                console.log(`Done ${name}`)
                 files.push({ name: name, storageUrl: publicUrl })
             } else {
                 failedUploads.push(file.name)
