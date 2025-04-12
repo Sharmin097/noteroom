@@ -32,6 +32,27 @@ export async function processBulkCompressUpload(fileObjects: fileUpload.Uploaded
     }
 }
 
+export async function processBuikPDFUpload(fileObjects: fileUpload.UploadedFile[], postID: string) {
+    try {
+        let files: { name: string, storageUrl: string }[] = []
+        let failedUploads = []
+
+        await Promise.all(fileObjects.map(async file => {
+            const publicUrl = await upload(file, `posts/${postID}/contents/${file["fileName"]}`)
+            if (publicUrl) {
+                const name = file.name
+                files.push({ name: name, storageUrl: publicUrl })
+            } else {
+                failedUploads.push(file.name)
+            }
+        }))
+
+        return { ok: true, files: files, failedUploads: failedUploads }
+    } catch (error) {
+        return { ok: false, error: error }
+    }
+}
+
 
 export function generateRandomUsername(displayname: string) {
     let sluggfied = slugify(displayname, {

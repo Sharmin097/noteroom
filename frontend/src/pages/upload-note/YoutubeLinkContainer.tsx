@@ -9,7 +9,7 @@ const extractYoutubeVideoId = (url: string): string | null => {
   return url.match(regex)?.[1] || null;
 };
 
-export default function LinkContainer({ youtubeLink: [youtubeLink, setYoutubeLink] }: any) {
+export default function LinkContainer({ youtubeLink: [youtubeLink, setYoutubeLink], youtubeLinks: [youtubeLinks, setYoutubeLinks] }: any) {
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   const [videoList, setVideoList] = useState<string[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -29,6 +29,7 @@ export default function LinkContainer({ youtubeLink: [youtubeLink, setYoutubeLin
     if (youtubeVideoId && !videoList.includes(youtubeVideoId)) {
       const updatedList = [...videoList, youtubeVideoId];
       setVideoList(updatedList);
+      setYoutubeLinks((prev: string) => [...prev, youtubeLink])
       setCurrentVideoIndex(updatedList.length - 1);
       setYoutubeLink(""); 
       ReactSwal.fire({
@@ -50,6 +51,7 @@ export default function LinkContainer({ youtubeLink: [youtubeLink, setYoutubeLin
     setYoutubeVideoId(null); 
     setVideoList([]); 
     setCurrentVideoIndex(0); 
+    setVideoList([])
     ReactSwal.fire({
       icon: "success",
       title: "Cleared!",
