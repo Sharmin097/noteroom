@@ -1,4 +1,4 @@
-import Notes, { contentsModel, mcqsModel,linksModel } from "../../schemas/notes"
+import Notes, { contentsModel, mcqsModel,linksModel, filesModel } from "../../schemas/notes"
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 import { isUpVoted } from "./voteService"
@@ -20,6 +20,8 @@ export async function addPost(postData: any, postType?: PostType) {
             post = await mcqsModel.create(postData)  
         } else if (postType === PostType.LINK) {
             post = await linksModel.create(postData);
+        } else if (postType === PostType.FILE) {
+            post = await filesModel.create(postData) 
         }
         
         if (post) {

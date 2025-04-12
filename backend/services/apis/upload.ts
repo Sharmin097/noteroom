@@ -11,7 +11,7 @@ import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
 import fileUpload from "express-fileupload";
-import { processBulkCompressUpload } from "../services/utils";
+import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";
 
 const router = Router()
 
@@ -287,7 +287,6 @@ export default function uploadApiRouter(io: Server) {
         const studentID = "9181e241-575c-4ef3-9d3c-2150eac4566d";
 
         try {
-            
             if (!studentID) return res.status(400).json({ ok: false, message: "Invalid student ID." });
     
             const { title, description } = req.body;
@@ -295,7 +294,7 @@ export default function uploadApiRouter(io: Server) {
             const sanitizedDescription = sanitizeHtml(description || "").trim();
             const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
 
-            const postData: { files: any[] } & PostData = {
+            const postData: { files: { name: string, storageUrl: string }[] } & PostData = {
                 postID: postID,
                 description: null,
                 ownerDocID: ownerDocID,
@@ -328,16 +327,16 @@ export default function uploadApiRouter(io: Server) {
                 })
             }
     
-            const files = Object.values(req.files).flat()
+            const uploadedFiles = Object.values(req.files).flat()
     
-            if (files.length > MAX_FILES) {
+            if (uploadedFiles.length > MAX_FILES) {
                 return res.json({
                     ok: false,
                     message: `You can only upload up to ${MAX_FILES} files at a time.`,
                 });
             }
     
-            for (const file of files) {
+            for (const file of uploadedFiles) {
                 const fileExtension = path.extname(file.name).toLowerCase();
     
                 if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
@@ -359,13 +358,23 @@ export default function uploadApiRouter(io: Server) {
                 fileObjects.push(file)                
             }
 
-            postData.files = fileObjects
-            console.log(postData)
-    
-            return res.json({
-                ok: true,
-                message: "Files posted successfully.",
-            });
+            const uploadResponse = await processBuikPDFUpload(fileObjects, postID)
+            if (uploadResponse.ok) {
+                const files = uploadResponse.files
+                // const failedUploads = response.failedUploads
+                //FIXME: implement failed uploads handler
+                postData.files = files
+                
+                const response = await addPost(postData, PostType.FILE)
+                if (response.ok) {
+                    await Notes.updateOne({ _id: response.postID }, { completed: true })
+                    return res.json({ ok: true, message: "Files posted successfully." });    
+                } else {
+                    return res.json({ ok: false, message: "Files cannot be posted successfully. Please try again a bit later!" });
+                }
+            } else {
+                return res.json({ ok: false, message: "Files cannot be posted successfully. Please try again a bit later!" });
+            }
     
         } catch (error) {
             logger.error(`(/upload/file): Error for studentID=${studentID}, error=${error}`);
