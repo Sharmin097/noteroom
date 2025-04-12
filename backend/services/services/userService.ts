@@ -1,6 +1,22 @@
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 
+const ALLOWED_CHANGEABLE_FIELDS = [
+    "profile_pic",
+    "displayname",
+    "bio",
+    "rollnumber",
+    "favouritesubject",
+    "notfavsubject",
+    "group",
+    "collegeyear",
+    "collegesection",
+    "district",
+    "username",
+    "visibility",
+    "collegeID"
+  ];
+
 export const Convert = {
     async getStudentID_username(username: string) {
         try {
@@ -10,7 +26,7 @@ export const Convert = {
             return null
         }
     },
-    
+
     async getDocumentID_studentid(studentID: string) {
         try {
             let documentID = (await Students.findOne({ studentID: studentID }, { _id: 1 }))["_id"]
@@ -69,39 +85,47 @@ export async function getProfile(username: string) {
     try {
         let student = await Students.aggregate([
             { $match: { username: username } },
-            { $addFields: {
-                featuredNoteCount: { $size: "$featured_notes" }
-            } },
-            { $lookup: {
-                from: "posts",
-                localField: "owned_notes",
-                foreignField: "_id",
-                as: "owned_posts"
-            } },
-            { $lookup: {
-                from: 'badges',
-                localField: 'badges',
-                foreignField: 'badgeID',
-                as: 'badges'
-            } },    
-            { $project: {
-                _id: 0,
-                username: 1, displayname: 1, group: 1,
-                profile_pic: 1, bio: 1, collegeID: 1, collegeyear: 1,
-                favouritesubject: 1, notfavsubject: 1, featuredNoteCount: 1,
-                rollnumber: 1, badges: 1,
-                owned_posts: {
-                    $map: {
-                        input: "$owned_posts",
-                        as: "post",
-                        in: {
-                            noteTitle: "$$post.title",
-                            noteID: "$$post._id",
-                            noteThumbnail: { $first: "$$post.content" }
+            {
+                $addFields: {
+                    featuredNoteCount: { $size: "$featured_notes" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "posts",
+                    localField: "owned_notes",
+                    foreignField: "_id",
+                    as: "owned_posts"
+                }
+            },
+            {
+                $lookup: {
+                    from: 'badges',
+                    localField: 'badges',
+                    foreignField: 'badgeID',
+                    as: 'badges'
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    username: 1, displayname: 1, group: 1,
+                    profile_pic: 1, bio: 1, collegeID: 1, collegeyear: 1,
+                    favouritesubject: 1, notfavsubject: 1, featuredNoteCount: 1,
+                    rollnumber: 1, badges: 1,
+                    owned_posts: {
+                        $map: {
+                            input: "$owned_posts",
+                            as: "post",
+                            in: {
+                                noteTitle: "$$post.title",
+                                noteID: "$$post._id",
+                                noteThumbnail: { $first: "$$post.content" }
+                            }
                         }
                     }
                 }
-            } }
+            }
         ])
         if (student.length === 0) return { ok: false }
 
@@ -118,7 +142,7 @@ export async function getMutualCollegeStudents(studentDocID: string, options?: a
         let students = await Students.find({ collegeID: collegeID, visibility: "public", _id: { $ne: studentDocID } }, { profile_pic: 1, displayname: 1, bio: 1, username: 1, _id: 0, collegeID: 1 })
         return students
     } else {
-        let resultCount: number | null 
+        let resultCount: number | null
         if (options.countDoc) {
             resultCount = await Students.countDocuments({ collegeID: collegeID, visibility: "public", _id: { $ne: new mongoose.Types.ObjectId(studentDocID) } })
         }
@@ -127,16 +151,18 @@ export async function getMutualCollegeStudents(studentDocID: string, options?: a
             { $match: { collegeID: collegeID, visibility: "public", _id: { $ne: new mongoose.Types.ObjectId(studentDocID) } } },
             { $skip: options.skip },
             { $limit: options.count },
-            { $project: {
-                profile_pic: 1, 
-                displayname: 1, 
-                bio: 1, 
-                username: 1, 
-                _id: 0, 
-                collegeID: 1
-            } }
+            {
+                $project: {
+                    profile_pic: 1,
+                    displayname: 1,
+                    bio: 1,
+                    username: 1,
+                    _id: 0,
+                    collegeID: 1
+                }
+            }
         ])
-        return {students, totalCount: resultCount}
+        return { students, totalCount: resultCount }
     }
 }
 
@@ -146,7 +172,7 @@ export async function searchStudent(searchTerm: string, options?: any) {
         let students = await Students.find({ username: { $regex: regex }, visibility: "public", onboarded: true }, { profile_pic: 1, displayname: 1, bio: 1, username: 1, _id: 0 })
         return students
     } else {
-        let resultCount: number | null 
+        let resultCount: number | null
         if (options.countDoc) {
             resultCount = await Students.countDocuments({ username: { $regex: regex }, visibility: "public", onboarded: true })
         }
@@ -155,14 +181,51 @@ export async function searchStudent(searchTerm: string, options?: any) {
             { $match: { username: { $regex: regex }, visibility: "public", onboarded: true } },
             { $skip: options.skip },
             { $limit: options.maxCount },
-            { $project: {
-                profile_pic: 1, 
-                displayname: 1, 
-                bio: 1, 
-                username: 1, 
-                _id: 0 
-            } }
+            {
+                $project: {
+                    profile_pic: 1,
+                    displayname: 1,
+                    bio: 1,
+                    username: 1,
+                    _id: 0
+                }
+            }
         ])
-        return {students, totalCount: resultCount}
+        return { students, totalCount: resultCount }
     }
 }
+
+export const updateProfileFields = async (studentID: string, updates: Record<string, string>) => {
+    const updatePayload: Record<string, string> = {};
+    const updatedFields: Record<string, string> = {}; // Track updated fields and their new values
+
+    for (const [field, value] of Object.entries(updates)) {
+        if (!ALLOWED_CHANGEABLE_FIELDS.includes(field)) {
+            throw new Error(`Field '${field}' is not allowed to be updated.`);
+        }
+
+        if (typeof value !== "string" || value.trim() === "") {
+            throw new Error(`Value for '${field}' cannot be empty.`);
+        }
+
+        // Add the field and its value to the update payload
+        updatePayload[field] = value.trim();
+        updatedFields[field] = value.trim();
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+        throw new Error("No valid fields provided for update.");
+    }
+
+    const updatedStudent = await Students.findOneAndUpdate(
+        { studentID },
+        updatePayload,
+        { new: true }
+    );
+
+    if (!updatedStudent) {
+        throw new Error("Student not found or update failed.");
+    }
+
+    return { updatedStudent, updatedFields }; // Return both updated student and fields
+};
