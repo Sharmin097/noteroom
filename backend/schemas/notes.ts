@@ -107,11 +107,13 @@ mcqsSchema.pre("save", function(next) {
 const mcqsModel = notesModel.discriminator(PostType.MCQ, mcqsSchema)
 
 const linksSchema = new Schema({
-    links: [{ // a list of urls which the user provides
-        _id: false,
-        type: String,
-        required: true 
-    }]
+    links: [String]
+})
+linksSchema.pre("save", function(next) {
+    const doc = this as any
+    doc.completed = true
+
+    next()
 })
 const linksModel = notesModel.discriminator(PostType.LINK, linksSchema)
 

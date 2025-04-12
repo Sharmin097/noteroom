@@ -90,6 +90,7 @@ const UploadNote: React.FC = () => {
   const [stackPdfs, setStackPdfs] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [youtubeLink, setYoutubeLink] = useState<string>("");
+  const [youtubeLinks, setYoutubeLinks] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<SubNav>(SubNav.TEXT_IMAGES);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [mcqs, dispatch] = useReducer(mcqReducer, []);
@@ -179,6 +180,14 @@ const UploadNote: React.FC = () => {
             postData.append(`file-${crypto.randomUUID()}`, file)
           }
           return await handleFetch('/api/upload/file', postData)
+
+        case SubNav.LINKS:
+          postData.append("postTitle", postTitle)
+          postData.append("linksString", JSON.stringify(youtubeLinks))
+          for (let file of stackPdfs) {
+            postData.append(`file-${crypto.randomUUID()}`, file)
+          }
+          return await handleFetch('/api/upload/link', postData)
       }
     } catch (error) {
       ReactSwal.fire({
@@ -206,6 +215,7 @@ const UploadNote: React.FC = () => {
 
         { activeTab === SubNav.LINKS && <LinkContainer 
           youtubeLink={[youtubeLink, setYoutubeLink]}
+          youtubeLinks={[youtubeLinks, setYoutubeLinks]}
         /> }
 
         { activeTab === SubNav.FILE && <FileContainer 

@@ -277,6 +277,7 @@ export default function uploadApiRouter(io: Server) {
     });
 
     router.post("/file", async (req, res: any) => {
+        //FIXME: add a delete post when upload fails (@rafi)
         const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
         const MAX_FILES = 5;
         const MAX_TITLE_LENGTH = 100;
@@ -390,70 +391,67 @@ export default function uploadApiRouter(io: Server) {
         const postID = uuidv4();
     
         try {
-            const studentID = req.session?.['stdid'] || "--studentid--";
-            if (!studentID) {
-                return res.status(401).json({ ok: false, message: "Unauthorized. Please log in." });
-            }
+            const studentID = req.session?.['stdid']
+            if (!studentID) return
     
-            const { postTitle, postLinks } = req.body;
+            const { postTitle, linksString } = req.body;
+            const links: string[] = JSON.parse(linksString || "[]")
             const sanitizedTitle = sanitizeHtml(postTitle || "").trim();
-            const sanitizedLink = sanitizeHtml(postLinks || "").trim().toLowerCase();
-    
             const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString();
     
-            const postData = {
-                postID,
-                ownerDocID,
+            const postData: { links: string[] } & PostData = {
+                postID: postID,
+                ownerDocID: ownerDocID,
                 title: null,
-                link: null
+                links: [] 
             };
     
+            if (links.length === 0) {
+                return res.json({
+                    ok: false,
+                    message: "Valid HTTP or HTTPS link(s) is required."
+                });
+            }
+
             logger.info(`(/upload/link): Received post for studentID=${studentID}, postID=${postID}`);
     
-            // Validate title
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
-                return res.status(400).json({
+                return res.json({
                     ok: false,
                     message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`
                 });
             }
     
             postData.title = sanitizedTitle;
-    
-            // Validate link (must be single valid https? URL)
-            if (
-                !sanitizedLink ||
-                typeof sanitizedLink !== "string" ||
-                !/^https?:\/\//.test(sanitizedLink) ||
-                !isValidUrl(sanitizedLink)
-            ) {
-                return res.status(400).json({
-                    ok: false,
-                    message: "Exactly one valid HTTP or HTTPS link is required."
-                });
+
+            for (const link of links) {
+                const sanitizedLink = sanitizeHtml(link || "").trim().toLowerCase();
+
+                if (!sanitizedLink || typeof sanitizedLink !== "string" || !/^https?:\/\//.test(sanitizedLink) || !isValidUrl(sanitizedLink) ) {
+                    return res.json({
+                        ok: false,
+                        message: "Valid HTTP or HTTPS link(s) is required."
+                    });
+                }
             }
+
+            postData.links = links
     
-            postData.link = sanitizedLink;
-    
-            // Save post
             const response = await addPost(postData, PostType.LINK);
             if (response.ok) {
-                await Notes.updateOne({ _id: response.postID }, { completed: true });
                 logger.info(`(/upload/link): Post saved for studentID=${req.session["stdid"] || '--studentID--'}, postID=${postID}`);
-                return res.status(200).json({ ok: true, message: "Link post uploaded successfully!" });
+                return res.json({ ok: true, message: "Link post uploaded successfully!" });
             } else {
-                await deletePost(postID, PostType.LINK);
                 logger.error(`(/upload/link): Failed to add post for studentID=${req.session["stdid"] || '--studentID--'}: ${response.error}`);
-                return res.status(500).json({
+                return res.json({
                     ok: false,
                     message: "Post couldn't be uploaded. Please try again later."
                 });
             }
     
         } catch (error) {
-            await deletePost(postID, PostType.LINK);
             logger.error(`(/upload/link): Exception for studentID==${req.session["stdid"] || '--studentID--'}: ${error}`);
-            return res.status(500).json({
+            return res.json({
                 ok: false,
                 message: "An error occurred while uploading. Please try again later."
             });
