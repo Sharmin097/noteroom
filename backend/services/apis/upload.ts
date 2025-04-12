@@ -282,6 +282,7 @@ export default function uploadApiRouter(io: Server) {
         const MAX_TITLE_LENGTH = 100;
         const MAX_DESCRIPTION_LENGTH = 500;
         const ALLOWED_EXTENSIONS = [".pdf"];
+        const postID = uuidv4()
 
         const studentID = "9181e241-575c-4ef3-9d3c-2150eac4566d";
 
@@ -292,6 +293,15 @@ export default function uploadApiRouter(io: Server) {
             const { title, description } = req.body;
             const sanitizedTitle = sanitizeHtml(title || "").trim();
             const sanitizedDescription = sanitizeHtml(description || "").trim();
+            const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
+
+            const postData: { files: any[] } & PostData = {
+                postID: postID,
+                description: null,
+                ownerDocID: ownerDocID,
+                title: null,
+                files: []
+            }
     
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
                 return res.json({
@@ -306,14 +316,20 @@ export default function uploadApiRouter(io: Server) {
                     message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`,
                 });
             }
-    
-            if (!req.files || !req.files.file) {
-                return res.json({ ok: false, message: "At least one file must be uploaded." });
+
+            let fileObjects: fileUpload.UploadedFile[] = []
+            postData.description = (new JSDOM(sanitizedDescription)).window.document.querySelector("p")?.textContent.trim().length !== 0 ? sanitizedDescription : null
+            postData.title = sanitizedTitle
+
+            if (!req.files || Object.keys(req.files).length === 0) {
+                return res.json({
+                    ok: false,
+                    message: "At least one file needs to be selected"
+                })
             }
     
-            const files = Array.isArray(req.files.file) ? req.files.file : [req.files.file];
+            const files = Object.values(req.files).flat()
     
-            // Limit number of uploaded files
             if (files.length > MAX_FILES) {
                 return res.json({
                     ok: false,
@@ -321,45 +337,34 @@ export default function uploadApiRouter(io: Server) {
                 });
             }
     
-            const results = [];
-    
             for (const file of files) {
                 const fileExtension = path.extname(file.name).toLowerCase();
     
                 if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-                    results.push({
-                        file: file.name,
+                    return res.json({
                         ok: false,
                         message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(", ")} are allowed.`,
                     });
-                    continue;
                 }
     
                 if (file.size > MAX_FILE_SIZE) {
-                    results.push({
-                        file: file.name,
+                    return res.json({
                         ok: false,
                         message: "File exceeds the maximum allowed size of 5GB.",
                     });
-                    continue;
                 }
-    
+
                 const sanitizedFileName = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
-    
-                // Log (replace with DB/file system logic)
-                logger.info(`(/upload/file): File processed for studentID=${studentID}, fileName=${sanitizedFileName}`);
-    
-                results.push({
-                    file: file.name,
-                    ok: true,
-                    message: "File uploaded successfully!",
-                });
+                file["fileName"] = sanitizedFileName
+                fileObjects.push(file)                
             }
+
+            postData.files = fileObjects
+            console.log(postData)
     
             return res.json({
                 ok: true,
-                message: "Files processed.",
-                results,
+                message: "Files posted successfully.",
             });
     
         } catch (error) {
