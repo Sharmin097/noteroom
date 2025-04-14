@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Server } from "socket.io";
 import { Convert, getMutualCollegeStudents, getProfile, updateProfileFields } from "../services/userService";
 import sanitizeHtml from 'sanitize-html';
+import logger from "../logger";
 
 const router = Router()
 export const ALLOWED_CHANGEABLE_FIELDS = [
@@ -56,48 +57,58 @@ export default function profileApiRouter(io: Server) {
         }
     });
           
-	router.post("/change", async (req, res:any) => {
+	router.post("/change", async (req, res: any) => {
+		const studentID = req.session["stdid"];
+		
 		try {
-			//FIXME: check if the group is in Science, Commerce or Arts
-			//TODO: add loggers @Saba
-			const studentID = req.session["stdid"] ;
-			if (!studentID) return 
-
-			if (Object.keys(req.body).length === 0) {
-				return res.json({ ok: false, message: "No valid changes provided." });
+			if (!studentID) return res.json({ ok: false, message: "Student not logged in." });
+	
+			// Check group from request body
+			const group = req.body.group?.trim();
+			if (!group || !["Science", "Commerce", "Arts"].includes(group)) {
+				logger.warn(`Invalid or missing group for student ${studentID}: ${group}`);
+				return res.json({ ok: false, message: "Invalid or missing group." });
 			}
-
+	
+			logger.info(`Student ID: ${studentID}, Group: ${group}`);
+	
 			const updates: Record<string, string> = {};
-
+	
 			for (const key in req.body) {
 				const rawValue = req.body[key];
-				const value = sanitizeHtml(rawValue || "").trim(); 
-
+				const value = sanitizeHtml(rawValue || "").trim();
+	
 				if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
+					logger.warn(`Unauthorized change attempt on field: ${key} by student ${studentID}`);
 					return res.json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
 				}
-
+	
 				if (!value) {
+					logger.warn(`Empty value submitted for "${key}" by student ${studentID}`);
 					return res.json({ ok: false, message: `Value for "${key}" cannot be empty.` });
 				}
-
+	
 				updates[key] = value;
 			}
-
+	
 			if (Object.keys(updates).length === 0) {
 				return res.json({ ok: false, message: "No valid changes provided." });
 			}
-
-			const response = await updateProfileFields(studentID, updates)
+	
+			const response = await updateProfileFields(studentID, updates);
+	
 			if (response.ok) {
-				res.json({ ok: true })
+				logger.info(`Profile updated successfully for student ${studentID}`);
+				res.json({ ok: true });
 			} else {
-				res.json({ ok: false, message: "Can't change your profile details now! Please try again a bit later"})
+				logger.error(`Update failed for student ${studentID}`);
+				res.json({ ok: false, message: "Can't change your profile details now! Please try again a bit later" });
 			}
 		} catch (error) {
+			logger.error(`Exception occurred during profile change for student ${studentID}: ${error}`);
 			res.json({ ok: false, message: "An error occurred while updating profile." });
 		}
-	});  
+	});
 
  
     

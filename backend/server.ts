@@ -26,6 +26,7 @@ import notificationApiRouter from './services/apis/notifications.js';
 import requestsApiRouter from './services/apis/requests.js';
 import authApiRouter from './services/apis/auth.js';
 import uploadApiRouter from './services/apis/upload.js';
+import mcqApiRouter from './services/apis/mcq';
 
 config({ path: join(__dirname, '.env') });
 
@@ -82,6 +83,7 @@ app.use('/api/feed', feedApiRouter(io))
 app.use('/api/search', seacrhApiRouter(io))
 app.use('/api/auth', authApiRouter(io))
 app.use('/api/upload', uploadApiRouter(io))
+app.use('/api/mcq/', mcqApiRouter(io))
 
 app.get('/logout', (req, res) => {
     try {
