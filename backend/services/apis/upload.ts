@@ -11,7 +11,7 @@ import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
 import fileUpload from "express-fileupload";
-import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";
+import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";// Used to sanitize input to prevent XSS
 
 const router = Router()
 
@@ -277,24 +277,27 @@ export default function uploadApiRouter(io: Server) {
     });
 
     router.post("/file", async (req, res: any) => {
-        //FIXME: add a delete post when upload fails (@rafi)
+        // FIXME: add a delete post when upload fails (@rafi)
         const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
         const MAX_FILES = 5;
         const MAX_TITLE_LENGTH = 100;
         const MAX_DESCRIPTION_LENGTH = 500;
         const ALLOWED_EXTENSIONS = [".pdf"];
         const postID = uuidv4()
-
+    
         const studentID = req.session?.["stdid"]
-
+    
         try {
-            if (!studentID) return res.status(400).json({ ok: false, message: "Invalid student ID." });
+            if (!studentID) {
+                logger.error(`(/upload/file): Missing studentID in session.`)
+                return res.status(400).json({ ok: false, message: "Invalid student ID." });
+            }
     
             const { postTitle: title, postDescription: description } = req.body;
             const sanitizedTitle = sanitizeHtml(title || "").trim();
             const sanitizedDescription = sanitizeHtml(description || "").trim();
             const ownerDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
-
+    
             const postData: { files: { name: string, storageUrl: string }[] } & PostData = {
                 postID: postID,
                 description: null,
@@ -303,7 +306,10 @@ export default function uploadApiRouter(io: Server) {
                 files: []
             }
     
+            logger.info(`(/upload/file): Received post data for studentID=${studentID}, postID=${postID}`)
+    
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+                logger.error(`(/upload/file): Invalid title from studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`,
@@ -311,17 +317,19 @@ export default function uploadApiRouter(io: Server) {
             }
     
             if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
+                logger.error(`(/upload/file): Description too long from studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`,
                 });
             }
-
+            
             let fileObjects: fileUpload.UploadedFile[] = []
             postData.description = (new JSDOM(sanitizedDescription)).window.document.querySelector("p")?.textContent.trim().length !== 0 ? sanitizedDescription : null
             postData.title = sanitizedTitle
-
+    
             if (!req.files || Object.keys(req.files).length === 0) {
+                logger.error(`(/upload/file): No files uploaded by studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: "At least one file needs to be selected"
@@ -331,6 +339,7 @@ export default function uploadApiRouter(io: Server) {
             const uploadedFiles = Object.values(req.files).flat()
     
             if (uploadedFiles.length > MAX_FILES) {
+                logger.error(`(/upload/file): Too many files uploaded by studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: `You can only upload up to ${MAX_FILES} files at a time.`,
@@ -341,6 +350,7 @@ export default function uploadApiRouter(io: Server) {
                 const fileExtension = path.extname(file.name).toLowerCase();
     
                 if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+                    logger.error(`(/upload/file): Invalid file extension (${fileExtension}) by studentID=${studentID}`)
                     return res.json({
                         ok: false,
                         message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(", ")} are allowed.`,
@@ -348,32 +358,38 @@ export default function uploadApiRouter(io: Server) {
                 }
     
                 if (file.size > MAX_FILE_SIZE) {
+                    logger.error(`(/upload/file): File too large by studentID=${studentID}`)
                     return res.json({
                         ok: false,
                         message: "File exceeds the maximum allowed size of 5GB.",
                     });
                 }
-
+    
                 const sanitizedFileName = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
                 file["fileName"] = sanitizedFileName
-                fileObjects.push(file)                
+                fileObjects.push(file)
+    
+                logger.info(`(/upload/file): File sanitized successfully for studentID=${studentID}, fileName=${postID + " = " + sanitizedFileName}`)
             }
-
+    
             const uploadResponse = await processBuikPDFUpload(fileObjects, postID)
             if (uploadResponse.ok) {
                 const files = uploadResponse.files
-                // const failedUploads = response.failedUploads
-                //FIXME: implement failed uploads handler
                 postData.files = files
-                
+    
+                logger.info(`(/upload/file): Files uploaded to storage for studentID=${studentID}, postID=${postID}`)
+    
                 const response = await addPost(postData, PostType.FILE)
                 if (response.ok) {
                     await Notes.updateOne({ _id: response.postID }, { completed: true })
-                    return res.json({ ok: true, message: "Files posted successfully." });    
+                    logger.info(`(/upload/file): Post document created for studentID=${studentID}, postID=${postID}`)
+                    return res.json({ ok: true, message: "Files posted successfully." });
                 } else {
+                    logger.error(`(/upload/file): Failed to create post document for studentID=${studentID}, postID=${postID}: ${response.error}`)
                     return res.json({ ok: false, message: "Files cannot be posted successfully. Please try again a bit later!" });
                 }
             } else {
+                logger.error(`(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${uploadResponse.error}`)
                 return res.json({ ok: false, message: "Files cannot be posted successfully. Please try again a bit later!" });
             }
     
@@ -385,6 +401,7 @@ export default function uploadApiRouter(io: Server) {
             });
         }
     });
+    
     
     router.post("/link", async (req, res:any) => {
         const MAX_TITLE_LENGTH = 100;
@@ -459,6 +476,10 @@ export default function uploadApiRouter(io: Server) {
     });
     
     
+    
+ 
+  
+
     
     return router
 }
