@@ -47,79 +47,53 @@ export default function profileApiRouter(io: Server) {
             res.json({ ok: false })
         }
     });
-   
-     //change profile details
-       
-const ALLOWED_CHANGEABLE_FIELDS = [
-    "displayname",
-    "bio",
-    "rollnumber",
-    "favouritesubject",
-    "notfavsubject",
-    "group",
-    "collegeyear"
-  ];
-  
- 
-  router.post("/change", async (req, res:any) => {
-    try {
-      //Step 1: Get the current user's student ID from the session
-       const studentID = req.session["stdid"];
-       // hardcoded studentID to check api
-      //const studentID ="1"
-      if (!studentID) {
-        return res.status(401).json({ ok: false, message: "Unauthorized" });
-      }
-  
-      // Step 2: Prepare an object to hold valid updates
-      const updates: Record<string, string> = {};
-  
-      // Step 3: Loop through each key in req.body
-      for (const key in req.body) {
-        const rawValue = req.body[key];
-        const value = sanitizeHtml(rawValue || "").trim(); // Sanitize input
+          
+	router.post("/change", async (req, res:any) => {
+		try {
+			const ALLOWED_CHANGEABLE_FIELDS = [
+				"displayname",
+				"bio",
+				"rollnumber",
+				"favouritesubject",
+				"notfavsubject",
+				"group",
+				"collegeyear"
+			];
+			const studentID = req.session["stdid"];
+			if (!studentID) return 
 
-        // Reject if the field is not in allowed list
-        if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
-          return res.status(400).json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
-        }
-  
-        //  Reject empty values (like empty strings)
-        if (!value) {
-          return res.status(400).json({ ok: false, message: `Value for "${key}" cannot be empty.` });
-        }
-  
-        // Add valid and sanitized field to update object
-        updates[key] = value;
-      }
-  
-      //If no valid fields were provided
-      if (Object.keys(updates).length === 0) {
-        return res.status(400).json({ ok: false, message: "No valid changes provided." });
-      }
-  
-      // Step 4: Get MongoDB document ID for this student
-      const studentDocID = await Convert.getDocumentID_studentid(studentID);
-  
-      // Step 5: Update the student document in MongoDB
-      const result = await studentsSchema.updateOne(
-        { _id: studentDocID },
-        { $set: updates }
-      );
-  
-      //  Step 6: Respond based on update result
-      if (result.modifiedCount > 0) {
-        res.json({ ok: true, message: "Profile updated successfully." });
-      } else {
-        res.status(200).json({ ok: true, message: "No changes were applied." });
-      }
-  
-    } catch (error) {
-      // Catch and handle any unexpected server errors
-      console.error("Error in /api/users/change:", error);
-      res.status(500).json({ ok: false, message: "An error occurred while updating profile." });
-    }
-  });  
+			if (Object.keys(req.body).length === 0) {
+				return res.json({ ok: false, message: "No valid changes provided." });
+			}
+
+			const updates: Record<string, string> = {};
+
+			for (const key in req.body) {
+				const rawValue = req.body[key];
+				const value = sanitizeHtml(rawValue || "").trim(); // Sanitize input
+
+				if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
+					return res.json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
+				}
+
+				if (!value) {
+					return res.json({ ok: false, message: `Value for "${key}" cannot be empty.` });
+				}
+
+				updates[key] = value;
+			}
+
+			if (Object.keys(updates).length === 0) {
+				return res.json({ ok: false, message: "No valid changes provided." });
+			}
+
+			console.log(updates)
+			res.json({ ok: true, updates: updates })
+		} catch (error) {
+			console.error("Error in /api/users/change:", error);
+			res.json({ ok: false, message: "An error occurred while updating profile." });
+		}
+	});  
 
  
     
