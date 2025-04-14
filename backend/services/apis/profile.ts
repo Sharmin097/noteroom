@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { Server } from "socket.io";
 import { Convert, getMutualCollegeStudents, getProfile } from "../services/userService";
+import studentsSchema from "../../schemas/students" 
+import sanitizeHtml from 'sanitize-html';
 
 const router = Router()
 
@@ -44,7 +46,56 @@ export default function profileApiRouter(io: Server) {
         } catch (error) {
             res.json({ ok: false })
         }
-    })
+    });
+          
+	router.post("/change", async (req, res:any) => {
+		try {
+			const ALLOWED_CHANGEABLE_FIELDS = [
+				"displayname",
+				"bio",
+				"rollnumber",
+				"favouritesubject",
+				"notfavsubject",
+				"group",
+				"collegeyear"
+			];
+			const studentID = req.session["stdid"];
+			if (!studentID) return 
 
+			if (Object.keys(req.body).length === 0) {
+				return res.json({ ok: false, message: "No valid changes provided." });
+			}
+
+			const updates: Record<string, string> = {};
+
+			for (const key in req.body) {
+				const rawValue = req.body[key];
+				const value = sanitizeHtml(rawValue || "").trim(); // Sanitize input
+
+				if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
+					return res.json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
+				}
+
+				if (!value) {
+					return res.json({ ok: false, message: `Value for "${key}" cannot be empty.` });
+				}
+
+				updates[key] = value;
+			}
+
+			if (Object.keys(updates).length === 0) {
+				return res.json({ ok: false, message: "No valid changes provided." });
+			}
+
+			console.log(updates)
+			res.json({ ok: true, updates: updates })
+		} catch (error) {
+			console.error("Error in /api/users/change:", error);
+			res.json({ ok: false, message: "An error occurred while updating profile." });
+		}
+	});  
+
+ 
+    
     return router
 }
