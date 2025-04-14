@@ -1,10 +1,18 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { Convert, getMutualCollegeStudents, getProfile } from "../services/userService";
-import studentsSchema from "../../schemas/students" 
+import { Convert, getMutualCollegeStudents, getProfile, updateProfileFields } from "../services/userService";
 import sanitizeHtml from 'sanitize-html';
 
 const router = Router()
+export const ALLOWED_CHANGEABLE_FIELDS = [
+	"displayname",
+	"bio",
+	"rollnumber",
+	"favouritesubject",
+	"notfavsubject",
+	"group",
+	"collegeyear"
+]
 
 export default function profileApiRouter(io: Server) {
     router.get("/mutual-college", async (req, res) => {
@@ -50,16 +58,9 @@ export default function profileApiRouter(io: Server) {
           
 	router.post("/change", async (req, res:any) => {
 		try {
-			const ALLOWED_CHANGEABLE_FIELDS = [
-				"displayname",
-				"bio",
-				"rollnumber",
-				"favouritesubject",
-				"notfavsubject",
-				"group",
-				"collegeyear"
-			];
-			const studentID = req.session["stdid"];
+			//FIXME: check if the group is in Science, Commerce or Arts
+			//TODO: add loggers @Saba
+			const studentID = req.session["stdid"] ;
 			if (!studentID) return 
 
 			if (Object.keys(req.body).length === 0) {
@@ -70,7 +71,7 @@ export default function profileApiRouter(io: Server) {
 
 			for (const key in req.body) {
 				const rawValue = req.body[key];
-				const value = sanitizeHtml(rawValue || "").trim(); // Sanitize input
+				const value = sanitizeHtml(rawValue || "").trim(); 
 
 				if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
 					return res.json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
@@ -87,10 +88,13 @@ export default function profileApiRouter(io: Server) {
 				return res.json({ ok: false, message: "No valid changes provided." });
 			}
 
-			console.log(updates)
-			res.json({ ok: true, updates: updates })
+			const response = await updateProfileFields(studentID, updates)
+			if (response.ok) {
+				res.json({ ok: true })
+			} else {
+				res.json({ ok: false, message: "Can't change your profile details now! Please try again a bit later"})
+			}
 		} catch (error) {
-			console.error("Error in /api/users/change:", error);
 			res.json({ ok: false, message: "An error occurred while updating profile." });
 		}
 	});  

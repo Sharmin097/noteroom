@@ -1,22 +1,6 @@
 import Students from "../../schemas/students"
 import mongoose from "mongoose"
 
-const ALLOWED_CHANGEABLE_FIELDS = [
-    "profile_pic",
-    "displayname",
-    "bio",
-    "rollnumber",
-    "favouritesubject",
-    "notfavsubject",
-    "group",
-    "collegeyear",
-    "collegesection",
-    "district",
-    "username",
-    "visibility",
-    "collegeID"
-  ];
-
 export const Convert = {
     async getStudentID_username(username: string) {
         try {
@@ -195,37 +179,11 @@ export async function searchStudent(searchTerm: string, options?: any) {
     }
 }
 
-export const updateProfileFields = async (studentID: string, updates: Record<string, string>) => {
-    const updatePayload: Record<string, string> = {};
-    const updatedFields: Record<string, string> = {}; // Track updated fields and their new values
-
-    for (const [field, value] of Object.entries(updates)) {
-        if (!ALLOWED_CHANGEABLE_FIELDS.includes(field)) {
-            throw new Error(`Field '${field}' is not allowed to be updated.`);
-        }
-
-        if (typeof value !== "string" || value.trim() === "") {
-            throw new Error(`Value for '${field}' cannot be empty.`);
-        }
-
-        // Add the field and its value to the update payload
-        updatePayload[field] = value.trim();
-        updatedFields[field] = value.trim();
+export async function updateProfileFields(studentID: string, updates: Record<string, string>) {
+    try {
+        await Students.updateOne( { studentID: studentID }, updates );
+        return { ok: true }
+    } catch (error) {
+        return { ok: false, error: error }
     }
-
-    if (Object.keys(updatePayload).length === 0) {
-        throw new Error("No valid fields provided for update.");
-    }
-
-    const updatedStudent = await Students.findOneAndUpdate(
-        { studentID },
-        updatePayload,
-        { new: true }
-    );
-
-    if (!updatedStudent) {
-        throw new Error("Student not found or update failed.");
-    }
-
-    return { updatedStudent, updatedFields }; // Return both updated student and fields
 };
