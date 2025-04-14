@@ -11,7 +11,7 @@ import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
 import fileUpload from "express-fileupload";
-import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";
+import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";// Used to sanitize input to prevent XSS
 
 const router = Router()
 
@@ -459,6 +459,10 @@ export default function uploadApiRouter(io: Server) {
     });
     
     
+    
+ 
+  
+
     
     return router
 }
