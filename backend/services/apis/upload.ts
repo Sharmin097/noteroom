@@ -33,28 +33,21 @@ interface PostData {
     description?: string
 }
 
-interface LinkPostData {
-    postID: string;
-    ownerDocID: string;
-    title: string;
-    link: string;
-  }
+async function handleUploadError(message: string, postID: string, postType: PostType, response: any) {
+    await deletePost(postID, postType)
+    logger.error(message)
+    return response.json({
+        ok: false,
+        message: "Post cannot be uploaded. Please try again a bit later!"
+    });
+}
 
 export default function uploadApiRouter(io: Server) {
     router.use(rateLimit({
-        windowMs: 60 * 1000, // 1 minute
-        max: 5, // Allow only 5 requests per minute
+        windowMs: 60 * 1000, 
+        max: 5,
         message: "Too many requests, please try again later."
-    }))
-
-    const isValidUrl = (url: string): boolean => {
-        try {
-            new URL(url);
-            return true;
-        } catch (e) {
-            return false;
-        }
-    };    
+    }))    
 
     router.post("/content", async (req, res: any) => {
         const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -141,30 +134,41 @@ export default function uploadApiRouter(io: Server) {
                     logger.info(`(/upload/content): File sanitized and handled successfully for studentID=${studentID}, fileName=${postData.postID + " = " + sanitizedFileName}`);
                 }
             }
-            
-            if (fileObjects.length !== 0) {
-                //FIXME: process compression-upload asynchronously. send the user "witing" confirmation and then process
-                const uploadResponse = await processBulkCompressUpload(fileObjects, postData.postID)
-                if (uploadResponse.ok) {
+
+            try {
+                if (fileObjects.length !== 0) {
+                    const uploadResponse = await processBulkCompressUpload(fileObjects, postData.postID)
+                    if (!uploadResponse.ok) {
+                        return await handleUploadError(
+                            `(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${uploadResponse.error}`,
+                            postID, PostType.CONTENT, res
+                        )
+                    }
+
                     logger.info(`(/upload/content): Compressed files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}`)
                     postData.content = uploadResponse.content
-                } else {
-                    logger.error(`(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${uploadResponse.error}`)
                 }
-            }
 
-            const response = await addPost(postData, PostType.CONTENT)
-            if (response.ok) {
+                const response = await addPost(postData, PostType.CONTENT)
+                if (!response.ok) {
+                    return await handleUploadError(
+                        `(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${response.error}`,
+                        postID, PostType.CONTENT, res
+                    )
+                }
+
                 logger.info(`(/upload/content): Added post document of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}`)
                 await Notes.updateOne({ _id: response.postID }, { completed: true })
                 return res.json({ ok: true, message: "Post uploaded successfully!" })
-            } else {
-                await deletePost(postData.postID, PostType.CONTENT)
-                logger.error(`(/upload/content): Couldn't post document of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${response.error}`)
-                return res.json({ ok: false, message: "Post couldn't get uploaded. Please try again a bit later." })
+
+            } catch (error) {
+                return await handleUploadError(
+                    `(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${error}`,
+                    postID, PostType.CONTENT, res
+                )
             }
+
         } catch (error) {
-            await deletePost(postID, PostType.CONTENT)
             logger.error(`(/upload/content): Error for studentID=${req.session?.['stdid'] || "--studentid--"}: ${error}`);
             return res.json({
                 ok: false,
@@ -277,7 +281,6 @@ export default function uploadApiRouter(io: Server) {
     });
 
     router.post("/file", async (req, res: any) => {
-        // FIXME: add a delete post when upload fails (@rafi)
         const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
         const MAX_FILES = 5;
         const MAX_TITLE_LENGTH = 100;
@@ -285,13 +288,10 @@ export default function uploadApiRouter(io: Server) {
         const ALLOWED_EXTENSIONS = [".pdf"];
         const postID = uuidv4()
     
-        const studentID = req.session?.["stdid"]
-    
+        
         try {
-            if (!studentID) {
-                logger.error(`(/upload/file): Missing studentID in session.`)
-                return res.status(400).json({ ok: false, message: "Invalid student ID." });
-            }
+            const studentID = req.session?.["stdid"]
+            if (!studentID) return
     
             const { postTitle: title, postDescription: description } = req.body;
             const sanitizedTitle = sanitizeHtml(title || "").trim();
@@ -371,9 +371,16 @@ export default function uploadApiRouter(io: Server) {
     
                 logger.info(`(/upload/file): File sanitized successfully for studentID=${studentID}, fileName=${postID + " = " + sanitizedFileName}`)
             }
-    
-            const uploadResponse = await processBuikPDFUpload(fileObjects, postID)
-            if (uploadResponse.ok) {
+            
+            try {
+                const uploadResponse = await processBuikPDFUpload(fileObjects, postID)
+                if (!uploadResponse.ok) {
+                    return await handleUploadError(
+                        `(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${uploadResponse.error}`,
+                        postID, PostType.FILE, res
+                    )
+                } 
+
                 const files = uploadResponse.files
                 postData.files = files
     
@@ -385,16 +392,20 @@ export default function uploadApiRouter(io: Server) {
                     logger.info(`(/upload/file): Post document created for studentID=${studentID}, postID=${postID}`)
                     return res.json({ ok: true, message: "Files posted successfully." });
                 } else {
-                    logger.error(`(/upload/file): Failed to create post document for studentID=${studentID}, postID=${postID}: ${response.error}`)
-                    return res.json({ ok: false, message: "Files cannot be posted successfully. Please try again a bit later!" });
+                    return await handleUploadError(
+                        `(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${response.error}`,
+                        postID, PostType.FILE, res
+                    )
                 }
-            } else {
-                logger.error(`(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${uploadResponse.error}`)
-                return res.json({ ok: false, message: "Files cannot be posted successfully. Please try again a bit later!" });
+            } catch (error) {
+                return await handleUploadError(
+                    `(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${error}`,
+                    postID, PostType.FILE, res
+                )
             }
     
         } catch (error) {
-            logger.error(`(/upload/file): Error for studentID=${studentID}, error=${error}`);
+            logger.error(`(/upload/file): Error while uploading: ${error}`);
             return res.json({
                 ok: false,
                 message: "An error occurred while uploading. Please try again later.",
@@ -406,6 +417,14 @@ export default function uploadApiRouter(io: Server) {
     router.post("/link", async (req, res:any) => {
         const MAX_TITLE_LENGTH = 100;
         const postID = uuidv4();
+        const isValidUrl = (url: string): boolean => {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
     
         try {
             const studentID = req.session?.['stdid']

@@ -41,19 +41,10 @@ export async function addPost(postData: any, postType?: PostType) {
 
 export async function deletePost(postID: string, postType: PostType) {
     try {
-        switch(postType) {
-            case PostType.CONTENT:
-                await Notes.deleteOne({ postID: postID })
-                const fileDeleteResponse = await deleteFile(postID)
-                return { ok: fileDeleteResponse.ok, code: !fileDeleteResponse.ok ? "FILE_DELETE_FAIL" : null } 
-            
-            case PostType.LINK:
-                // Deleting link-related data (if any)
-                await Notes.deleteOne({ postID: postID });  // Assuming LinkPosts is the collection for link posts.
-                return { ok: true };  // Return success for link deletion
-    
-            default:
-                return { ok: false, error: "Unknown post type." };
+        if (postType === PostType.CONTENT || postType === PostType.FILE) {
+            await Notes.deleteOne({ postID: postID })
+            const fileDeleteResponse = await deleteFile(postID)
+            return { ok: fileDeleteResponse.ok, code: !fileDeleteResponse.ok ? "FILE_DELETE_FAIL" : null } 
         }
     } catch (error) {
         return { ok: false, error: error }
