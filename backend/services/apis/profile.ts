@@ -58,10 +58,9 @@ export default function profileApiRouter(io: Server) {
     });
           
 	router.post("/change", async (req, res: any) => {
-		const studentID = req.session["stdid"];
-		
 		try {
-			if (!studentID) return res.json({ ok: false, message: "Student not logged in." });
+			const studentID = req.session?.["stdid"];
+			if (!studentID) return 
 	
 			// Check group from request body
 			const group = req.body.group?.trim();
@@ -105,7 +104,7 @@ export default function profileApiRouter(io: Server) {
 				res.json({ ok: false, message: "Can't change your profile details now! Please try again a bit later" });
 			}
 		} catch (error) {
-			logger.error(`Exception occurred during profile change for student ${studentID}: ${error}`);
+			logger.error(`Exception occurred during profile change: ${error}`);
 			res.json({ ok: false, message: "An error occurred while updating profile." });
 		}
 	});
