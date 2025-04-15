@@ -180,6 +180,7 @@ export async function searchStudent(searchTerm: string, options?: any) {
 }
 
 export async function updateProfileFields(studentID: string, updates: Record<string, string>) {
+    //TODO: add profile picture change logic (@rafi)
     try {
         await Students.updateOne( { studentID: studentID }, updates );
         return { ok: true }
