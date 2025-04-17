@@ -4,14 +4,19 @@ import { SavedNoteObject } from "../types/types";
 import { useAppData } from "./AppDataContext";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import downloadPostZip from "../utils/utils";
+import { useGlobalComponentController } from "./GlobalComponentContext";
 
-let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
+const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
+const ReactSwal = withReactContent(Swal);
+
 export const FeedNoteContext = createContext<any>(null)
 export default function FeedNotesProvider({ children }: { children: ReactNode | ReactNode[] }) {
     const [feedNotes, dispatch] = useReducer(feedReducer, [])
     const [loading, setLodaing] = useState<boolean>(true)
     const [page, setPage] = useState<number>(1)
     const [hasMore, setHasMore] = useState<boolean>(true)
+    const { toast: [toast, setToast] } = useGlobalComponentController()!
     const { savedNotes: [, setSavedNotes] } = useAppData()
 
     const observer = useRef<IntersectionObserver | null>(null)
@@ -28,17 +33,6 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
 
         if (node) observer.current.observe(node)
     }, [loading])
-
-    function fireToast(title: string) {
-        return withReactContent(Swal).fire({
-            toast: true,
-            position: "bottom-right",
-            title: title,
-            showConfirmButton: true,
-            timer: 3000,
-            timerProgressBar: true
-        })
-    }
 
     async function fetchNotes() {
         setLodaing(true)
@@ -94,7 +88,7 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
             if (response.ok) {
                 let data = await response.json()
                 if (data.ok) {
-                    fireToast(savedState ? "Removed from saved" : "Post saved")
+                    setToast({ show: true, data: { message: savedState ? "Removed from saved" : "Post saved" } })
                 }
             } else {
                 return { ok: false }
@@ -104,12 +98,49 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
         }
     }
 
+    async function download(folderName: string, postID: string, links?: string[]) {
+        try {
+            ReactSwal.fire({
+                title: "Preparing Download",
+                text: "Please wait while we generate the ZIP...",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    ReactSwal.showLoading();
+                }
+            });
+            const imageUrls: string[] = links ? links : []
+            if (!links) {
+                const imageResponse = await fetch(`${API_SERVER_URL}/api/posts/${postID}/images`, { credentials: "include" })
+                if (imageResponse.ok) {
+                    const data = await imageResponse.json()
+                    if (data.ok && data.images && data.images.length !== 0) {
+                        imageUrls.push(...data.images)
+                    }
+                }
+            }
+
+            if (imageUrls.length !== 0) {
+                const success = await downloadPostZip(folderName, imageUrls);
+                ReactSwal.close();
+
+                if (success) {
+                    setToast({ show: true, data: { message: "Downloading Post" } })
+                } else {
+                    throw new Error("Failed to create ZIP");
+                }
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
     useEffect(() => {
         fetchNotes()
     }, [])
 
     return (
-        <FeedNoteContext.Provider value={{ feedNotes, loading, fetchNotes, lastNoteRef, dispatch, FeedActions, controller: [upvoteNote, saveNote] }}>
+        <FeedNoteContext.Provider value={{ feedNotes, loading, fetchNotes, lastNoteRef, dispatch, FeedActions, controller: [upvoteNote, saveNote, download] }}>
             {children}
         </FeedNoteContext.Provider>
     )

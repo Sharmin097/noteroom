@@ -5,7 +5,7 @@ import { useState } from "react";
 import PostView from "./pages/post-view/PostView";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import SearchProfile from "./pages/search-profile/SearchProfile";
-import Settings from "./pages/settings/Settings";	
+import Settings from "./pages/settings/Settings";
 import UserProfile from "./pages/user-profile/UserProfile";
 import SignUp from "./pages/sign-up/SignUp";
 import { useUserAuth } from "./context/UserAuthContext";
@@ -13,6 +13,8 @@ import Login from "./pages/login/Login";
 import nrLogo from "./assets/ng_logo.png"
 import UploadNote from "./pages/upload-note/UploadNote";
 import NotFound from "./pages/error-pages/NotFound";
+import { useGlobalComponentController } from "./context/GlobalComponentContext";
+import { CustomToast } from "./partials/Toast";
 
 //TODO: A reddit like logo when the feed loads or the user auth loads
 
@@ -62,31 +64,35 @@ function MainLayout({ userAuth }: { userAuth: any }) {
 	</>
 }
 
-function App() {	
+function App() {
 	const { userAuth } = useUserAuth()!;
 	const { pathname } = useLocation()
+	const { toast: [toast, setToast] } = useGlobalComponentController()
 
 	return (
-		<Routes>
-			<Route element={<PublicRoute />}>
-				<Route path="/login" element={<Login />} />
-				<Route path="/signup" element={<SignUp />} />
-			</Route>
-
-			<Route element={<ProtectedRoute />}>
-				<Route element={<MainLayout userAuth={userAuth}/>}>
-					<Route path="/" element={<DashBoard />} />
-					<Route path="/post/:postID" element={<PostView />} />
-					<Route path="/user/:username" element={<UserProfile />} />
-					<Route path="/search-profile" element={<SearchProfile />} />
-					<Route path="/settings" element={<Settings />} />
-					<Route path="/upload" element={<UploadNote />} />
+		<>
+			<Routes>
+				<Route element={<PublicRoute />}>
+					<Route path="/login" element={<Login />} />
+					<Route path="/signup" element={<SignUp />} />
 				</Route>
-			</Route>
 
-			<Route path="*" element={<Navigate to="/not-found" state={{ type: "page", route: pathname }} replace={true} />} />
-			<Route path="/not-found" element={<NotFound />} />
-		</Routes> 
+				<Route element={<ProtectedRoute />}>
+					<Route element={<MainLayout userAuth={userAuth} />}>
+						<Route path="/" element={<DashBoard />} />
+						<Route path="/post/:postID" element={<PostView />} />
+						<Route path="/user/:username" element={<UserProfile />} />
+						<Route path="/search-profile" element={<SearchProfile />} />
+						<Route path="/settings" element={<Settings />} />
+						<Route path="/upload" element={<UploadNote />} />
+					</Route>
+				</Route>
+
+				<Route path="*" element={<Navigate to="/not-found" state={{ type: "page", route: pathname }} replace={true} />} />
+				<Route path="/not-found" element={<NotFound />} />
+			</Routes>
+			{ toast?.show && <CustomToast message={toast?.data.message} toast={[toast, setToast]} /> }
+		</>
 	);
 }
 

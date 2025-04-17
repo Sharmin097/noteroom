@@ -2,9 +2,9 @@ import { useContext, useState } from "react";
 import { ShareModal } from "../../partials";
 import { PostContext } from "./PostView";
 
-export function NoteEngagement() {
+export function NoteEngagement({ postImages }) {
     const [shareModalShow, setShareModalShow] = useState<boolean>(false)
-    const {noteData, controller: [upvoteNote,]} = useContext(PostContext)
+    const {noteData, controller: [upvoteNote,, download]} = useContext(PostContext)
 
     const isUpvoted = noteData?.interactionData.isUpvoted;
     return (
@@ -31,7 +31,7 @@ export function NoteEngagement() {
         
                     { 
                         noteData?.contentData.contentCount !== 0 ? 
-                            <svg className="download-icon" width="28" height="28" viewBox="0 0 43 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg className="download-icon" width="28" height="28" viewBox="0 0 43 43" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={() => download(noteData?.noteData.noteTitle, noteData?.noteData.noteID, postImages) }>
                                 <path d="M37.1541 26.5395V33.6165C37.1541 34.555 36.7813 35.455 36.1177 36.1186C35.4541 36.7822 34.5541 37.155 33.6156 37.155H8.84623C7.90776 37.155 7.00773 36.7822 6.34414 36.1186C5.68054 35.455 5.30774 34.555 5.30774 33.6165V26.5395M12.3847 17.6933L21.2309 26.5395M21.2309 26.5395L30.0771 17.6933M21.2309 26.5395V5.30859" stroke="#1E1E1E" strokeWidth="2.29523" strokeLinecap="round" strokeLinejoin="round"></path>
                             </svg> : ''
                     }

@@ -17,7 +17,7 @@ let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 export const PostContext = createContext<any>(null)
 
 export default function PostView() {
-    const { feedNotes, controller: [upvoteNote, saveNote] } = useFeed()
+    const { feedNotes, controller: [upvoteNote, saveNote, download] } = useFeed()
     const navigate = useNavigate()
 
     const [noteImages, setNoteImages] = useState<string[]>([])
@@ -70,7 +70,7 @@ export default function PostView() {
     }, [postID])
 
     return (
-        <PostContext.Provider value={{ noteData, controller: [upvoteNote, saveNote] }}>
+        <PostContext.Provider value={{ noteData, controller: [upvoteNote, saveNote, download] }}>
             <div className="middle-section">
                 <div className="post-container">
                     <PostHeader></PostHeader>
@@ -81,7 +81,7 @@ export default function PostView() {
                         {noteData?.contentData.contentCount > 0 && <ImageContainer noteImages={noteImages} controller={[prevImage, nextImage, offset]} />}
                     </div>
 
-                    <NoteEngagement></NoteEngagement>
+                    <NoteEngagement postImages={noteImages} ></NoteEngagement>
                     <CommentsContainer></CommentsContainer>
                 </div>
             </div>

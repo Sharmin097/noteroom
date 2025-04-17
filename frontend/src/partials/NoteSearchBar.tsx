@@ -19,6 +19,7 @@ export default function NoteSearchBar({ notiModalState }: { notiModalState: [any
   const [isLoading, setIsLoading] = useState(false);
   const [debounceQuery, setDebounceQuery] = useState<string>("")
   const navigate = useNavigate()
+  const { userProfile: [profile] } = useAppData()
 
   function handleClick() {
     setIsSearchFocused(true)
@@ -119,7 +120,7 @@ export default function NoteSearchBar({ notiModalState }: { notiModalState: [any
             {unreadNotiCount}
           </span> : null}
         </div>
-        <img src={AvatarImage} className="profile-avatar" alt="Profile" onClick={() => navigate(`/user/${currentUsername}`)} />
+        <img src={profile.profile_pic || AvatarImage} className="profile-avatar" alt="Profile" onClick={() => navigate(`/user/${currentUsername}`)} />
       </div>
       <div className={`search-results-container ${isSearchFocused ? 'visible' : ''} no-hide`} >
         <div className="search-results-list no-hide">
