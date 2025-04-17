@@ -7,6 +7,8 @@ import withReactContent from "sweetalert2-react-content"
 import { Link } from "react-router-dom"
 import { useAppData } from "../../context/AppDataContext"
 import Toki from "../../assets/toki_nocomments.png"
+import { useUserAuth } from "../../context/UserAuthContext"
+import { useGlobalComponentController } from "../../context/GlobalComponentContext"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
@@ -42,8 +44,8 @@ function Comment({ feedbackData, children }: any) {
                         })}>
                             <svg className="like-icon" width="20" height="22" viewBox="0 0 115 117" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 {
-                                    isUpVoted ? 
-                                        <path className='like-icon-fill' d='M28.4938 47.5373C28.4938 47.5373 28.4863 108.91 28.493 110.455C28.4996 112 84.4861 110.998 88.993 110.998C93.5 110.998 108.994 88.5431 109.494 70.581C109.994 52.6188 107.998 49.9985 107.498 49.9985L66 49.9982C78.4744 33.916 62.958 -7.56607 57.9956 8.99958C53.0332 25.5652 49.9956 32.4996 49.9956 32.4996L28.4938 47.5373Z' fill='black'/>
+                                    isUpVoted ?
+                                        <path className='like-icon-fill' d='M28.4938 47.5373C28.4938 47.5373 28.4863 108.91 28.493 110.455C28.4996 112 84.4861 110.998 88.993 110.998C93.5 110.998 108.994 88.5431 109.494 70.581C109.994 52.6188 107.998 49.9985 107.498 49.9985L66 49.9982C78.4744 33.916 62.958 -7.56607 57.9956 8.99958C53.0332 25.5652 49.9956 32.4996 49.9956 32.4996L28.4938 47.5373Z' fill='black' />
                                         :
                                         <path d="M107.498 49.9985C107.998 49.9985 109.994 52.6188 109.494 70.581C108.994 88.5431 93.5 110.998 88.993 110.998C84.4861 110.998 28.4996 112 28.493 110.455C28.4863 108.91 28.4938 47.5373 28.4938 47.5373L49.9956 32.4996C49.9956 32.4996 53.0332 25.5652 57.9956 8.99958C62.958 -7.56607 78.4744 33.916 66 49.9982M107.498 49.9985C106.998 49.9985 66 49.9982 66 49.9982M107.498 49.9985L66 49.9982" stroke="#606770" strokeWidth="10" strokeLinecap="round" />
                                 }
@@ -128,10 +130,10 @@ function CommentSection({ comments: [comments, setComments] }: any) {
                         }
                     </div>
                     : <div className="no-comments">
-                        <img src={Toki} style={{width: "100px", marginLeft: "40%"}} />
-                        <p style={{fontSize: "20px"}}>No comments yet. Be the first one!</p>
+                        <img src={Toki} style={{ width: "100px", marginLeft: "40%" }} />
+                        <p style={{ fontSize: "20px" }}>No comments yet. Be the first one!</p>
                     </div>
-                    
+
             }
         </>
     )
@@ -148,6 +150,7 @@ export default function CommentsContainer() {
     const [loading, setLoading] = useState<boolean>(false)
     const [loadingComments, setLoadingComments] = useState<boolean>(true)
     const { userProfile: [, , currentUsername] } = useAppData()
+    const { toast: [toast, setToast] } = useGlobalComponentController()!
 
     const { noteData } = useContext(PostContext)
     const postID = noteData?.noteData.noteID
@@ -239,14 +242,7 @@ export default function CommentsContainer() {
 
 
     function fireToast(title: string) {
-        return withReactContent(Swal).fire({
-            toast: true,
-            position: "bottom-right",
-            title: title,
-            showConfirmButton: true,
-            timer: 3000,
-            timerProgressBar: true
-        })
+        setToast({ show: true, data: { message: title } })
     }
 
 
@@ -273,16 +269,16 @@ export default function CommentsContainer() {
 
     return (
         <div className="comment-section">
-            {loadingComments ? <div className="search-loading-indicator" style={{margin: "20px 50%"}}></div> : <CommentsControllerContext.Provider value={{ controller: [openReplyEditor, upvoteComment], postID: postID }}>
+            {loadingComments ? <div className="search-loading-indicator" style={{ margin: "20px 50%" }}></div> : <CommentsControllerContext.Provider value={{ controller: [openReplyEditor, upvoteComment], postID: postID }}>
                 <JoinConversation fireToast={fireToast} loading={[loading, setLoading]} comments={[comments, setComments]}></JoinConversation>
                 <CommentSection comments={[comments, setComments]}></CommentSection>
 
-                <TextEditor 
-                    showState={[showEditor, setShowEditor]} 
-                    text={[replyData, setReplyData]} 
-                    loading={[loading, setLoading]} 
+                <TextEditor
+                    showState={[showEditor, setShowEditor]}
+                    text={[replyData, setReplyData]}
+                    loading={[loading, setLoading]}
                     title={"Give a reply"}
-                    action={sendReply} 
+                    action={sendReply}
                     subTitle={replyToText}
                     buttonText={"Reply"}
                     inputPlaceHolder={replyToUsernameRef.current === currentUsername ? `Extend your opinion!` : `Reply to ${replyToDisplaynameRef.current}'s opinion`}

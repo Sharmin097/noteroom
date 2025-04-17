@@ -234,7 +234,7 @@ export async function searchPosts(searchTerm: string, options?: any) {
         const posts = await Notes.aggregate([
             { $match: { title: { $regex: regex }, type_: { $ne: "private" } } },
             { $project: {
-                postID: "$_id",
+                postID: 1,
                 title: 1
             } }
         ])
