@@ -21,7 +21,7 @@ function Comment({ feedbackData, children }: any) {
         <div className='main-cmnt-container'>
             <div className="main__author-threadline-wrapper">
                 <img
-                    src={"https://avatar.iran.liara.run/public/8"}
+                    src={feedbackData?.commenterDocID.profile_pic || "https://avatar.iran.liara.run/public/8"}
                     alt="User Avatar"
                     className="main__cmnt-author-img cmnt-author-img"
                 />
@@ -30,10 +30,10 @@ function Comment({ feedbackData, children }: any) {
             <div className="main__cmnts-replies-wrapper">
                 <div className="main__body cmnt-body-3rows">
                     <div className="main__reply-info reply-info">
-                        <Link to={`/user/${feedbackData?.commenterDocID.username}`}>
+                        <Link to={`/user/${feedbackData?.commenterDocID.username}`} style={{textDecoration: "none", color: "black"}}>
                             <span className="main__author-name">{feedbackData?.commenterDocID.displayname}</span>
                         </Link>
-                        <span className="reply-date">{feedbackData?.createdAt}</span>
+                        <span className="reply-date">{(new Date(feedbackData?.createdAt)).toDateString()}</span>
                     </div>
                     <div className="main__reply-msg reply-msg" dangerouslySetInnerHTML={{ __html: feedbackData?.feedbackContents }}></div>
                     <div className="main__engagement-opts engagement-opts">
@@ -82,16 +82,16 @@ function Reply({ replyData, parentFeedbackDocID }: { replyData: any, parentFeedb
     return (
         <div className='thread-msg'>
             <img
-                src={"https://avatar.iran.liara.run/public/90"}
+                src={replyData?.commenterDocID.profile_pic || "https://avatar.iran.liara.run/public/90"}
                 alt="User Avatar"
                 className="cmnt-author-img thread-avatar"
             />
             <div className="cmnt-body-3rows">
                 <div className="reply-info">
-                    <Link to={`/user/${replyData?.commenterDocID.username}`}>
-                        <span className="main__author-name" >{replyData?.commenterDocID.displayname}</span>
+                    <Link to={`/user/${replyData?.commenterDocID.username}`} style={{textDecoration: "none", color: "black"}}>
+                        <span className="main__author-name">{replyData?.commenterDocID.displayname}</span>
                     </Link>
-                    <span className="reply-date">{replyData?.createdAt}</span>
+                    <span className="reply-date">{(new Date(replyData?.createdAt)).toDateString()}</span>
                 </div>
                 <div className="reply-msg" dangerouslySetInnerHTML={{ __html: replyData.feedbackContents }}></div>
                 <div className="main__engagement-opts engagement-opts">
@@ -235,7 +235,7 @@ export default function CommentsContainer() {
     function openReplyEditor(replyToText: string, openedThreadID: string, replyToUsername: string, replyToDisplayname: string) {
         setShowEditor(prev => !prev)
         setOpenedThreadID(openedThreadID)
-        setReplyToText(replyToText.length > 100 ? replyToText.slice(0, 100) + "..." : replyToText)
+        setReplyToText(`<b>${replyToDisplayname}</b> - ${(replyToText.length > 100 ? replyToText.slice(0, 100) + "..." : replyToText)}`)
         replyToUsernameRef.current = replyToUsername
         replyToDisplaynameRef.current = replyToDisplayname
     }
