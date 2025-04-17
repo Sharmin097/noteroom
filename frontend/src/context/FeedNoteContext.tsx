@@ -18,6 +18,7 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
     const [hasMore, setHasMore] = useState<boolean>(true)
     const { toast: [toast, setToast] } = useGlobalComponentController()!
     const { savedNotes: [, setSavedNotes] } = useAppData()
+    const [seed, setSeed] = useState<number>()
 
     const observer = useRef<IntersectionObserver | null>(null)
 
@@ -27,17 +28,18 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
 
         observer.current = new IntersectionObserver(async (entries: IntersectionObserverEntry[]) => {
             if (entries[0].isIntersecting && hasMore) {
-                await fetchNotes()
+                await fetchNotes(seed)
             }
         })
 
         if (node) observer.current.observe(node)
     }, [loading])
 
-    async function fetchNotes() {
+    async function fetchNotes(seed: number | undefined) {
+        if (!seed) return 
         setLodaing(true)
         try {
-            let response = await fetch(`${API_SERVER_URL}/api/feed?seed=601914080&page=${page}`, { credentials: 'include' });
+            let response = await fetch(`${API_SERVER_URL}/api/feed?seed=${seed}&page=${page}`, { credentials: 'include' });
             let notes = await response.json()
             if (notes.length !== 0) {
                 setLodaing(false)
@@ -136,7 +138,13 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
     }
 
     useEffect(() => {
-        fetchNotes()
+        const now = new Date();
+        const baseSeed = Math.floor(now.getTime());
+        const salt = now.getMinutes() * 31 + now.getSeconds(); 
+        const seed = ((baseSeed + salt) * 104729) % 999999937;
+        setSeed(seed)
+
+        fetchNotes(seed)
     }, [])
 
     return (
