@@ -21,7 +21,7 @@ function Comment({ feedbackData, children }: any) {
         <div className='main-cmnt-container'>
             <div className="main__author-threadline-wrapper">
                 <img
-                    src={feedbackData?.commenterDocID.profile_pic || "https://avatar.iran.liara.run/public/8"}
+                    src={feedbackData?.commenterDocID?.profile_pic || "https://avatar.iran.liara.run/public/8"}
                     alt="User Avatar"
                     className="main__cmnt-author-img cmnt-author-img"
                 />
@@ -30,8 +30,8 @@ function Comment({ feedbackData, children }: any) {
             <div className="main__cmnts-replies-wrapper">
                 <div className="main__body cmnt-body-3rows">
                     <div className="main__reply-info reply-info">
-                        <Link to={`/user/${feedbackData?.commenterDocID.username}`} style={{textDecoration: "none", color: "black"}}>
-                            <span className="main__author-name">{feedbackData?.commenterDocID.displayname}</span>
+                        <Link to={`/user/${feedbackData?.commenterDocID?.username}`} style={{textDecoration: "none", color: "black"}}>
+                            <span className="main__author-name">{feedbackData?.commenterDocID?.displayname || "[deleted]" }</span>
                         </Link>
                         <span className="reply-date">{(new Date(feedbackData?.createdAt)).toDateString()}</span>
                     </div>
@@ -58,8 +58,8 @@ function Comment({ feedbackData, children }: any) {
                             onClick={() => openReplyEditor(
                                 (new DOMParser()).parseFromString(feedbackData?.feedbackContents, "text/html").querySelector("body")?.textContent,
                                 feedbackData?._id,
-                                feedbackData?.commenterDocID.username,
-                                feedbackData?.commenterDocID.displayname
+                                feedbackData?.commenterDocID?.username,
+                                feedbackData?.commenterDocID?.displayname
                             )}
                             width="25" height="24" viewBox="0 0 22 21" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18.7186 12.9452C18.7186 13.401 18.5375 13.8382 18.2152 14.1605C17.8929 14.4829 17.4557 14.6639 16.9999 14.6639H6.68747L3.25 18.1014V4.35155C3.25 3.89571 3.43108 3.45854 3.75341 3.13622C4.07573 2.81389 4.5129 2.63281 4.96873 2.63281H16.9999C17.4557 2.63281 17.8929 2.81389 18.2152 3.13622C18.5375 3.45854 18.7186 3.89571 18.7186 4.35155V12.9452Z" stroke="#1E1E1E" strokeWidth="1.14582" strokeLinecap="round" strokeLinejoin="round" />
@@ -82,24 +82,24 @@ function Reply({ replyData, parentFeedbackDocID }: { replyData: any, parentFeedb
     return (
         <div className='thread-msg'>
             <img
-                src={replyData?.commenterDocID.profile_pic || "https://avatar.iran.liara.run/public/90"}
+                src={replyData?.commenterDocID?.profile_pic || "https://avatar.iran.liara.run/public/90"}
                 alt="User Avatar"
                 className="cmnt-author-img thread-avatar"
             />
             <div className="cmnt-body-3rows">
                 <div className="reply-info">
-                    <Link to={`/user/${replyData?.commenterDocID.username}`} style={{textDecoration: "none", color: "black"}}>
-                        <span className="main__author-name">{replyData?.commenterDocID.displayname}</span>
+                    <Link to={`/user/${replyData?.commenterDocID?.username}`} style={{textDecoration: "none", color: "black"}}>
+                        <span className="main__author-name">{replyData?.commenterDocID?.displayname || "[deleted]"}</span>
                     </Link>
                     <span className="reply-date">{(new Date(replyData?.createdAt)).toDateString()}</span>
                 </div>
-                <div className="reply-msg" dangerouslySetInnerHTML={{ __html: replyData.feedbackContents }}></div>
+                <div className="reply-msg" dangerouslySetInnerHTML={{ __html: replyData?.feedbackContents }}></div>
                 <div className="main__engagement-opts engagement-opts">
                     <svg className="reply-icon thread-opener" onClick={() => openReplyEditor(
                         (new DOMParser()).parseFromString(replyData?.feedbackContents, "text/html").querySelector("body")?.textContent,
                         parentFeedbackDocID,
-                        replyData?.commenterDocID.username,
-                        replyData?.commenterDocID.displayname
+                        replyData?.commenterDocID?.username,
+                        replyData?.commenterDocID?.displayname
                     )} width="25" height="24" viewBox="0 0 22 21" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M18.7186 12.9452C18.7186 13.401 18.5375 13.8382 18.2152 14.1605C17.8929 14.4829 17.4557 14.6639 16.9999 14.6639H6.68747L3.25 18.1014V4.35155C3.25 3.89571 3.43108 3.45854 3.75341 3.13622C4.07573 2.81389 4.5129 2.63281 4.96873 2.63281H16.9999C17.4557 2.63281 17.8929 2.81389 18.2152 3.13622C18.5375 3.45854 18.7186 3.89571 18.7186 4.35155V12.9452Z" stroke="#1E1E1E" strokeWidth="1.14582" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -219,14 +219,10 @@ export default function CommentsContainer() {
             setUpvoteCount((prev: number) => prev + (isUpVoted ? -1 : +1))
             setIsUpVoted((prev: boolean) => !prev)
 
-            const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/feedbacks/${feedbackID}/vote?type=${isUpVoted ? 'downvote' : 'upvote'}`, {
+            await fetch(`${API_SERVER_URL}/api/posts/${postID}/feedbacks/${feedbackID}/vote?type=${isUpVoted ? 'downvote' : 'upvote'}`, {
                 method: "post",
                 credentials: "include"
             })
-            if (response.ok) {
-                const data = await response.json()
-                console.log(data)
-            }
         } catch (error) {
             console.error(error)
         }
@@ -258,7 +254,7 @@ export default function CommentsContainer() {
                 }
                 setLoadingComments(false)
             } catch (error) {
-                console.error(error)
+                // console.error(error)
             } finally {
                 setLoadingComments(false)
             }
