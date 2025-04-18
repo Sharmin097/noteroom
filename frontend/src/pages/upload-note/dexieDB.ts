@@ -1,7 +1,7 @@
 import Dexie from "dexie";
+import { DraftPost, SubNav as DexieStores } from "./UploadNote";
 
 export const dexieDB = new Dexie("nr_drafts")
-enum DexieStores { TEXT_IMAGE="content", LINK="link", FILE="file", MCQ="mcq" }
 
 dexieDB.version(2).stores({
     [DexieStores.TEXT_IMAGE]: "postID, title, description, images, type",
@@ -19,4 +19,33 @@ export async function getAllDrafts() {
         })
     )
     return Object.values(draftObjects).flat()
+}
+
+export async function addDraft(postType: DexieStores, post: DraftPost) {
+    try {
+        await dexieDB[postType].add(post)
+        return true
+    } catch (error) {
+        return false
+    }
+}
+
+export async function deleteDraft(postType: DexieStores, postID: string) {
+    try {
+        await dexieDB[postType].delete(postID)
+        return true
+    } catch (error) {
+        return false
+    }
+}
+
+export async function clearDraft() {
+    try {
+        for (const table of dexieDB.tables) {
+            await table.clear()
+        }
+        return true
+    } catch (error) {
+        return false
+    }
 }

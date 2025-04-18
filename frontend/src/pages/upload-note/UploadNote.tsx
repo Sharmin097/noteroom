@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useReducer, act } from "react";
-import Quill, { QuillOptions } from "quill";
+import React, { useState, useEffect, useRef, useReducer } from "react";
+import Quill from "quill";
 import "quill/dist/quill.snow.css";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -9,9 +9,9 @@ import MCQContainer from "./MCQContainer";
 import FileContainer from "./FileContainer";
 import LinkContainer from "./YoutubeLinkContainer";
 import QuillEditor from "../../partials/QuillEditor";
-import mcqReducer from "../../reducers/mcqReducer";
-import { dexieDB, getAllDrafts } from "./dexieDB";
-import { useLiveQuery } from "dexie-react-hooks"
+import mcqReducer, { MCQActions } from "../../reducers/mcqReducer";
+import DraftPostContainer from "./DraftPost";
+import { useGlobalComponentController } from "../../context/GlobalComponentContext";
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL;
 const ReactSwal = withReactContent(Swal);
@@ -26,9 +26,19 @@ export interface MCQ {
   correctAnswer: string | null;
 }
 
+export interface DraftPost {
+  postID: string,
+  title: string,
+  type: SubNav,
+  description?: string,
+  images?: File[],
+  files?: File[],
+  mcqs?: MCQ[]
+}
+
 
 export enum SubNav { TEXT_IMAGE="content", LINK="link", FILE="file", MCQ="mcq" }
-const mapPostTypesTitles = {
+export const mapPostTypesTitles = {
   [SubNav.TEXT_IMAGE]: "Text and Images",
   [SubNav.FILE]: "Files",
   [SubNav.LINK]: "Links",
@@ -92,36 +102,6 @@ function PostTitle({ postTitle: [postTitle, setPostTitle] }: any) {
   )
 }
 
-function Draft({ draftPosts, controller: [editDraft, deleteDraft] }: any) {
-  return (
-    <div className="draft-posts-container" style={{minHeight: "300px", width: "100%"}}>
-            <div className="draft-posts-scrollable" style={{maxHeight: "250px", overflowY: "auto", paddingRight: "8px", scrollbarWidth: "thin"}}>
-              {draftPosts.map((post: any, idx) => (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ddd' }}>
-                    <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginRight: '10px', textAlign: "left" }}>
-                      <strong>{post.postTitle}</strong>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => editDraft(post.postID)}
-                        style={{ padding: '6px 12px', fontSize: '14px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px',cursor: 'pointer',}}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => deleteDraft(post.postID)}
-                        style={{ padding: '6px 12px', fontSize: '14px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', }} 
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-              ))}
-            </div>
-          </div>
-
-  )
-}
 
 const UploadNote: React.FC = () => {
   const [postTitle, setPostTitle] = useState<string>("");
@@ -134,7 +114,10 @@ const UploadNote: React.FC = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [mcqs, dispatch] = useReducer(mcqReducer, []);
   const [disableButton, setDisableButton] = useState<boolean>(true)
-  // const [draftPosts, setDraftPosts] = useState<any[]>([])
+  const [draftPosts, setDraftPosts] = useState<DraftPost[]>([])
+  const [showDraftContainer, setShowDraftContainer] = useState<boolean>(false)
+  const [applyDraft, setApplyDraft] = useState<{ apply: boolean, draft: DraftPost | null}>({ apply: false, draft: null })
+  const [isDraftsLoaded, setIsDraftsLoaded] = useState<boolean>(false)
 
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
@@ -142,92 +125,92 @@ const UploadNote: React.FC = () => {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  const dexieModule = useRef<any>(null)
+  const [dexieLoaded, setDexieLoaded] = useState<boolean>(false)
+
+  const { toast: [, setToast] } = useGlobalComponentController()!
+
+  const MAX_DRAFT_LIMIT = 20
+
   useEffect(() => {
     setDisableButton(postTitle.trim().length === 0)
   }, [postTitle])
 
-  // useEffect(() => {
-  //   async function loadDraftsFromDB() {
-  //     const fromDB = await getAllDrafts()
-  //     setDraftPosts(fromDB)
-  //   }
-  //   loadDraftsFromDB()
-  // }, [])
-  // function applyDraftPost(post: any) {
-  //   if (post.type === SubNav.TEXT_IMAGE) {
-  //     setPostTitle(post.title)
-  //     quillRef.current?.clipboard.dangerouslyPasteHTML(post.description)
-  //     setStackFiles(post.images)
-  //   }
-  // }
+  useEffect(() => {
+    if (applyDraft.apply) {
+      const { draft } = applyDraft
+      const { type } = draft!
 
-  // function deleteDraft(postID: string) {
-  //   console.log(postID)
-  //   setDraftPosts(prev => prev.filter(draft => draft.postID === postID))
-  // }
+      setActiveTab(type as SubNav)
+      setPostTitle(draft!.title || "")
+      if (type === SubNav.TEXT_IMAGE || type === SubNav.FILE) {
+        quillRef.current?.clipboard.dangerouslyPasteHTML(draft!.description || "")
+      }
 
-	// async function draftPost() {
-	// 	try {
-	// 		let post = {
-	// 			postID: crypto.randomUUID(),
-	// 			title: postTitle,
-	// 			type: activeTab,
-  //       ...((activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) && { description: quillRef?.current?.getSemanticHTML() })
-	// 		}
-	// 		switch(activeTab) {
-	// 			case SubNav.TEXT_IMAGE:
-	// 				post["images"] = stackFiles
-	// 				dexieDB[SubNav.TEXT_IMAGE].add(post)
-	// 				break
-	// 			case SubNav.FILE:
-	// 				post["files"] = stackPdfs
-	// 				dexieDB[SubNav.FILE].add(post)
-	// 				break
-	// 		}
-	// 		ReactSwal.fire({
-	// 			toast: true,
-  //       backdrop: false,
-	// 			icon: "success",
-	// 			text: "Post saved as draft",
-	// 			position: "bottom",
-  //       showCancelButton: false,
-  //       timer: 2000,
-  //       timerProgressBar: true
-	// 		})
-	// 	} catch (error) {
-	// 		console.error(error)
-	// 	}
-	// }
-
-  // async function editDraft(postID: string) {
-  //     ReactSwal.close()
-  //     const allPosts = await getAllDrafts()
-	// 		const draftPost = allPosts.filter((post: any) => post.postID === postID) as any
-  //     if (draftPost.length !== 0) applyDraftPost(draftPost[0])
-  // }
-
-	// async function showDrafts() {
-  //   if (draftPosts.length !== 0) {
-  //     ReactSwal.fire({
-  //       title: "Draft Posts",
-  //       showCancelButton: true,
-  //       html: <Draft draftPosts={draftPosts} controller={[editDraft, deleteDraft]} />
-  //     })
-  //   } else {
-  //     ReactSwal.fire({
-  //       title: "No draft posts!",
-  //       text: "Save some drafts to edit them later"
-  //     })
-  //   }
-	// }
+      if (type === SubNav.TEXT_IMAGE) {
+        setStackFiles(draft!.images || [])   
+      } else if (type === SubNav.FILE) {
+        setStackPdfs(draft!.files || [])
+      } else if (type === SubNav.MCQ) {
+        dispatch({ type: MCQActions.ADD, payload: { mcqs: draft?.mcqs } })
+      }
+    }
+  }, [applyDraft])
 
   useEffect(() => {
-    if (activeTab !== SubNav.TEXT_IMAGE) {
-      ReactSwal.fire({
-        title: "Only Text/Images Section is supported. Others will be implemented soon!"
-      })
+    async function loadDraftsFromDB() {
+      const fromDB = await dexieModule.current.getAllDrafts()
+      setDraftPosts(fromDB)
     }
-  }, [activeTab])
+    if (dexieLoaded) {
+      loadDraftsFromDB()
+      setIsDraftsLoaded(true)
+    }
+  }, [dexieLoaded])
+
+  useEffect(() => {
+    async function loadDexieModule() {
+      const module = await import("./dexieDB")
+      dexieModule.current = module
+      setDexieLoaded(true)
+    }
+
+    loadDexieModule()
+  }, [])
+
+	async function addDraft() {
+		try {
+      if (draftPosts.length < MAX_DRAFT_LIMIT) {
+        let post: DraftPost = {
+          postID: crypto.randomUUID(),
+          title: postTitle,
+          type: activeTab,
+          ...((activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) && { description: quillRef?.current?.getSemanticHTML() }),
+          ...(activeTab === SubNav.TEXT_IMAGE && { images: stackFiles} ),
+          ...(activeTab === SubNav.FILE && { files: stackPdfs} ),
+          ...(activeTab === SubNav.MCQ && { mcqs: mcqs } ),
+        }
+  
+        const response = await dexieModule.current.addDraft(activeTab, post)
+        if (response) {
+          setDraftPosts(prev => [...prev, ...[post]])
+          setToast({ show: true, data: { message: "Post saved as a draft" } })
+        }
+      } else {
+        setToast({ show: true, data: { message: `Oops! You can only have up to ${MAX_DRAFT_LIMIT} drafts` } })
+      }
+		} catch (error) {
+			console.error(error)
+		}
+	}
+
+  // useEffect(() => {
+  //   if (activeTab !== SubNav.TEXT_IMAGE) {
+  //     ReactSwal.fire({
+  //       title: "Only Text/Images Section is supported. Others will be implemented soon!"
+  //     })
+  //   }
+  // }, [activeTab])
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -357,8 +340,17 @@ const UploadNote: React.FC = () => {
         style={{display: (activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) ? "" : "none" }}
       />
 
+      <DraftPostContainer 
+        showContainer={[showDraftContainer, setShowDraftContainer]} 
+        drafts={[draftPosts, setDraftPosts]}
+        applyDraft={[applyDraft, setApplyDraft]}
+        dexieModule={dexieModule}
+        setToast={setToast}
+        MAX_DRAFT_LIMIT={MAX_DRAFT_LIMIT}
+      />
+
       <div className="button-group">
-        <button className="save-draft-btn" disabled={isLoading || disableButton}>
+        <button className="save-draft-btn" disabled={isLoading || disableButton || activeTab === SubNav.LINK} onClick={addDraft}>
           Save Draft
         </button>
         <button
@@ -368,7 +360,7 @@ const UploadNote: React.FC = () => {
         >
           {isLoading ? "Publishing..." : "Publish"}
         </button>
-        {/* <button>Show drafts</button> */}
+        <button onClick={() => setShowDraftContainer(true)} className="save-draft-btn" disabled={isLoading || !isDraftsLoaded}>Show drafts</button>
       </div>
     </div>
   );
