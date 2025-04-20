@@ -263,7 +263,7 @@ export default function LinkContainer({ youtubeLinks: [videoList, setVideoList] 
 				flexGrow: 1,
 			  }}
 			>
-			  No saved videos yet. Add some from the preview above!
+			  No vidos added yet. Paste links and add them to upload!
 			</div>
 		  ) : (
 			videoList.map((video) => (

@@ -26,6 +26,15 @@ export interface MCQ {
   correctAnswer: string | null;
 }
 
+interface Link { 
+  link: String, 
+  id: string, 
+  details: { 
+    title: string, 
+    channelTitle: string 
+  } 
+}
+
 export interface DraftPost {
   postID: string,
   title: string,
@@ -33,7 +42,8 @@ export interface DraftPost {
   description?: string,
   images?: File[],
   files?: File[],
-  mcqs?: MCQ[]
+  mcqs?: MCQ[],
+  links?
 }
 
 
@@ -108,7 +118,7 @@ const UploadNote: React.FC = () => {
   const [stackFiles, setStackFiles] = useState<File[]>([]);
   const [stackPdfs, setStackPdfs] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [youtubeLinks, setYoutubeLinks] = useState<{ link: String, id: string, details: { title: string, channelTitle: string } }[]>([])
+  const [youtubeLinks, setYoutubeLinks] = useState<Link[]>([])
   const [activeTab, setActiveTab] = useState<SubNav>(SubNav.LINK);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [mcqs, dispatch] = useReducer(mcqReducer, []);
@@ -152,6 +162,8 @@ const UploadNote: React.FC = () => {
         setStackPdfs(draft!.files || [])
       } else if (type === SubNav.MCQ) {
         dispatch({ type: MCQActions.ADD, payload: { mcqs: draft?.mcqs } })
+      } else if (type === SubNav.LINK) {
+        setYoutubeLinks(draft!.links)
       }
     }
   }, [applyDraft])
@@ -188,6 +200,7 @@ const UploadNote: React.FC = () => {
           ...(activeTab === SubNav.TEXT_IMAGE && { images: stackFiles} ),
           ...(activeTab === SubNav.FILE && { files: stackPdfs} ),
           ...(activeTab === SubNav.MCQ && { mcqs: mcqs } ),
+          ...(activeTab === SubNav.LINK && { links: youtubeLinks } ),
         }
   
         const response = await dexieModule.current.addDraft(activeTab, post)
@@ -348,7 +361,7 @@ const UploadNote: React.FC = () => {
       />
 
       <div className="button-group">
-        <button className="save-draft-btn" disabled={isLoading || disableButton || activeTab === SubNav.LINK} onClick={addDraft}>
+        <button className="save-draft-btn" disabled={isLoading || disableButton} onClick={addDraft}>
           Save Draft
         </button>
         <button

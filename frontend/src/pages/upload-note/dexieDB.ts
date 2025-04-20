@@ -1,9 +1,9 @@
 import Dexie from "dexie";
 import { DraftPost, SubNav as DexieStores } from "./UploadNote";
 
-export const dexieDB = new Dexie("nr_drafts")
+export const dexieDB = new Dexie("NR_DRAFTS")
 
-dexieDB.version(2).stores({
+dexieDB.version(1).stores({
     [DexieStores.TEXT_IMAGE]: "postID, title, description, images, type",
     [DexieStores.LINK]: "postID, title, links, type",
     [DexieStores.FILE]: "postID, title, description, files, type",
