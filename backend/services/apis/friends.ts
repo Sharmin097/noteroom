@@ -78,23 +78,31 @@ export default function friendsApiRouter(io: Server) {
   });
 //follow a user
 
-router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
-      if (!user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $push: { followers: req.body.userId } });
-        await currentUser.updateOne({ $push: { followings: req.params.id } });
-        res.status(200).json("user has been followed");
-      } else {
-        res.status(403).json("you allready follow this user");
-      }
-    } catch (err) {
-      res.status(500).json(err);
+ router.put("/follow/:username", async (req, res: any) => {
+  try {
+    const targetUsername = req.params.username; // user to be followed
+    const followerId = req.body.userId; // user who wants to follow
+
+    const userToFollow = await User.findOne({ username: targetUsername });
+    const currentUser = await User.findById(followerId);
+
+    if (!userToFollow || !currentUser) {
+      return res.status(404).json("User not found.");
     }
-  } else {
-    res.status(403).json("you cant follow yourself");
+
+    if (userToFollow._id.toString() === followerId) {
+      return res.status(403).json("You can't follow yourself.");
+    }
+
+    if (!userToFollow.followers.includes(followerId)) {
+      await userToFollow.updateOne({ $push: { followers: followerId } });
+      await currentUser.updateOne({ $push: { followings: userToFollow._id } });
+      return res.status(200).json("User has been followed.");
+    } else {
+      return res.status(403).json("You already follow this user.");
+    }
+  } catch (err) {
+    res.status(500).json("Something went wrong.");
   }
 });
 
