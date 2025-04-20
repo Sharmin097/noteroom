@@ -5,28 +5,103 @@ import { SubNav as DexieStores } from "./UploadNote"
 
 function Draft({ post, controller: [editDraft, deleteDraft] }: any) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ddd' }}>
-            <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginRight: '10px', textAlign: "left" }}>
-                <Tippy trigger="click" placement="top" content={mapPostTypesTitles[post.type]} >
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px',
+                borderBottom: '1px solid #ddd'
+            }}
+        >
+            <div
+                style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    marginRight: '10px',
+                    textAlign: 'left'
+                }}
+            >
+                <Tippy trigger="click" placement="top" content={mapPostTypesTitles[post.type]}>
                     <strong>{post.title.slice(0, 30)}</strong>
                 </Tippy>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div
                     onClick={() => editDraft(post.postID)}
-                    style={{ padding: '6px 12px', fontSize: '14px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px',cursor: 'pointer'}}
+                    style={{
+                        cursor: 'pointer',
+                        padding: '6px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                    title="Edit"
                 >
-                    Edit
-                </button>
-                <button 
+                    <svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg" fill="none" width="20" height="20">
+                        <g id="SVGRepo_iconCarrier">
+                            <path
+                                d="m104.175 90.97-4.252 38.384 38.383-4.252L247.923 15.427V2.497L226.78-18.646h-12.93zm98.164-96.96 31.671 31.67"
+                                transform="translate(-77.923 40.646)"
+                                style={{
+                                    fill: 'none',
+                                    stroke: '#000',
+                                    strokeWidth: 12,
+                                    strokeLinecap: 'round',
+                                    strokeLinejoin: 'round'
+                                }}
+                            />
+                            <path
+                                d="m195.656 33.271-52.882 52.882"
+                                transform="translate(-77.923 40.646)"
+                                style={{
+                                    fill: 'none',
+                                    stroke: '#000',
+                                    strokeWidth: 12,
+                                    strokeLinecap: 'round',
+                                    strokeLinejoin: 'round'
+                                }}
+                            />
+                        </g>
+                    </svg>
+                </div>
+
+                <div
                     onClick={() => deleteDraft(post.type as DexieStores, post.postID)}
-                    style={{ padding: '6px 12px', fontSize: '14px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+                    style={{
+                        cursor: 'pointer',
+                        padding: '6px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                    title="Delete"
                 >
-                    Delete
-                </button>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#000"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                    </svg>
+                </div>
             </div>
         </div>
-    )
+    );
 }
 
 export default function DraftPostContainer({ showContainer: [showContainer, setShowContainer], drafts: [draftPosts, setDraftPosts], applyDraft: [, setApplyDraft], dexieModule, setToast, MAX_DRAFT_LIMIT }) {
