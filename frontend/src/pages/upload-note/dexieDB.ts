@@ -20,7 +20,6 @@ export async function getAllDrafts() {
     )
     return Object.values(draftObjects).flat()
 }
-
 export async function addDraft(postType: DexieStores, post: DraftPost) {
     try {
         await dexieDB[postType].add(post)

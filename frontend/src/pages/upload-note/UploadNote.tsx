@@ -108,9 +108,8 @@ const UploadNote: React.FC = () => {
   const [stackFiles, setStackFiles] = useState<File[]>([]);
   const [stackPdfs, setStackPdfs] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [youtubeLink, setYoutubeLink] = useState<string>("");
-  const [youtubeLinks, setYoutubeLinks] = useState<string[]>([])
-  const [activeTab, setActiveTab] = useState<SubNav>(SubNav.TEXT_IMAGE);
+  const [youtubeLinks, setYoutubeLinks] = useState<{ link: String, id: string, details: { title: string, channelTitle: string } }[]>([])
+  const [activeTab, setActiveTab] = useState<SubNav>(SubNav.LINK);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [mcqs, dispatch] = useReducer(mcqReducer, []);
   const [disableButton, setDisableButton] = useState<boolean>(true)
@@ -287,7 +286,7 @@ const UploadNote: React.FC = () => {
           return await handleFetch('/api/upload/file', postData)
 
         case SubNav.LINK:
-          postData.append("linksString", JSON.stringify(youtubeLinks))
+          postData.append("linksString", JSON.stringify(youtubeLinks.map(video => video.link)))
           for (let file of stackPdfs) {
             postData.append(`file-${crypto.randomUUID()}`, file)
           }
@@ -318,7 +317,6 @@ const UploadNote: React.FC = () => {
         /> }
 
         { activeTab === SubNav.LINK && <LinkContainer 
-          youtubeLink={[youtubeLink, setYoutubeLink]}
           youtubeLinks={[youtubeLinks, setYoutubeLinks]}
         /> }
 
