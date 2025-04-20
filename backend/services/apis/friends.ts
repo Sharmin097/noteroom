@@ -78,34 +78,51 @@ export default function friendsApiRouter(io: Server) {
   });
 //follow a user
 
- router.put("/follow/:username", async (req, res: any) => {
-  try {
-    const targetUsername = req.params.username; // user to be followed
-    const followerId = req.body.userId; // user who wants to follow
+// Simulate in-memory/mock data
 
-    const userToFollow = await User.findOne({ username: targetUsername });
-    const currentUser = await User.findById(followerId);
+let testUserDatabase = {
+  receiver: {
+    username: "john_doe",
+    followers: ["u001", "u002"], // userIds following john_doe
+  },
+  sender: {
+    userId: "u003",
+    followings: [], // whom u003 is following
+  },
+};
 
-    if (!userToFollow || !currentUser) {
-      return res.status(404).json("User not found.");
-    }
+// Follow API (GET method)
+router.get("/follow/:username", (req, res:any) => {
+  const receiverUsername = req.params.username;
+  const senderId = typeof req.query.senderId === "string" ? req.query.senderId : "u003"; // fallback default
 
-    if (userToFollow._id.toString() === followerId) {
-      return res.status(403).json("You can't follow yourself.");
-    }
+  // Fetch test objects (simulated data)
+  const receiver = testUserDatabase.receiver;
+  const sender = testUserDatabase.sender;
 
-    if (!userToFollow.followers.includes(followerId)) {
-      await userToFollow.updateOne({ $push: { followers: followerId } });
-      await currentUser.updateOne({ $push: { followings: userToFollow._id } });
-      return res.status(200).json("User has been followed.");
-    } else {
-      return res.status(403).json("You already follow this user.");
-    }
-  } catch (err) {
-    res.status(500).json("Something went wrong.");
+  // Check if receiver exists
+  if (receiver.username !== receiverUsername) {
+    return res.status(404).json({ message: "Receiver not found." });
   }
-});
 
+  // Check if already followed (mock logic)
+  const alreadyFollowing = receiver.followers.includes(senderId);
+
+  if (alreadyFollowing) {
+    return res.status(200).json({ message: "Already following", followState: "following" });
+  }
+
+  // Simulate follow logic by updating mock objects
+  receiver.followers.push(senderId);
+  sender.followings.push(receiver.username);
+
+  return res.status(200).json({
+    message: `Follow request sent to ${receiver.username}`,
+    followState: "following",
+    testReceiverObject: receiver,
+    testSenderObject: sender,
+  });
+});
     
     return router
 }
