@@ -1,4 +1,4 @@
-import Students from "../../schemas/students"
+import Students from "../schemas/students.model"
 import { OAuth2Client } from "google-auth-library"
 
 export async function verifyToken(client_id: string, id_token: string) {
@@ -19,7 +19,7 @@ export async function getUserAuth(studentID_: string) {
     try {
         const authData = await Students.findOne({ studentID: studentID_ }, { studentID: 1, username: 1, _id: 0 })
         const { studentID, username } = authData
-        return { ok: true, userAuth: { studentID, username} }
+        return { ok: true, userAuth: { studentID, username } }
     } catch (error) {
         return { ok: false, error: error }
     }
@@ -29,12 +29,14 @@ export async function getUserVarification(email: string) {
     try {
         let student = await Students.findOne({ email: email })
         if (student) {
-            return { ok: true, data: {
-                studentPass: student["password"],
-                studentID: student["studentID"],
-                username: student["username"],
-                authProvider: student["authProvider"]
-            } }
+            return {
+                ok: true, data: {
+                    studentPass: student["password"],
+                    studentID: student["studentID"],
+                    username: student["username"],
+                    authProvider: student["authProvider"]
+                }
+            }
         } else {
             return { ok: false, code: "NO_EMAIL" }
         }

@@ -1,4 +1,4 @@
-import Students from "../../schemas/students"
+import Students from "../schemas/students.model"
 import mongoose from "mongoose"
 
 export const Convert = {
@@ -67,19 +67,11 @@ export const Convert = {
 
 export async function getProfile(username: string) {
     try {
-        let student = await Students.aggregate([
+        const user = await Students.aggregate([
             { $match: { username: username } },
             {
                 $addFields: {
                     featuredNoteCount: { $size: "$featured_notes" }
-                }
-            },
-            {
-                $lookup: {
-                    from: "posts",
-                    localField: "owned_notes",
-                    foreignField: "_id",
-                    as: "owned_posts"
                 }
             },
             {
@@ -97,25 +89,13 @@ export async function getProfile(username: string) {
                     profile_pic: 1, bio: 1, collegeID: 1, collegeyear: 1,
                     favouritesubject: 1, notfavsubject: 1, featuredNoteCount: 1,
                     rollnumber: 1, badges: 1,
-                    owned_posts: {
-                        $map: {
-                            input: "$owned_posts",
-                            as: "post",
-                            in: {
-                                noteTitle: "$$post.title",
-                                noteID: "$$post._id",
-                                noteThumbnail: { $first: "$$post.content" }
-                            }
-                        }
-                    }
                 }
             }
         ])
-        if (student.length === 0) return { ok: false }
+        if (user.length === 0) return { ok: false }
 
-        return { ok: true, student: student[0] }
+        return { ok: true, user: user[0] }
     } catch (error) {
-        console.log(error)
         return { ok: false }
     }
 }
@@ -182,7 +162,7 @@ export async function searchStudent(searchTerm: string, options?: any) {
 export async function updateProfileFields(studentID: string, updates: Record<string, string>) {
     //TODO: add profile picture change logic (@rafi)
     try {
-        await Students.updateOne( { studentID: studentID }, updates );
+        await Students.updateOne({ studentID: studentID }, updates);
         return { ok: true }
     } catch (error) {
         return { ok: false, error: error }

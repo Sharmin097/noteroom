@@ -1,16 +1,16 @@
-import { feedbacksModel as Feedbacks, replyModel as Reply } from "../../schemas/comments"
-import { isCommentUpVoted } from "./voteService"
-import Notes from "../../schemas/notes"
+import { feedbacksModel as Feedbacks, replyModel as Reply } from "../schemas/comments.model"
+import { isCommentUpVoted } from "./vote.service"
+import Notes from "../schemas/notes.model"
 export async function getComments({ noteDocID, studentDocID }) {
     try {
         let feedbacks = await Feedbacks.find({ noteDocID: noteDocID }).populate('commenterDocID', 'displayname username studentID profile_pic').sort({ createdAt: -1 })
         let _extentedFeedbacks = await Promise.all(
-                feedbacks.map(async feedback => {
+            feedbacks.map(async feedback => {
                 let isupvoted = await isCommentUpVoted({ feedbackDocID: feedback._id.toString(), voterStudentDocID: studentDocID })
                 let reply = await Reply.find({ parentFeedbackDocID: feedback._id })
                     .populate('commenterDocID', 'username displayname profile_pic studentID')
-    
-                return [{...feedback.toObject(), isUpVoted: isupvoted}, reply]
+
+                return [{ ...feedback.toObject(), isUpVoted: isupvoted }, reply]
             })
         )
         return { ok: true, comments: _extentedFeedbacks }
@@ -34,7 +34,7 @@ export async function addFeedback(feedbackData: any) {
                     select: 'studentID username'
                 }
             })
-    
+
         return { ok: true, feedback: extendedFeedback }
     } catch (error) {
         return { ok: false }
