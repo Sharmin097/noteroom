@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { searchStudent } from "../services/userService";
-import { searchPosts } from "../services/postService";
+import { searchStudent } from "../services/user.service";
+import { searchPosts } from "../services/post.service";
 
 export const router = Router()
 export default function seacrhApiRouter(io: Server) {

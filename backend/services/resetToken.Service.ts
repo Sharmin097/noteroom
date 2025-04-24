@@ -1,5 +1,5 @@
-import Tokens from "../../schemas/password_reset_tokens"
-import Students from "../../schemas/students"
+import Tokens from "../schemas/password_reset_tokens.model"
+import Students from "../schemas/students.model"
 
 
 interface ResetToken {

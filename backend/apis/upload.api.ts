@@ -1,17 +1,17 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { Convert } from "../services/userService";
-import { addPost, deletePost } from "../services/postService";
+import { Convert } from "../services/user.service";
+import { addPost, deletePost } from "../services/post.service";
 import path from 'path';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
-import Notes, { PostType } from "../../schemas/notes";
+import Notes, { PostType } from "../schemas/notes.model"
 import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
 import fileUpload from "express-fileupload";
 import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";// Used to sanitize input to prevent XSS
-import sanitizeMiddleware from "../../middlewares/sanitizeMiddleware";
+import sanitizeMiddleware from "../middlewares/sanitizeMiddleware";
 
 const router = Router()
 

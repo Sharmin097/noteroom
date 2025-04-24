@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Server } from 'socket.io';
 import { OAuth2Client } from 'google-auth-library';
-import { addUserProfile, getUserAuth, getUserVarification } from '../services/authService';
+import { addUserProfile, getUserAuth, getUserVarification } from '../services/auth.service';
 import { generateRandomUsername } from '../services/utils';
 import { capitalize, sample } from "lodash"
 import logger from '../logger';

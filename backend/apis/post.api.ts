@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { getSinglePost, addSavePost, deleteSavedPost, getSavedPosts } from "../services/postService";
-import { addFeedback, addReply, getComments } from "../services/feedbackService";
-import { addVote, deleteVote } from "../services/voteService";
-import { Convert } from "../services/userService";
-import { NotificationEvent, NotificationSender } from "../services/notificationService";
-import notesModel from "../../schemas/notes";
+import { getSinglePost, addSavePost, deleteSavedPost, getSavedPosts } from "../services/post.service";
+import { addFeedback, addReply, getComments } from "../services/feedback.service";
+import { addVote, deleteVote } from "../services/vote.service";
+import { Convert } from "../services/user.service";
+import { NotificationEvent, NotificationSender } from "../services/notification.service";
+import notesModel from "../schemas/notes.model";
 
 const router = Router()
 export default function postApiRouter(io: Server) {
@@ -16,12 +16,12 @@ export default function postApiRouter(io: Server) {
             const studentID = req.session["stdid"]
             const studentDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            const response: any = await getSinglePost(postDocID, studentDocID, { images: false })
-            if (response.ok) {
-                res.json({ ok: true, noteData: response.noteData })
-            } else {
-                res.json({ ok: false })
-            }
+            // const response: any = await getSinglePost(postDocID, studentDocID, { images: false })
+            // if (response.ok) {
+            //     res.json({ ok: true, noteData: response.noteData })
+            // } else {
+            //     res.json({ ok: false })
+            // }
         } catch (error) {
             console.error(error)
             res.json({ ok: false })
@@ -31,12 +31,12 @@ export default function postApiRouter(io: Server) {
     router.get("/:postID/images", async (req, res) => {
         try {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            const response: any = await getSinglePost(postDocID, null, { images: true })
-            if (response.ok) {
-                res.json({ ok: true, images: response.images })
-            } else {
-                res.json({ ok: false })
-            }
+            // const response: any = await getSinglePost(postDocID, null, { images: true })
+            // if (response.ok) {
+            //     res.json({ ok: true, images: response.images })
+            // } else {
+            //     res.json({ ok: false })
+            // }
         } catch (error) {
             res.json({ ok: false })
         }
@@ -62,7 +62,7 @@ export default function postApiRouter(io: Server) {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
             const action = <"save" | "delete">req.query["action"]
             const studentDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
-    
+
             if (action === 'save') {
                 let response = await addSavePost({ studentDocID, noteDocID: postDocID })
                 res.json({ ok: response.ok })
@@ -82,7 +82,7 @@ export default function postApiRouter(io: Server) {
             const studentID = req.session["stdid"]
             const feedbackContent = req.body.feedbackContent
             const commenterDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
-            
+
             const feedbackData = {
                 noteDocID: postDocID,
                 commenterDocID: commenterDocID,
@@ -90,7 +90,7 @@ export default function postApiRouter(io: Server) {
             }
             const response = await addFeedback(feedbackData)
             if (response.ok) {
-                const { feedback } = response 
+                const { feedback } = response
 
                 const toStudentID = feedback["noteDocID"]["ownerDocID"]["studentID"];
                 const fromStudentID = feedback["commenterDocID"]["studentID"]
@@ -140,7 +140,7 @@ export default function postApiRouter(io: Server) {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
             const studentID = req.session["stdid"]
             const replyContent = req.body.replyContent
-            const parentFeedbackDocID = req.params.feedbackID 
+            const parentFeedbackDocID = req.params.feedbackID
             const replyToUsername = req.body.replyToUsername
             const replierDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
 
@@ -185,7 +185,7 @@ export default function postApiRouter(io: Server) {
             const voterStudentID = req.session["stdid"]
             const voterStudentDocID = (await Convert.getDocumentID_studentid(voterStudentID)).toString()
             const voteType = <"upvote" | "downvote">req.query["type"]
-            
+
             if (!action) {
                 let response = await addVote({ voteType, noteDocID: postDocID, voterStudentDocID: voterStudentDocID }, "post")
                 res.json({ ok: response.ok })
