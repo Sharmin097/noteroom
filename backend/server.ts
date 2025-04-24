@@ -86,7 +86,6 @@ app.use('/api/auth', authApiRouter(io))
 app.use('/api/upload', uploadApiRouter(io))
 app.use('/api/mcq/', mcqApiRouter(io))
 app.use('/api/friends', friendsApiRouter(io))
-
 app.get('/logout', (req, res) => {
     try {
         req.session.destroy(error => {

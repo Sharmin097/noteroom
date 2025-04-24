@@ -10,5 +10,8 @@
         "dev:backend": "npm run dev --workspace=backend",
         "build:backend": "npm run build --workspace=backend",
         "build:frontend": "npm run build --workspace=frontend"
+    },
+    "dependencies": {
+        "pdfjs-dist": "^5.1.91"
     }
 }
