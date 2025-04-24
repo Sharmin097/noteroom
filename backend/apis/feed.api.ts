@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { getPosts } from "../services/postService";
-import { Convert } from "../services/userService";
+import { getPosts } from "../services/post.service";
+import { Convert } from "../services/user.service";
 import logger from "../logger";
 
 const router = Router()
@@ -13,7 +13,7 @@ export default function feedApiRouter(io: Server) {
             const page = Number(req.query.page) || 1
             const seed: number = Number(req.query.seed)
             const skip: number = (page - 1) * count
-            
+
             let studentDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
             logger.info(`(/feed): Converted to documentID from studentID=${req.session["stdid"] || '--studentID--'}`)
             let notes = await getPosts(studentDocID, { skip: skip, limit: count, seed: seed })

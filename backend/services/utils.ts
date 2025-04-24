@@ -1,19 +1,19 @@
 import fileUpload from "express-fileupload"
 import sharp from "sharp"
-import { upload } from "./firebaseService"
+import { upload } from "./firebase.service"
 import slugify from "slugify"
-import {v4 as uuidv4} from "uuid"
+import { v4 as uuidv4 } from "uuid"
 
 export async function compressImage(fileObject: any) {
     try {
         let imageBuffer = fileObject.data
         let imageType: "jpeg" | "png" = fileObject.mimetype === "image/jpeg" ? "jpeg" : "png"
         let compressedBuffer = await sharp(imageBuffer)
-            [imageType](
-                imageType === "png" 
-                ? { quality: 70, compressionLevel: 9, adaptiveFiltering: true } 
+        [imageType](
+            imageType === "png"
+                ? { quality: 70, compressionLevel: 9, adaptiveFiltering: true }
                 : { quality: 70, progressive: true }
-            ).toBuffer()
+        ).toBuffer()
 
         return { ...fileObject, buffer: compressedBuffer, size: compressedBuffer.length }
     } catch (error) {

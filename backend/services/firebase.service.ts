@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 import firebaseAdmin from 'firebase-admin'; 
 import chalk from 'chalk';
 
-config({ path: join(__dirname, '../../../.env') });
+config({ path: join(__dirname, '../../.env') });
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN === "true" ? process.env.FIREBASE_CLOUD_CRED_ADMIN! : process.env.FIREBASE_CLOUD_CRED_EMPLOYEE!);
 const bucketName = process.env.DEVELOPMENT === "true" ? process.env.NOTEROOM_DEVELOPMENT_FIREBASE_BUCKET : process.env.NOTEROOM_PRODUCTION_FIREBASE_BUCKET

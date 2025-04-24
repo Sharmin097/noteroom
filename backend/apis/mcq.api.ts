@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import logger from "../logger";
 import rateLimit from 'express-rate-limit';
+import logger from "../logger";
 
 const router = Router()
 

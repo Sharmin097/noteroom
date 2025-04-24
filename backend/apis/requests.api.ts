@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { Convert } from "../services/userService";
-import { addRequest, deleteRequest, getRequest, getRequests } from "../services/requestService";
-import { NotificationEvent, NotificationSender } from "../services/notificationService";
-import { userSocketMap } from "../../server";
+import { Convert } from "../services/user.service";
+import { addRequest, deleteRequest, getRequest, getRequests } from "../services/request.service";
+import { NotificationEvent, NotificationSender } from "../services/notification.service";
+import { userSocketMap } from "../server";
 
 const router = Router()
 
@@ -68,7 +68,7 @@ export default function requestsApiRouter(io: Server) {
             let studentDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
             let response = await getRequests(studentDocID)
             if (response.ok) {
-                res.json({ ok: true, requests: response.requests })         
+                res.json({ ok: true, requests: response.requests })
             } else {
                 res.json({ ok: false })
             }
@@ -90,7 +90,7 @@ export default function requestsApiRouter(io: Server) {
                     senderDocID, receiverDocID,
                     message: req.body.message
                 }
-    
+
                 const response = await addRequest(requestData)
                 if (response.ok) {
                     const { requestData, receiverStudentID } = response.data
@@ -110,11 +110,11 @@ export default function requestsApiRouter(io: Server) {
                     res.json({ ok: false, message: "Request can't be sent successfully!" })
                 }
             } else {
-                res.json({ ok: false, message: "You can't send a request to yourself! "})
+                res.json({ ok: false, message: "You can't send a request to yourself! " })
             }
 
         } catch (error) {
-            
+
         }
     })
 
