@@ -1,6 +1,6 @@
 import { Server } from "socket.io"
-import { Notifs, InteractionNotifs } from "../../schemas/notifications"
-import { userSocketMap } from "../../server"
+import { Notifs, InteractionNotifs } from "../schemas/notifications.model"
+import { userSocketMap } from "../server"
 
 
 export enum NotificationEvent {

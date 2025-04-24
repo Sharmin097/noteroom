@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { Server } from "socket.io";
-import { deleteAllNoti, getNotifications, readNoti } from "../services/notificationService";
+import { deleteAllNoti, getNotifications, readNoti } from "../services/notification.service";
 
 const router = Router()
 
