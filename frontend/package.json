@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.8",
     "@editorjs/editorjs": "^2.30.8",
     "@editorjs/header": "^2.8.8",
     "@editorjs/list": "^2.0.6",
@@ -26,6 +27,7 @@
     "lexical": "^0.27.0",
     "lodash": "^4.17.21",
     "mathlive": "^0.104.0",
+    "pdfjs-dist": "^5.1.91",
     "quill": "^2.0.3",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
