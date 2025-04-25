@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
-import ngLogo from "../../assets/ng_logo.png"
 import SignUpImage from "../../assets/signup_image.png"
 import "../../public/css/signup-login.css"
 import { useUserAuth } from '../../context/UserAuthContext';
 import slug from 'slug';
 import GoogleLogin from '../../partials/GoogleLogin';
+import MainLayout from './MainLayout';
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
@@ -17,6 +17,8 @@ const SignUp = () => {
     const [email, setEmail] = useState<string>("")
     const [password, setPassword] = useState<string>("")
     const [isBtnDisabled, setIsBtnDisabled] = useState<boolean>(true)
+    const [authError, setAuthError] = useState<string>("")
+    const [hasError, setHasError] = useState<boolean>(false)
     const { setUserAuth } = useUserAuth()!
     const username = useRef<string>("")
     const navigate = useNavigate();
@@ -41,6 +43,10 @@ const SignUp = () => {
 
     async function signup() {
         try {
+            // Reset any previous errors
+            setHasError(false)
+            setAuthError("")
+            
             const formData = new FormData()
             formData.append("displayname", displayname)
             formData.append("email", email)
@@ -56,10 +62,11 @@ const SignUp = () => {
                 const data = await response.json()
                 if (data.ok) {
                     setUserAuth(data.userAuth)
-                    navigate("/", { replace: true })
+                    navigate("/profession",{replace:true})
                 } else {
                     if (!data.displayname) {
-                        showSwal(data.message || "Someting went wrong! Please try again a bit later")
+                        setHasError(true)
+                        setAuthError(data.message || "Invalid username or password.")
                     } else {
                         const suggested = slug(data.displayname, {
                             lower: true,
@@ -85,53 +92,99 @@ const SignUp = () => {
                         }
                     }
                 }
+            } else {
+                setHasError(true)
+                setAuthError("Something went wrong. Please try again later.")
             }
         } catch (error) {
-            showSwal("Someting went wrong! Please try again a bit later")
+            setHasError(true)
+            setAuthError("Something went wrong. Please try again later.")
         }
     }
+
+    // Clear error when user changes input
+    useEffect(() => {
+        if (hasError) {
+            setHasError(false)
+            setAuthError("")
+        }
+    }, [displayname, email, password])
 
     useEffect(() => {
         setIsBtnDisabled(displayname.trim() === "" || email.trim() === "" || password.trim() === "")
     }, [displayname, email, password])
 
     return (
-        <div className="flex-center-evenly">
-            <div className="main-container flex-column-center">
-                <div className="brand-section flex-column-center">
-                    <img src={ngLogo} alt="NoteRoom" className="brand__site-logo" onClick={() => navigate('/')} />
-                    <p className="brand__logo-title">NoteRoom</p>
-                    <h2 className="brand__main-heading">Create a new account</h2>
-                    <p className="txt-gray-light-bold">Join the country’s top note-sharing platform to connect, share, and download notes</p>
-                </div>
-
-                <div className="acquisition-container flex-column-center">
-                    <GoogleLogin setUserAuth={setUserAuth} />
-                    
-                    <div className="separator flex-center-evenly">
-                        <span className="line"></span>
-                        <span className="txt-gray-light-bold">Or</span>
-                        <span className="line"></span>
-                    </div>
-
-                    <div className="custom-form flex-column-center">
-                        <input type="text" value={displayname} onChange={(e) => setDisplayname(e.target.value)} name="displayname" placeholder="Your Name" className="custom__input-field" required />
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} name="email" placeholder="Email (required)" className="custom__input-field" required />
-
-                        <div className="password-container">
-                            <input type={passwordVisible ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} id="password" name="password" placeholder="Set a password" className="custom__input-field custom__input-field--marginless" required />
-                            <button type="button" onClick={() => setPasswordVisible(prev => !prev)} className="toggle-password">
-                                {passwordVisible ? "hide" : "show"}
-                            </button>
-                        </div>
-
-                        <button className="primary-btn flex-center-evenly" disabled={isBtnDisabled} onClick={() => !isBtnDisabled && signup()}>Sign Up</button>
-                    </div>
-                </div>
-                <p className="redirecting-msg">Already have an account? <a href="/login" className="redirect-link">Login</a></p>
+        <MainLayout imagePath={SignUpImage}>
+            <div className="auth-form-welcome-section">
+                <h2 className="auth-form-welcome-text">Welcome to NoteRoom</h2>
             </div>
-            <img className="focus-img" src={SignUpImage} alt="Two friends talking about NoteRoom" />
-        </div>
+
+            <div className="auth-form-form">
+                <div className="auth-form-google-container">
+                    <GoogleLogin setUserAuth={setUserAuth} />
+                </div>
+                
+                <div className="auth-form-or-separator">
+                    <span className="auth-form-or-text">— OR —</span>
+                </div>
+
+                <div className="auth-form-input-fields">
+                    <div className="auth-form-input-label">Name</div>
+                    <input 
+                        type="text" 
+                        value={displayname} 
+                        onChange={(e) => setDisplayname(e.target.value)} 
+                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                        required 
+                    />
+                    
+                    <div className="auth-form-input-label">Email</div>
+                    <input 
+                        type="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                        required 
+                    />
+                    
+                    <div className="auth-form-input-label">Set a new password</div>
+                    <div className="auth-form-password-container">
+                        <input 
+                            type={passwordVisible ? "text" : "password"} 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                            required 
+                        />
+                        <button 
+                            className="auth-form-password-toggle" 
+                            onClick={() => setPasswordVisible(prev => !prev)}
+                        >
+                            {passwordVisible ? "hide" : "show"}
+                        </button>
+                    </div>
+
+                    {hasError && (
+                        <div className="auth-form-error-message">
+                            {authError}
+                        </div>
+                    )}
+
+                    <button 
+                        className="auth-form-button" 
+                        disabled={isBtnDisabled} 
+                        onClick={() => !isBtnDisabled && signup()}
+                    >
+                        SIGN UP
+                    </button>
+                </div>
+            </div>
+            
+            <div className="auth-form-login-link">
+                <p>Already have an account? <a href="/login">Sign In</a></p>
+            </div>
+        </MainLayout>
     );
 };
 

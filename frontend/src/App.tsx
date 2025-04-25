@@ -7,12 +7,15 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import SearchProfile from "./pages/search-profile/SearchProfile";
 import Settings from "./pages/settings/Settings";	
 import UserProfile from "./pages/user-profile/UserProfile";
-import SignUp from "./pages/sign-up/SignUp";
+import SignUp from "./pages/signup-login/SignUp";
 import { useUserAuth } from "./context/UserAuthContext";
-import Login from "./pages/login/Login";
+import Login from "./pages/signup-login/Login";
 import nrLogo from "./assets/ng_logo.png"
 import UploadNote from "./pages/upload-note/UploadNote";
 import NotFound from "./pages/error-pages/NotFound";
+import ProfessionSelection from "./pages/signup-login/ProfessionSelection";
+import Checkout from "./pages/checkout/SelectPlan"
+import Payment from "./pages/checkout/Payment";
 
 //TODO: A reddit like logo when the feed loads or the user auth loads
 
@@ -71,6 +74,9 @@ function App() {
 			<Route element={<PublicRoute />}>
 				<Route path="/login" element={<Login />} />
 				<Route path="/signup" element={<SignUp />} />
+				<Route path="/profession" element={<ProfessionSelection/>} />
+				<Route path="/checkout" element={<Checkout/>} />
+				<Route path="/payment" element={<Payment/>} />
 			</Route>
 
 			<Route element={<ProtectedRoute />}>

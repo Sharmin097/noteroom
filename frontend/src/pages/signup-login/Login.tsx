@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import '../../public/css/signup-login.css'
 import { useUserAuth } from '../../context/UserAuthContext';
 import LoginImage from '../../assets/login_image.png'
-import ngLogo from "../../assets/ng_logo.png"
 import Swal from "sweetalert2"
 import withReactContent from "sweetalert2-react-content"
 import 'sweetalert2/dist/sweetalert2.min.css';
 import GoogleLogin from '../../partials/GoogleLogin';
+import MainLayout from './MainLayout';
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const ReactSwal = withReactContent(Swal)
@@ -19,6 +19,8 @@ export default function Login() {
     const [email, setEmail] = useState<string>("")
     const [password, setPassword] = useState<string>("")
     const [isBtnDisabled, setIsBtnDisabled] = useState<boolean>(true)
+    const [authError, setAuthError] = useState<string>("")
+    const [hasError, setHasError] = useState<boolean>(false)
 
     function showSwal(text: any) {
         return ReactSwal.fire({
@@ -40,6 +42,10 @@ export default function Login() {
 
     async function login() {
         try {
+            // Reset any previous errors
+            setHasError(false)
+            setAuthError("")
+            
             const loginData = new FormData()
             loginData.append("email", email)
             loginData.append("password", password)
@@ -55,54 +61,97 @@ export default function Login() {
                     setUserAuth(data.userAuth)
                     navigate("/", { replace: true })
                 } else {
-                    showSwal(data.message || "Someting went wrong! Please try again a bit later")
+                    // Show inline error instead of alert
+                    setHasError(true)
+                    setAuthError(data.message || "Invalid username or password.")
                 }
             } else {
+                setHasError(true)
+                setAuthError("Invalid username or password.")
             }
         } catch (error) {
-            showSwal("Someting went wrong! Please try again a bit later")
+            setHasError(true)
+            setAuthError("Something went wrong! Please try again later.")
         }
     }
+
+    // Clear error when user changes input
+    useEffect(() => {
+        if (hasError) {
+            setHasError(false)
+            setAuthError("")
+        }
+    }, [email, password])
 
     useEffect(() => {
         setIsBtnDisabled(password.length === 0 || email.length === 0)
     }, [password, email])
 
     return (
-        <div className="flex-center-evenly flex-inverse gradient-2">
-            <div className="main-container flex-column-center">
-                <div className="brand-section flex-column-center">
-                    <img src={ngLogo} alt="NoteRoom" className="brand__site-logo" />
-                    <p className="brand__logo-title">NoteRoom</p>
-                    <h2 className="brand__main-heading">Login to NoteRoom</h2>
-                    <p className="txt-gray-light-bold">Welcome back! Pick up where you left off</p>
-                </div>
-
-                <div className="acquisition-container flex-column-center">
-                    <GoogleLogin setUserAuth={setUserAuth} />
-
-                    <div className="separator flex-center-evenly">
-                        <span className="line"></span>
-                        <span className="txt-gray-light-bold">Or</span>
-                        <span className="line"></span>
-                    </div>
-
-                    <div className="custom-form flex-column-center">
-                        <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (required)" className="custom__input-field" required />
-
-                        <div className="password-container">
-                            <input type={passwordVisible ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} name="password" placeholder="NoteRoom Password" className="custom__input-field custom__input-field--marginless" required />
-                            <button type="button" onClick={() => setPasswordVisible(prev => !prev)} className="toggle-password">
-                                {passwordVisible ? "hide" : "show"}
-                            </button>
-                        </div>
-                        <p className="redirecting-msg"><a href="/support" className="redirect-link">Forgot Password?</a></p>
-                        <button className="primary-btn flex-center-evenly" disabled={isBtnDisabled} onClick={() => !isBtnDisabled && login()}>Login</button>
-                    </div>
-                </div>
-                <p className="redirecting-msg">Don't have an account? <a href="/signup" className="redirect-link">Create Today</a></p>
+        <MainLayout imagePath={LoginImage}>
+            <div className="auth-form-welcome-section">
+                <h2 className="auth-form-welcome-text">Welcome back to noteroom</h2>
             </div>
-            <img className="focus-img" src={LoginImage} alt="Two friends talking about NoteRoom" />
-        </div>
+
+            <div className="auth-form-form">
+                <div className="auth-form-google-container">
+                    <GoogleLogin setUserAuth={setUserAuth} />
+                </div>
+                
+                <div className="auth-form-or-separator">
+                    <span className="auth-form-or-text">— OR —</span>
+                </div>
+
+                <div className="auth-form-input-fields">
+                    <div className="auth-form-input-label">Email</div>
+                    <input 
+                        type="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                        required 
+                    />
+                    
+                    <div className="auth-form-input-label">Password</div>
+                    <div className="auth-form-password-container">
+                        <input 
+                            type={passwordVisible ? "text" : "password"} 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                            required 
+                        />
+                        <button 
+                            className="auth-form-password-toggle" 
+                            onClick={() => setPasswordVisible(prev => !prev)}
+                        >
+                            {passwordVisible ? "hide" : "show"}
+                        </button>
+                    </div>
+                    
+                    {hasError && (
+                        <div className="auth-form-error-message">
+                            {authError}
+                        </div>
+                    )}
+
+                    <div className="auth-form-forgot-password">
+                        <a href="/support">Forgot Password?</a>
+                    </div>
+
+                    <button 
+                        className="auth-form-button" 
+                        disabled={isBtnDisabled} 
+                        onClick={() => !isBtnDisabled && login()}
+                    >
+                        LOGIN
+                    </button>
+                </div>
+            </div>
+            
+            <div className="auth-form-login-link">
+                <p>Don't have an account? <a href="/signup">Create Today</a></p>
+            </div>
+        </MainLayout>
     );
 };
