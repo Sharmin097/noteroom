@@ -3,7 +3,7 @@ import AppDataProvider from "./AppDataContext";
 import FeedNotesProvider from "./FeedNoteContext";
 import WebSocketProvider from "./WebSocketContext";
 
-type AuthValue = {
+export type AuthValue = {
     loading: boolean,
     userAuth: {
         studentID: string,
@@ -12,7 +12,7 @@ type AuthValue = {
     setUserAuth: any,
 }
 
-let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
+const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const UserAuthContext = createContext<AuthValue | null>(null)
 export default function UserAuthProvider({ children }: { children: ReactNode | ReactNode[] }) {
     const [userAuth, setUserAuth] = useState<any>(null)

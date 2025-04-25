@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
-import { SavedNoteObject } from "../types/types";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppData } from "../context/AppDataContext";
 import ngLogo from "../assets/ng_logo.png"
+import { UserProfilePost } from "../../../types/post.types";
 
-function SavedNote({ note }: { note: SavedNoteObject }) {
+function SavedNote({ note }: { note: UserProfilePost }) {
     return <div className="saved-note">
         <span className="sv-note-title">
-            <Link className="sv-n-link" to={"/post/" + note.noteID}><b>{note.noteTitle.slice(0, 30) + "..."}</b></Link>
+            <Link className="sv-n-link" to={"/post/" + note.postID}><b>{note.title.slice(0, 30) + "..."}</b></Link>
         </span>
     </div>
 }
@@ -15,7 +15,7 @@ function SavedNote({ note }: { note: SavedNoteObject }) {
 
 export default function LeftPanel() {
     const [showNoSavedNotesMsg, setShowSavedNotesMsg] = useState(false)
-    const { savedNotes: [savedNotes, ] } = useAppData()
+    const { savedNotes: [savedNotes, ] } = useAppData()!
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -61,7 +61,7 @@ export default function LeftPanel() {
 
             <div className="saved-notes-container">
                 {savedNotes?.map((note: any) => {
-                    return <SavedNote note={note} key={note.noteID}></SavedNote>
+                    return <SavedNote note={note} key={note.postID}></SavedNote>
                 })}
 
                 <div className="no-saved-notes-message" style={{display: showNoSavedNotesMsg ? 'flex' : "none"}}>

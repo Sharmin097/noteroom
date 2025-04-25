@@ -2,20 +2,15 @@ import { useCallback, useEffect } from "react"
 import { useAppData } from "../context/AppDataContext"
 import { useNavigate } from "react-router-dom"
 import { NotificationActions, NotificationEvent } from "../reducers/notificationReducer"
+import { NotificationType } from "../../../types/notification.types"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
-function Notification({ notiData, rightPanelState: [, setShowRightPanel], notiState: [, setShowNotiModal], dispatch }: any) {
+function Notification({ notiData, rightPanelState: [, setShowRightPanel], notiState: [, setShowNotiModal], dispatch }: { notiData: NotificationType, rightPanelState: any, notiState: any, dispatch: any}) {
     const navigate = useNavigate()
 
     const readNoti = useCallback(async (notiID: string) => {
         try {
-            const response = await fetch(`${API_SERVER_URL}/api/notifications/${notiID}/read`, {
-                credentials: "include"
-            })
-            if (response.ok) {
-                const data = await response.json()
-                console.log(data)
-            }
+            await fetch(`${API_SERVER_URL}/api/notifications/${notiID}/read`, { credentials: "include" })
         } catch (error) {
             console.error(error)
         }
@@ -63,7 +58,7 @@ function Notification({ notiData, rightPanelState: [, setShowRightPanel], notiSt
 }
 
 export default function NotificationModal({ notiState: [showNotiModal, setShowNotiModal], rightPanelState: [showRightPanel, setShowRightPanel] }: any) {
-    const { notification: [notifs, dispatch] } = useAppData()
+    const { notification: [notifs, dispatch] } = useAppData()!
     async function deleteAllNotification() {
         if (notifs.length === 0) return
 

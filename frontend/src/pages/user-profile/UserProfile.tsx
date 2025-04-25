@@ -4,37 +4,37 @@ import PostsSection from "./PostsSection";
 import PersonalInformation from "./PersonalInformation";
 import BasicInformation from "./BasicInformation"
 import { useAppData } from "../../context/AppDataContext";
+import { useQuery } from "@apollo/client"
+import {getUserByUsername } from "../../../../backend/graphql/queries/users.query"
+import { UserProfileType } from "../../../../types/user.types"
 import "../../public/css/user-profile.css"
 
-let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 export default function UserProfile() {
-	const { userProfile: [profile, , currentUsername] } = useAppData()
-	const [user, setUser] = useState<any>(null)
+	const { userProfile: [profile, , currentUsername] } = useAppData()!
+	const [user, setUser] = useState<UserProfileType | null>()
 	const { username } = useParams()
 	const [loading, setLoading] = useState<boolean>(true)
 	const navigate = useNavigate()
+	const isCurrentUser = currentUsername === username
 
 	useEffect(() => {
-		async function getProfile() {
-			if (username === currentUsername) {
-				setLoading(false)
-				setUser(profile)
-			} else {
-				const response = await fetch(`${API_SERVER_URL}/api/users/${username}`, { credentials: 'include' })
-				if (response.ok) {
-					const data = await response.json()
-					setLoading(false)
-					if (data && data.ok) {
-						setUser(data.profile)
-					} else {
-						navigate("/not-found", { state: { type: "user", username: username }, replace: true })
-					}
-				}
-			}
+		if (isCurrentUser) {
+			setUser(profile)
+			setLoading(false)
 		}
+	}, [username, profile, isCurrentUser])
 
-		getProfile()
-	}, [username, profile])
+	useQuery(getUserByUsername, {
+		variables: { username: username },
+		skip: isCurrentUser,
+		onCompleted: (data) => {
+			setUser(data.user)
+			setLoading(false)
+		},
+		onError: (error) => {
+			setLoading(false)
+		}
+	})
 
 	return (
 		<>

@@ -1,11 +1,11 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useReducer, useRef, useState } from "react";
 import feedReducer, { FeedActions } from "../reducers/feedReducer";
-import { SavedNoteObject } from "../types/types";
 import { useAppData } from "./AppDataContext";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import downloadPostZip from "../utils/utils";
 import { useGlobalComponentController } from "./GlobalComponentContext";
+import { UserProfilePost } from "../../../types/post.types";
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const ReactSwal = withReactContent(Swal);
@@ -72,18 +72,18 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
             return { ok: true, error: error }
         }
     }
-    async function saveNote({ noteID, noteTitle, noteThumbnail }: SavedNoteObject, savedState: boolean) {
+    async function saveNote({ postID, title, content }: UserProfilePost, savedState: boolean) {
         try {
-            dispatch({ type: FeedActions.TOGGLE_SAVE_NOTE, payload: { noteID: noteID } })
+            dispatch({ type: FeedActions.TOGGLE_SAVE_NOTE, payload: { noteID: postID } })
             setSavedNotes((prev: any) => {
                 if (savedState) {
-                    return prev.filter((note: SavedNoteObject) => note.noteID !== noteID)
+                    return prev.filter((note: UserProfilePost) => note.postID !== postID)
                 } else {
-                    return [...prev, { noteID, noteTitle, noteThumbnail }]
+                    return [...prev, { postID, title, content }]
                 }
             })
 
-            let response = await fetch(`${API_SERVER_URL}/api/posts/${noteID}/save?action=${savedState ? 'delete' : 'save'}`, {
+            let response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/save?action=${savedState ? 'delete' : 'save'}`, {
                 method: 'put',
                 credentials: "include"
             })

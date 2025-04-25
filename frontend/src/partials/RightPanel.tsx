@@ -5,7 +5,7 @@ import { useUserAuth } from "../context/UserAuthContext";
 import AvatarImage from "../assets/avatars/avatar-1.png"
 
 export default function RightPanel({ notiModalState: [, setShowNotiModal], rightPanelState }: any) {
-    const {userProfile: [profile, ]} = useAppData()
+    const {userProfile: [profile, ]} = useAppData()!
     const { userAuth } = useUserAuth()!
     const navigate = useNavigate()
 
@@ -34,7 +34,7 @@ export default function RightPanel({ notiModalState: [, setShowNotiModal], right
                 </svg>
 
                 
-                <Link to={`/user/${userAuth.username}`}><img src={profile.profile_pic || AvatarImage } className="profile-pic"/></Link>
+                <Link to={`/user/${userAuth.username}`}><img src={profile?.profile_pic || AvatarImage } className="profile-pic"/></Link>
             </div>
 
             <Requests></Requests>

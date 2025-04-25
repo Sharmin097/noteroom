@@ -1,9 +1,3 @@
-export interface SavedNoteObject {
-    noteID: string,
-    noteTitle: string,
-	noteThumbnail: string
-}
-
 export interface RequestObject {
 	recID: string,
 	senderDisplayName: string,
@@ -11,21 +5,6 @@ export interface RequestObject {
 	message: string
 }
 
-export interface IONotification {
-    notiID: string,
-    content: string,
-    redirectTo: string | null,
-    isRead: false,
-    createdAt: string,
-    isInteraction: boolean,
-	notiType: string,
-    fromUser: {
-        profile_pic: string,
-        displayname: any,
-        username: any
-    },
-	additional?: any
-}
 export class FeedNoteObject {
 	noteData: any;
 	contentData: any;
