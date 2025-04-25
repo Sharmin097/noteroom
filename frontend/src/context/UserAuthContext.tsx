@@ -1,7 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import AppDataProvider from "./AppDataContext";
 import FeedNotesProvider from "./FeedNoteContext";
-import ScrollPositionProvider from "./ScrollPosition";
 import WebSocketProvider from "./WebSocketContext";
 
 type AuthValue = {
@@ -57,15 +56,13 @@ export default function UserAuthProvider({ children }: { children: ReactNode | R
 
 function AuthenticatedProviders({ children }: { children: ReactNode | ReactNode[] }) {
     return (
-        <ScrollPositionProvider>
-            <AppDataProvider>
-                <FeedNotesProvider>
-                    <WebSocketProvider>
-                        {children}
-                    </WebSocketProvider>
-                </FeedNotesProvider>
-            </AppDataProvider>
-        </ScrollPositionProvider>
+        <AppDataProvider>
+            <FeedNotesProvider>
+                <WebSocketProvider>
+                    {children}
+                </WebSocketProvider>
+            </FeedNotesProvider>
+        </AppDataProvider>
     )
 }
 

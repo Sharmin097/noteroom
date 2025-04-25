@@ -7,7 +7,7 @@ export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
-  const { controller: [, saveNote] } = useFeed()
+  const { controller: [, saveNote, download] } = useFeed()
   const isSaveNote = note.interactionData.isSaved
 
   return (
@@ -87,7 +87,7 @@ export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="opt-label">Download</span>
+              <span className="opt-label" onClick={() => download(note?.noteData.noteTitle, note?.noteData.noteID)}>Download</span>
             </div>
           }
         </>

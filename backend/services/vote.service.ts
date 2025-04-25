@@ -1,23 +1,25 @@
-import Votes, { CommentVotes } from "../../schemas/votes"
-import Notes from "../../schemas/notes"
-import { feedbacksModel } from "../../schemas/comments"
-export async function isUpVoted({ noteDocID, voterStudentDocID }) {
-    let upvote_doc = await Votes.findOne({ 
-        $and: [ 
-            { docType: { $ne: 'feedback' } }, 
-            { noteDocID: noteDocID }, 
-            { voterStudentDocID: voterStudentDocID } 
-        ] })
+import Votes, { CommentVotes } from "../schemas/votes,model"
+import Notes from "../schemas/notes.model"
+import { feedbacksModel } from "../schemas/comments.model"
+export async function isUpvoted(postDocID, voterStudentDocID) {
+    let upvote_doc = await Votes.findOne({
+        $and: [
+            { docType: { $ne: 'feedback' } },
+            { noteDocID: postDocID },
+            { voterStudentDocID: voterStudentDocID }
+        ]
+    })
     return upvote_doc ? true : false
 }
 
 export async function isCommentUpVoted({ feedbackDocID, voterStudentDocID }) {
-    let upvote_doc = await CommentVotes.findOne({ 
-        $and: [ 
-            { docType: { $eq: 'feedback' } }, 
-            { feedbackDocID: feedbackDocID }, 
-            { voterStudentDocID: voterStudentDocID } 
-        ] })
+    let upvote_doc = await CommentVotes.findOne({
+        $and: [
+            { docType: { $eq: 'feedback' } },
+            { feedbackDocID: feedbackDocID },
+            { voterStudentDocID: voterStudentDocID }
+        ]
+    })
     return upvote_doc ? true : false
 }
 
@@ -49,15 +51,15 @@ export async function deleteVote({ noteDocID, voterStudentDocID }, on: "post" | 
 export async function addVote({ noteDocID, voterStudentDocID, voteType }, on: "post" | "comment", feedbackDocID?: any) {
     try {
         if (on === "post") {
-            const voteData = await Votes.create({noteDocID, voterStudentDocID, voteType})
+            const voteData = await Votes.create({ noteDocID, voterStudentDocID, voteType })
             if (voteData) {
-                await Notes.findByIdAndUpdate(noteDocID, { $inc: { upvoteCount : 1 } })
+                await Notes.findByIdAndUpdate(noteDocID, { $inc: { upvoteCount: 1 } })
                 return { ok: true }
             } else {
                 return { ok: false }
             }
         } else {
-            const voteData = await CommentVotes.create({noteDocID, voterStudentDocID, voteType, feedbackDocID})
+            const voteData = await CommentVotes.create({ noteDocID, voterStudentDocID, voteType, feedbackDocID })
             if (voteData) {
                 await feedbacksModel.updateOne({ _id: feedbackDocID }, { $inc: { upvoteCount: 1 } })
                 return { ok: true }

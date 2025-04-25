@@ -18,14 +18,16 @@ import chalk from 'chalk';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swaggers/swaggerOptions';
 
-import postApiRouter from './services/apis/post.js';
-import feedApiRouter from './services/apis/feed.js';
-import seacrhApiRouter from './services/apis/search.js';
-import profileApiRouter from './services/apis/profile.js';
-import notificationApiRouter from './services/apis/notifications.js';
-import requestsApiRouter from './services/apis/requests.js';
-import authApiRouter from './services/apis/auth.js';
-import uploadApiRouter from './services/apis/upload.js';
+import postApiRouter from './apis/post.api.js';
+import feedApiRouter from './apis/feed.api.js';
+import seacrhApiRouter from './apis/search.api.js';
+import profileApiRouter from './apis/profile.api.js';
+import notificationApiRouter from './apis/notifications.api.js';
+import requestsApiRouter from './apis/requests.api.js';
+import authApiRouter from './apis/auth.api.js';
+import uploadApiRouter from './apis/upload.api.js';
+import mcqApiRouter from './apis/mcq.api';
+import friendsApiRouter from './apis/friends.api';
 
 config({ path: join(__dirname, '.env') });
 
@@ -82,6 +84,8 @@ app.use('/api/feed', feedApiRouter(io))
 app.use('/api/search', seacrhApiRouter(io))
 app.use('/api/auth', authApiRouter(io))
 app.use('/api/upload', uploadApiRouter(io))
+app.use('/api/mcq/', mcqApiRouter(io))
+app.use('/api/friends', friendsApiRouter(io))
 
 app.get('/logout', (req, res) => {
     try {

@@ -7,7 +7,7 @@ import ngLogo from "../assets/ng_logo.png"
 function SavedNote({ note }: { note: SavedNoteObject }) {
     return <div className="saved-note">
         <span className="sv-note-title">
-            <Link className="sv-n-link" to={"/post/" + note.noteID}><b>{note.noteTitle}</b></Link>
+            <Link className="sv-n-link" to={"/post/" + note.noteID}><b>{note.noteTitle.slice(0, 30) + "..."}</b></Link>
         </span>
     </div>
 }

@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import Requests from "../../schemas/requests"
+import Requests from "../schemas/requests.model"
 
 
 interface RequestObject {

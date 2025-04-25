@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useReducer, useState } from "react";
-import { IONotification, RequestObject, SavedNoteObject } from "../types/types";
+import { SavedNoteObject } from "../types/types";
 import { useUserAuth } from "./UserAuthContext";
 import notificationReducer, { NotificationActions } from "../reducers/notificationReducer";
 import requestReducer, { RequestsActions } from "../reducers/requestReducer";
@@ -39,7 +39,7 @@ export default function AppDataProvider({ children }: { children: ReactNode | Re
                             ...savedNotes,
                             ...data.posts.map((note: SavedNoteObject) => {
                                 if (note.noteTitle.length > 30) {
-                                    return { ...note, noteTitle: note.noteTitle.slice(0, 30) + "..." }
+                                    return { ...note, noteTitle: note.noteTitle }
                                 }
                                 return note
                             })

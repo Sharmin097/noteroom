@@ -1,8 +1,7 @@
-import { useContext, useState } from "react"
-import { CommentsControllerContext } from "./CommentsContainer"
+import { useState } from "react"
 import { useParams } from "react-router-dom"
-import "../../public/css/quick-post.css"
 import TextEditor from "../../partials/PopupTextEditor"
+import "../../public/css/quick-post.css"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
@@ -17,7 +16,7 @@ export default function JoinConversation({ fireToast, loading: [loading, setLoad
 			setLoading(true)
 			const feedbackFormData = new FormData()
 			feedbackFormData.append("feedbackContent", commentData)
-
+			
 			const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/feedbacks`, {
 				method: "post",
 				body: feedbackFormData,

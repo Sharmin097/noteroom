@@ -105,3 +105,85 @@
  *       400:
  *         description: Bad request (missing required fields or invalid data).
  */
+
+
+/**
+ * @swagger
+ * /api/upload/file:
+ *   post:
+ *     summary: Upload up to 5 PDF files with title and description
+ *     tags:
+ *       - Upload
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               postTitle:
+ *                 type: string
+ *                 description: Title of the post (max 100 chars)
+ *               postDescription:
+ *                 type: string
+ *                 description: Optional description (max 500 chars)
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Up to 5 PDF files (max 5GB each)
+ *     responses:
+ *       200:
+ *         description: Result of the upload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *               example:
+ *                 ok: true
+ *                 message: "Files posted successfully."
+ */
+
+
+/**
+ * @swagger
+ * /api/upload/link:
+ *   post:
+ *     summary: Submit a post with external HTTP/HTTPS links
+ *     tags:
+ *       - Upload
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               postTitle:
+ *                 type: string
+ *                 description: Title of the post (max 100 chars)
+ *               linksString:
+ *                 type: string
+ *                 description: JSON string of link array (e.g. ["https://example.com"])
+ *     responses:
+ *       200:
+ *         description: Result of the upload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *               example:
+ *                 ok: true
+ *                 message: "Link post uploaded successfully!"
+ */
