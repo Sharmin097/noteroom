@@ -5,20 +5,52 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import downloadPostZip from "../utils/utils";
 import { useGlobalComponentController } from "./GlobalComponentContext";
-import { UserProfilePost } from "../../../types/post.types";
+import { PostType, UserProfilePost } from "../../../types/post.types";
+import { useQuery } from "@apollo/client";
+import {getPostsByPage} from "../../../backend/graphql/queries/posts.query"
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const ReactSwal = withReactContent(Swal);
 
-export const FeedNoteContext = createContext<any>(null)
+type FeedContextType = {
+    feedNotes: PostType[],
+    loading: boolean,
+    lastNoteRef: (node: any) => void,
+    dispatch: React.ActionDispatch<[actions: { type: FeedActions; payload?: any; }]>,
+    FeedActions: any,
+    controller: [
+        (noteID: string, upvoteState: boolean) => Promise<{ ok: boolean, error?: any }>,
+        ({ postID, title, content }: UserProfilePost, savedState: boolean) => Promise<{ ok: boolean }>,
+        (folderName: string, postID: string, links?: string[]) => Promise<void>
+    ]
+}
+
+export const FeedNoteContext = createContext<FeedContextType | null>(null)
 export default function FeedNotesProvider({ children }: { children: ReactNode | ReactNode[] }) {
     const [feedNotes, dispatch] = useReducer(feedReducer, [])
     const [loading, setLodaing] = useState<boolean>(true)
     const [page, setPage] = useState<number>(1)
     const [hasMore, setHasMore] = useState<boolean>(true)
     const { toast: [toast, setToast] } = useGlobalComponentController()!
-    const { savedNotes: [, setSavedNotes] } = useAppData()
+    const { savedNotes: [, setSavedNotes] } = useAppData()!
     const [seed, setSeed] = useState<number>()
+    const pageRef = useRef<number>(1)
+
+    const { fetchMore } = useQuery(getPostsByPage, {
+		variables: { page: pageRef.current, seed: 675137862 },
+		onCompleted: (data) => {
+            setLodaing(false)
+			if (data && data.posts && data.posts.length !== 0) {
+                const { posts } = data
+                dispatch({ type: FeedActions.ADD_NOTES, payload: { notes: posts } })
+            } else {
+                setHasMore(false)
+            }
+		},
+		onError: (error) => {
+            console.log(error)
+		}
+	})
 
     const observer = useRef<IntersectionObserver | null>(null)
 
@@ -28,32 +60,14 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
 
         observer.current = new IntersectionObserver(async (entries: IntersectionObserverEntry[]) => {
             if (entries[0].isIntersecting && hasMore) {
-                await fetchNotes(seed)
+                setLodaing(true)
+                pageRef.current = pageRef.current + 1
+                await fetchMore({ variables: { page: pageRef.current, seed: 675137862 } })
             }
         })
 
         if (node) observer.current.observe(node)
-    }, [loading])
-
-    async function fetchNotes(seed: number | undefined) {
-        if (!seed) return 
-        setLodaing(true)
-        try {
-            let response = await fetch(`${API_SERVER_URL}/api/feed?seed=${seed}&page=${page}`, { credentials: 'include' });
-            let notes = await response.json()
-            if (notes.length !== 0) {
-                setLodaing(false)
-                dispatch({ type: FeedActions.ADD_NOTES, payload: { notes: notes } })
-                setPage(prev => prev + 1)
-            } else {
-                setLodaing(false)
-                setHasMore(false)
-                return
-            }
-        } catch (error) {
-            console.log(error)
-        }
-    }
+    }, [loading, hasMore, fetchMore])
 
     async function upvoteNote(noteID: string, upvoteState: boolean) {
         try {
@@ -92,6 +106,7 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
                 if (data.ok) {
                     setToast({ show: true, data: { message: savedState ? "Removed from saved" : "Post saved" } })
                 }
+                return { ok: true }
             } else {
                 return { ok: false }
             }
@@ -137,18 +152,18 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
         }
     }
 
-    useEffect(() => {
-        const now = new Date();
-        const baseSeed = Math.floor(now.getTime());
-        const salt = now.getMinutes() * 31 + now.getSeconds(); 
-        const seed = ((baseSeed + salt) * 104729) % 999999937;
-        setSeed(seed)
+    // useEffect(() => {
+    //     const now = new Date();
+    //     const baseSeed = Math.floor(now.getTime());
+    //     const salt = now.getMinutes() * 31 + now.getSeconds(); 
+    //     const seed = ((baseSeed + salt) * 104729) % 999999937;
+    //     setSeed(seed)
 
-        fetchNotes(seed)
-    }, [])
+    //     // fetchNotes(675137862)
+    // }, [])
 
     return (
-        <FeedNoteContext.Provider value={{ feedNotes, loading, fetchNotes, lastNoteRef, dispatch, FeedActions, controller: [upvoteNote, saveNote, download] }}>
+        <FeedNoteContext.Provider value={{ feedNotes, loading, lastNoteRef, dispatch, FeedActions, controller: [upvoteNote, saveNote, download] }}>
             {children}
         </FeedNoteContext.Provider>
     )

@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
-import { FeedNoteObject } from "../../types/types";
+import { PostType } from "../../../../types/post.types";
 import { useFeed } from "../../context/FeedNoteContext";
 
-export function FeedNoteEngagement({ note }: { note: FeedNoteObject }) {
-  const { controller: [upvoteNote] } = useFeed()
-  const upvote = note.interactionData.isUpvoted
+export function FeedNoteEngagement({ note }: { note: PostType }) {
+  const { controller: [upvoteNote] } = useFeed()!
+  const upvote = note?.interactionData?.isUpvoted
 
   return (
     <div className="note-engagement">
-      <div className="uv-container" onClick={() => upvoteNote(note.noteData.noteID, upvote)}>
+      <div className="uv-container" onClick={() => upvoteNote(note?.postID, upvote)}>
         <svg
           className="uv-icon"
           width="18"
@@ -50,7 +50,7 @@ export function FeedNoteEngagement({ note }: { note: FeedNoteObject }) {
         <span className="fnc__tr--icon-label like-padding-top-5">Like</span>
       </div>
 
-      <Link className="cmnt-engagement" to={`/post/${note.noteData.noteID}`} style={{textDecoration: "none"}}>
+      <Link className="cmnt-engagement" to={`/post/${note?.postID}`} style={{textDecoration: "none"}}>
         <svg
           width="24"
           height="24"
