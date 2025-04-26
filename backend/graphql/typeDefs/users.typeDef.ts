@@ -8,6 +8,7 @@ const UserTypeDefs = `#graphql
     type User {
         profile_pic: String
         displayname: String
+        username: String!
         rollnumber: String
         collegeyear: String
         bio: String
@@ -15,7 +16,6 @@ const UserTypeDefs = `#graphql
         notfavsubject: String
         group: String
         collegeID: StringOrInt
-        username: String!
         owner: Boolean
         featuredNoteCount: Int
         badges: [Badge]
