@@ -149,11 +149,11 @@ export default function CommentsContainer() {
     const [replyData, setReplyData] = useState<string>("")
     const [loading, setLoading] = useState<boolean>(false)
     const [loadingComments, setLoadingComments] = useState<boolean>(true)
-    const { userProfile: [, , currentUsername] } = useAppData()
+    const { userProfile: [, , currentUsername] } = useAppData()!
     const { toast: [toast, setToast] } = useGlobalComponentController()!
 
-    const { noteData } = useContext(PostContext)
-    const postID = noteData?.noteData.noteID
+    const { noteData } = useContext(PostContext)!
+    const postID = noteData?.postID!
     const replyToUsernameRef = useRef<string>("")
     const replyToDisplaynameRef = useRef<string>("")
 
