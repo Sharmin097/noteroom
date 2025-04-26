@@ -29,8 +29,8 @@ import authApiRouter from './apis/auth.api.js';
 import uploadApiRouter from './apis/upload.api.js';
 import mcqApiRouter from './apis/mcq.api';
 import friendsApiRouter from './apis/friends.api';
-import resolvers from './graphql/resolvers/index'
-import typeDefs from './graphql/typeDefs/index'
+import resolvers from './graphql/resolvers/index.resolver'
+import typeDefs from './graphql/typeDefs/index.typeDef'
 
 config({ path: join(__dirname, '.env') });
 

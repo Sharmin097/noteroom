@@ -18,6 +18,9 @@ const notesSchema = new Schema({
         required: true,
         ref: 'students'
     },
+    ownerUserName: {
+        type: String
+    },
     postID: {
         type: String,
         required: true,
