@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useGlobalComponentController } from "../context/GlobalComponentContext";
+import { useGlobalComponentController } from "../context/globaldata.context";
 
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
