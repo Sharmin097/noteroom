@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../public/css/signup-login.css'
-import { useUserAuth } from '../../context/UserAuthContext';
+import { useUserAuth } from '../../context/userauth.context';
 import LoginImage from '../../assets/login_image.png'
 import ngLogo from "../../assets/ng_logo.png"
 import Swal from "sweetalert2"

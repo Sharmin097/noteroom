@@ -1,4 +1,4 @@
-import { NotificationEvent } from "../frontend/src/reducers/notificationReducer"
+import { NotificationEvent } from "../frontend/src/reducers/notification.reducer"
 
 export interface NotificationType {
     notiID: string,
@@ -7,11 +7,11 @@ export interface NotificationType {
     isRead: false,
     createdAt: string,
     isInteraction: boolean,
-	notiType: NotificationEvent,
+    notiType: NotificationEvent,
     fromUser: {
         profile_pic: string,
         displayname: any,
         username: any
     },
-	additional?: any
+    additional?: any
 }

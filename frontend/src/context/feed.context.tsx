@@ -1,13 +1,13 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useReducer, useRef, useState } from "react";
-import feedReducer, { FeedActions } from "../reducers/feedReducer";
-import { useAppData } from "./AppDataContext";
+import feedReducer, { FeedActions } from "../reducers/feed.reducer";
+import { useAppData } from "./appdata.context";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import downloadPostZip from "../utils/utils";
-import { useGlobalComponentController } from "./GlobalComponentContext";
+import { useGlobalComponentController } from "./globaldata.context";
 import { PostType, UserProfilePost } from "../../../types/post.types";
 import { useQuery } from "@apollo/client";
-import {getPostsByPage} from "../../../backend/graphql/queries/posts.query"
+import { getPostsByPage } from "../../../backend/graphql/queries/posts.query"
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const ReactSwal = withReactContent(Swal);
@@ -37,20 +37,20 @@ export default function FeedNotesProvider({ children }: { children: ReactNode | 
     const pageRef = useRef<number>(1)
 
     const { fetchMore } = useQuery(getPostsByPage, {
-		variables: { page: pageRef.current, seed: 675137862 },
-		onCompleted: (data) => {
+        variables: { page: pageRef.current, seed: 675137862 },
+        onCompleted: (data) => {
             setLodaing(false)
-			if (data && data.posts && data.posts.length !== 0) {
+            if (data && data.posts && data.posts.length !== 0) {
                 const { posts } = data
                 dispatch({ type: FeedActions.ADD_NOTES, payload: { notes: posts } })
             } else {
                 setHasMore(false)
             }
-		},
-		onError: (error) => {
+        },
+        onError: (error) => {
             console.log(error)
-		}
-	})
+        }
+    })
 
     const observer = useRef<IntersectionObserver | null>(null)
 

@@ -1,10 +1,10 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react"
 import { io } from "socket.io-client"
-import { useUserAuth } from "./UserAuthContext"
-import { useAppData } from "./AppDataContext"
-import { NotificationActions, NotificationEvent } from "../reducers/notificationReducer"
+import { useUserAuth } from "./userauth.context"
+import { useAppData } from "./appdata.context"
+import { NotificationActions, NotificationEvent } from "../reducers/notification.reducer"
 import { RequestObject } from "../types/types"
-import { RequestsActions } from "../reducers/requestReducer"
+import { RequestsActions } from "../reducers/request.reducer"
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const WebSocketContext = createContext<any>(null)

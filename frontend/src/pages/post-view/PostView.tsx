@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ImageContainer } from "./ImageContainer";
 import { NoteEngagement } from "./NoteEngagements";
 import PostHeader from "./PostHeader";
-import { useFeed } from "../../context/FeedNoteContext";
+import { useFeed } from "../../context/feed.context";
 import CommentsContainer from "./CommentsContainer";
 import { PostType, UserProfilePost } from "../../../../types/post.types";
 import { useQuery } from "@apollo/client";
@@ -72,7 +72,7 @@ export default function PostView() {
     useEffect(() => {
         async function getNoteData() {
             try {
-                const noteData = feedNotes.find(note => note.postID === postID) 
+                const noteData = feedNotes.find(note => note.postID === postID)
                 if (noteData) {
                     setNoteData(noteData)
                 } else {
@@ -94,7 +94,7 @@ export default function PostView() {
 
                     <div className="post-content">
                         <h1 className="post-title">{noteData?.title}</h1>
-                        <div className="post-description" dangerouslySetInnerHTML={{ __html: noteData?.description || "" }}></div>
+                        <div className="post-description" dangerouslySetInnerHTML={{ __html: noteData?.description || "" }} style={{overflowWrap: "break-word", wordBreak: "break-word"}}></div>
                         {(noteData?.content?.totalContentCount! > 0 && !noteImageLoading) ? <ImageContainer noteImages={noteImages} controller={[prevImage, nextImage, offset]} /> : null}
                     </div>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ShareModal from "../../partials/ShareModal";
-import { useFeed } from "../../context/FeedNoteContext";
+import { useFeed } from "../../context/feed.context";
 import { PostType } from "../../../../types/post.types";
 
 export default function FeedNoteMenu({ note }: { note: PostType }) {
@@ -69,8 +69,8 @@ export default function FeedNoteMenu({ note }: { note: PostType }) {
             <span className="opt-label">Save Post</span>
           </div>
 
-          { 
-            note?.content?.totalContentCount !== 0 && 
+          {
+            note?.content?.totalContentCount !== 0 &&
             <div className="option">
               <svg
                 width="40"
@@ -110,8 +110,8 @@ export default function FeedNoteMenu({ note }: { note: PostType }) {
           </svg>
           <span className="opt-label">Share</span>
         </div>
-      
-        
+
+
       </div>
 
       <ShareModal showState={[showShareModal, setShowShareModal]} noteLink={`/post/${note?.postID}`}></ShareModal>

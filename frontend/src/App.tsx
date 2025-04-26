@@ -8,12 +8,12 @@ import SearchProfile from "./pages/search-profile/SearchProfile";
 import Settings from "./pages/settings/Settings";
 import UserProfile from "./pages/user-profile/UserProfile";
 import SignUp from "./pages/sign-up/SignUp";
-import { useUserAuth } from "./context/UserAuthContext";
+import { useUserAuth } from "./context/userauth.context";
 import Login from "./pages/login/Login";
 import nrLogo from "./assets/ng_logo.png"
 import UploadNote from "./pages/upload-note/UploadNote";
 import NotFound from "./pages/error-pages/NotFound";
-import { useGlobalComponentController } from "./context/GlobalComponentContext";
+import { useGlobalComponentController } from "./context/globaldata.context";
 import { CustomToast } from "./partials/Toast";
 
 //TODO: A reddit like logo when the feed loads or the user auth loads
@@ -91,7 +91,7 @@ function App() {
 				<Route path="*" element={<Navigate to="/not-found" state={{ type: "page", route: pathname }} replace={true} />} />
 				<Route path="/not-found" element={<NotFound />} />
 			</Routes>
-			{ toast?.show && <CustomToast message={toast?.data.message} toast={[toast, setToast]} /> }
+			{toast?.show && <CustomToast message={toast?.data.message} toast={[toast, setToast]} />}
 		</>
 	);
 }

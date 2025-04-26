@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { PostType } from "../../../../types/post.types";
-import { useFeed } from "../../context/FeedNoteContext";
+import { useFeed } from "../../context/feed.context";
 
 export function FeedNoteEngagement({ note }: { note: PostType }) {
   const { controller: [upvoteNote] } = useFeed()!
@@ -50,7 +50,7 @@ export function FeedNoteEngagement({ note }: { note: PostType }) {
         <span className="fnc__tr--icon-label like-padding-top-5">Like</span>
       </div>
 
-      <Link className="cmnt-engagement" to={`/post/${note?.postID}`} style={{textDecoration: "none"}}>
+      <Link className="cmnt-engagement" to={`/post/${note?.postID}`} style={{ textDecoration: "none" }}>
         <svg
           width="24"
           height="24"

@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useReducer, useState } from "react";
-import { useUserAuth } from "./UserAuthContext";
-import notificationReducer, { NotificationActions } from "../reducers/notificationReducer";
-import requestReducer, { RequestsActions } from "../reducers/requestReducer";
+import { useUserAuth } from "./userauth.context";
+import notificationReducer, { NotificationActions } from "../reducers/notification.reducer";
+import requestReducer, { RequestsActions } from "../reducers/request.reducer";
 import { UserProfilePost } from "../../../types/post.types";
 import { useQuery } from "@apollo/client";
 import { getSavedPostsByUsername, getUserByUsername } from "../../../backend/graphql/queries/users.query";
@@ -29,27 +29,27 @@ export default function AppDataProvider({ children }: { children: ReactNode | Re
     const currentUsername = userAuth?.username
 
     useQuery(getSavedPostsByUsername, {
-		variables: { username: currentUsername },
-		onCompleted: (data) => {
-			if (data && data.user && data.user.saved_posts) {
+        variables: { username: currentUsername },
+        onCompleted: (data) => {
+            if (data && data.user && data.user.saved_posts) {
                 const { saved_posts } = data.user
                 setSavedNotes(saved_posts)
             }
-		},
-		onError: (error) => {
+        },
+        onError: (error) => {
             setSavedNotes([])
-		}
-	})
+        }
+    })
 
     useQuery(getUserByUsername, {
-		variables: { username: currentUsername },
-		onCompleted: (data) => {
+        variables: { username: currentUsername },
+        onCompleted: (data) => {
             setProfile(data.user)
-		},
-		onError: (error) => {
+        },
+        onError: (error) => {
             setProfile(null)
-		}
-	})
+        }
+    })
 
     useEffect(() => {
         async function getNotifs() {

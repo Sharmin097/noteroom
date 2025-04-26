@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import AppDataProvider from "./AppDataContext";
-import FeedNotesProvider from "./FeedNoteContext";
-import WebSocketProvider from "./WebSocketContext";
+import AppDataProvider from "./appdata.context";
+import FeedNotesProvider from "./feed.context";
+import WebSocketProvider from "./websocket.context";
 
 export type AuthValue = {
     loading: boolean,

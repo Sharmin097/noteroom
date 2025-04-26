@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useAppData } from "../../context/AppDataContext"
+import { useAppData } from "../../context/appdata.context"
 import { useNavigate } from "react-router-dom"
 import { UserProfilePost } from "../../../../types/post.types"
 import { UserProfileType } from "../../../../types/user.types"
@@ -52,7 +52,7 @@ export default function PostsSection({ user }: { user: UserProfileType }) {
 				{
 					tab === TabSection.MY_POSTS ?
 						<>
-							{user.owned_posts && user.owned_posts.length !== 0 ? 
+							{user.owned_posts && user.owned_posts.length !== 0 ?
 								user.owned_posts?.map((post: any, index: number) => {
 									return <NoteCard note={post} key={"owned-" + post.postID} />
 								}) : <NoNotesMessage />
@@ -60,9 +60,9 @@ export default function PostsSection({ user }: { user: UserProfileType }) {
 						</>
 						:
 						<>
-							{savedNotes.length !== 0 ? 
+							{savedNotes.length !== 0 ?
 								savedNotes.map((post: any, index: number) => {
-									return <NoteCard note={post} key={"saved-" + post.postID}/>
+									return <NoteCard note={post} key={"saved-" + post.postID} />
 								}) : <NoNotesMessage />
 							}
 						</>

@@ -1,6 +1,6 @@
 import FeedSection from "./FeedSection";
 import { useEffect, useRef } from "react";
-import { useGlobalComponentController } from "../../context/GlobalComponentContext";
+import { useGlobalComponentController } from "../../context/globaldata.context";
 import "../../public/css/dashboard.css";
 import '../../public/css/quick-post.css';
 import "../../public/css/main-pages.css";
