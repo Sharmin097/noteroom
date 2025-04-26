@@ -9,9 +9,9 @@ import MCQContainer from "./MCQContainer";
 import FileContainer from "./FileContainer";
 import LinkContainer from "./YoutubeLinkContainer";
 import QuillEditor from "../../partials/QuillEditor";
-import mcqReducer, { MCQActions } from "../../reducers/mcqReducer";
+import mcqReducer, { MCQActions } from "../../reducers/mcq.reducer";
 import DraftPostContainer from "./DraftPost";
-import { useGlobalComponentController } from "../../context/GlobalComponentContext";
+import { useGlobalComponentController } from "../../context/globaldata.context";
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL;
 const ReactSwal = withReactContent(Swal);
@@ -26,13 +26,13 @@ export interface MCQ {
   correctAnswer: string | null;
 }
 
-interface Link { 
-  link: String, 
-  id: string, 
-  details: { 
-    title: string, 
-    channelTitle: string 
-  } 
+interface Link {
+  link: String,
+  id: string,
+  details: {
+    title: string,
+    channelTitle: string
+  }
 }
 
 export interface DraftPost {
@@ -47,7 +47,7 @@ export interface DraftPost {
 }
 
 
-export enum SubNav { TEXT_IMAGE="content", LINK="link", FILE="file", MCQ="mcq" }
+export enum SubNav { TEXT_IMAGE = "content", LINK = "link", FILE = "file", MCQ = "mcq" }
 export const mapPostTypesTitles = {
   [SubNav.TEXT_IMAGE]: "Text and Images",
   [SubNav.FILE]: "Files",
@@ -64,25 +64,25 @@ function SubNatigation({ activeTab: [activeTab, setActiveTab] }: any) {
             className={activeTab === SubNav.TEXT_IMAGE ? "active" : ""}
             onClick={() => setActiveTab(SubNav.TEXT_IMAGE)}
           >
-            { mapPostTypesTitles[SubNav.TEXT_IMAGE] }
+            {mapPostTypesTitles[SubNav.TEXT_IMAGE]}
           </span>
           <span
             className={activeTab === SubNav.LINK ? "active" : ""}
             onClick={() => setActiveTab(SubNav.LINK)}
           >
-            { mapPostTypesTitles[SubNav.LINK] }
+            {mapPostTypesTitles[SubNav.LINK]}
           </span>
           <span
             className={activeTab === SubNav.FILE ? "active" : ""}
             onClick={() => setActiveTab(SubNav.FILE)}
           >
-            { mapPostTypesTitles[SubNav.FILE] }
+            {mapPostTypesTitles[SubNav.FILE]}
           </span>
           <span
             className={activeTab === SubNav.MCQ ? "active" : ""}
             onClick={() => setActiveTab(SubNav.MCQ)}
           >
-            { mapPostTypesTitles[SubNav.MCQ] }
+            {mapPostTypesTitles[SubNav.MCQ]}
           </span>
         </div>
       </nav>
@@ -93,8 +93,8 @@ function SubNatigation({ activeTab: [activeTab, setActiveTab] }: any) {
 function PostTitle({ postTitle: [postTitle, setPostTitle] }: any) {
   return (
     <div className="form-group">
-        <span className="char-count">{postTitle.length}/300</span>
-        <label className="Note-Title">
+      <span className="char-count">{postTitle.length}/300</span>
+      <label className="Note-Title">
         <input
           type="text"
           id="noteTitle"
@@ -106,9 +106,9 @@ function PostTitle({ postTitle: [postTitle, setPostTitle] }: any) {
           onChange={(e) => setPostTitle(e.target.value)}
         />
         <span className="Title-placeholder">Title*</span>
-        </label>
+      </label>
 
-      </div>
+    </div>
   )
 }
 
@@ -125,7 +125,7 @@ const UploadNote: React.FC = () => {
   const [disableButton, setDisableButton] = useState<boolean>(true)
   const [draftPosts, setDraftPosts] = useState<DraftPost[]>([])
   const [showDraftContainer, setShowDraftContainer] = useState<boolean>(false)
-  const [applyDraft, setApplyDraft] = useState<{ apply: boolean, draft: DraftPost | null}>({ apply: false, draft: null })
+  const [applyDraft, setApplyDraft] = useState<{ apply: boolean, draft: DraftPost | null }>({ apply: false, draft: null })
   const [isDraftsLoaded, setIsDraftsLoaded] = useState<boolean>(false)
 
   const editorRef = useRef<HTMLDivElement>(null);
@@ -157,7 +157,7 @@ const UploadNote: React.FC = () => {
       }
 
       if (type === SubNav.TEXT_IMAGE) {
-        setStackFiles(draft!.images || [])   
+        setStackFiles(draft!.images || [])
       } else if (type === SubNav.FILE) {
         setStackPdfs(draft!.files || [])
       } else if (type === SubNav.MCQ) {
@@ -189,20 +189,20 @@ const UploadNote: React.FC = () => {
     loadDexieModule()
   }, [])
 
-	async function addDraft() {
-		try {
+  async function addDraft() {
+    try {
       if (draftPosts.length < MAX_DRAFT_LIMIT) {
         let post: DraftPost = {
           postID: crypto.randomUUID(),
           title: postTitle,
           type: activeTab,
           ...((activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) && { description: quillRef?.current?.getSemanticHTML() }),
-          ...(activeTab === SubNav.TEXT_IMAGE && { images: stackFiles} ),
-          ...(activeTab === SubNav.FILE && { files: stackPdfs} ),
-          ...(activeTab === SubNav.MCQ && { mcqs: mcqs } ),
-          ...(activeTab === SubNav.LINK && { links: youtubeLinks } ),
+          ...(activeTab === SubNav.TEXT_IMAGE && { images: stackFiles }),
+          ...(activeTab === SubNav.FILE && { files: stackPdfs }),
+          ...(activeTab === SubNav.MCQ && { mcqs: mcqs }),
+          ...(activeTab === SubNav.LINK && { links: youtubeLinks }),
         }
-  
+
         const response = await dexieModule.current.addDraft(activeTab, post)
         if (response) {
           setDraftPosts(prev => [...prev, ...[post]])
@@ -211,10 +211,10 @@ const UploadNote: React.FC = () => {
       } else {
         setToast({ show: true, data: { message: `Oops! You can only have up to ${MAX_DRAFT_LIMIT} drafts` } })
       }
-		} catch (error) {
-			console.error(error)
-		}
-	}
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   // useEffect(() => {
   //   if (activeTab !== SubNav.TEXT_IMAGE) {
@@ -278,10 +278,10 @@ const UploadNote: React.FC = () => {
 
       setIsLoading(true)
       const postData = new FormData()
-	    postData.append("postTitle", postTitle)
+      postData.append("postTitle", postTitle)
       if (activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) postData.append("postDescription", quillRef?.current?.getSemanticHTML() || "")
 
-      switch(activeTab) {
+      switch (activeTab) {
         case SubNav.TEXT_IMAGE:
           for (let file of stackFiles) {
             postData.append(`file-${crypto.randomUUID()}`, file)
@@ -289,8 +289,8 @@ const UploadNote: React.FC = () => {
           return await handleFetch('/api/upload/content', postData)
 
         case SubNav.MCQ:
-          postData.append("mcqStrings", JSON.stringify(mcqs))   
-          return await handleFetch("/api/upload/mcq", postData) 
+          postData.append("mcqStrings", JSON.stringify(mcqs))
+          return await handleFetch("/api/upload/mcq", postData)
 
         case SubNav.FILE:
           for (let file of stackPdfs) {
@@ -320,39 +320,39 @@ const UploadNote: React.FC = () => {
     <div className="middle-section-upload">
       <SubNatigation activeTab={[activeTab, setActiveTab]} />
 
-      <PostTitle postTitle={[postTitle, setPostTitle]} />      
+      <PostTitle postTitle={[postTitle, setPostTitle]} />
 
       <div className="upload-container">
-        { activeTab === SubNav.TEXT_IMAGE && <ImageUploadContainer 
+        {activeTab === SubNav.TEXT_IMAGE && <ImageUploadContainer
           handleDrag={[isDragging, handleDragOver, handleDragLeave]}
           refs={[fileInputRef]}
           stackFiles={[stackFiles, setStackFiles]}
-        /> }
+        />}
 
-        { activeTab === SubNav.LINK && <LinkContainer 
+        {activeTab === SubNav.LINK && <LinkContainer
           youtubeLinks={[youtubeLinks, setYoutubeLinks]}
-        /> }
+        />}
 
-        { activeTab === SubNav.FILE && <FileContainer 
+        {activeTab === SubNav.FILE && <FileContainer
           handleDrag={[isDragging, handleDragOver, handleDragLeave]}
           refs={[pdfInputRef, pdfCanvasRef]}
           stackPdfs={[stackPdfs, setStackPdfs]}
-        /> }
+        />}
 
-        { activeTab === SubNav.MCQ && <MCQContainer 
+        {activeTab === SubNav.MCQ && <MCQContainer
           mcqs={[mcqs, dispatch]}
-        /> }
+        />}
       </div>
 
-      <QuillEditor 
+      <QuillEditor
         editorRef={editorRef}
         quillRef={quillRef}
         rootClass="form-group description-group"
-        style={{display: (activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) ? "" : "none" }}
+        style={{ display: (activeTab === SubNav.TEXT_IMAGE || activeTab === SubNav.FILE) ? "" : "none" }}
       />
 
-      <DraftPostContainer 
-        showContainer={[showDraftContainer, setShowDraftContainer]} 
+      <DraftPostContainer
+        showContainer={[showDraftContainer, setShowDraftContainer]}
         drafts={[draftPosts, setDraftPosts]}
         applyDraft={[applyDraft, setApplyDraft]}
         dexieModule={dexieModule}

@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import ngLogo from "../../assets/ng_logo.png"
 import SignUpImage from "../../assets/signup_image.png"
 import "../../public/css/signup-login.css"
-import { useUserAuth } from '../../context/UserAuthContext';
+import { useUserAuth } from '../../context/userauth.context';
 import slug from 'slug';
 import GoogleLogin from '../../partials/GoogleLogin';
 
@@ -107,7 +107,7 @@ const SignUp = () => {
 
                 <div className="acquisition-container flex-column-center">
                     <GoogleLogin setUserAuth={setUserAuth} />
-                    
+
                     <div className="separator flex-center-evenly">
                         <span className="line"></span>
                         <span className="txt-gray-light-bold">Or</span>

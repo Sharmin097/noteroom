@@ -33,6 +33,7 @@ export default function profileApiRouter(io: Server) {
 		}
 	})
 
+	//DEPRECATED
 	router.get("/:username", async (req, res) => {
 		try {
 			if (req.params.username) {

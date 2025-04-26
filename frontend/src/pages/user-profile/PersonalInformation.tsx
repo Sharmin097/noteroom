@@ -1,10 +1,11 @@
+import { UserProfileType } from "../../../../types/user.types"
 import { districtCollegeData } from "../../utils/onboarding-data" 
 
-export default function PersonalInformation({ user }: { user: any }) {
+export default function PersonalInformation({ user }: { user: UserProfileType }) {
     const collegeID = user.collegeID
     let collegeData: any = { name: collegeID, logo: "placeholder.png" }
 
-    if (!isNaN(collegeID)) {
+    if (typeof collegeID !== "string") {
         let data = Object.values(districtCollegeData).flat().find(data => data.id === collegeID)
         collegeData = { name: data?.name, logo: data?.logo }
     }

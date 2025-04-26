@@ -1,14 +1,14 @@
 import { useState } from "react";
 import ShareModal from "../../partials/ShareModal";
-import { FeedNoteObject } from "../../types/types";
-import { useFeed } from "../../context/FeedNoteContext";
+import { useFeed } from "../../context/feed.context";
+import { PostType } from "../../../../types/post.types";
 
-export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
+export default function FeedNoteMenu({ note }: { note: PostType }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
-  const { controller: [, saveNote, download] } = useFeed()
-  const isSaveNote = note.interactionData.isSaved
+  const { controller: [, saveNote, download] } = useFeed()!
+  const isSaveNote = note?.interactionData?.isSaved
 
   return (
     <div className="note-menu">
@@ -30,7 +30,7 @@ export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
         <>
           <div
             className="option svn-btn-parent"
-            onClick={() => saveNote({ noteID: note?.noteData.noteID, noteTitle: note?.noteData.noteTitle, noteThumbnail: note?.contentData.content1}, isSaveNote)}
+            onClick={() => saveNote({ postID: note?.postID, title: note?.title, content: note?.content }, isSaveNote)}
           >
             <button
               className={"save-note-btn " + (isSaveNote ? "saved" : "")}
@@ -69,8 +69,8 @@ export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
             <span className="opt-label">Save Post</span>
           </div>
 
-          { 
-            note?.contentData.contentCount !== 0 && 
+          {
+            note?.content?.totalContentCount !== 0 &&
             <div className="option">
               <svg
                 width="40"
@@ -87,7 +87,7 @@ export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="opt-label" onClick={() => download(note?.noteData.noteTitle, note?.noteData.noteID)}>Download</span>
+              <span className="opt-label" onClick={() => download(note?.title, note?.postID)}>Download</span>
             </div>
           }
         </>
@@ -110,11 +110,11 @@ export default function FeedNoteMenu({ note }: { note: FeedNoteObject }) {
           </svg>
           <span className="opt-label">Share</span>
         </div>
-      
-        
+
+
       </div>
 
-      <ShareModal showState={[showShareModal, setShowShareModal]} noteLink={`/post/${note.noteData.noteID}`}></ShareModal>
+      <ShareModal showState={[showShareModal, setShowShareModal]} noteLink={`/post/${note?.postID}`}></ShareModal>
     </div>
   );
 }

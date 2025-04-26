@@ -1,23 +1,24 @@
 import { useState } from "react"
-import { useAppData } from "../../context/AppDataContext"
+import { useAppData } from "../../context/appdata.context"
 import { useNavigate } from "react-router-dom"
+import { UserProfilePost } from "../../../../types/post.types"
+import { UserProfileType } from "../../../../types/user.types"
 
-function NoteCard({ note }: { note: any }) {
+function NoteCard({ note }: { note: UserProfilePost }) {
 	// let description = note.description ? (new DOMParser()).parseFromString(note.description, "text/html").body.textContent?.slice(0, 50) + "..." : ""
 	const navigate = useNavigate()
 
 	return (
-		<div className="note-card" style={{ marginBottom: "10px" }} onClick={() => navigate(`/post/${note.noteID}`)}>
-			<img className="profile-note-card-thumbnail" src={note.noteThumbnail || 'https://placehold.co/800x500'} alt="Note Thumbnail" />
-			<h3 id="note-title">{note.noteTitle.length > 25 ? `${note.noteTitle.slice(0, 25)}...` : note.noteTitle}</h3>
-			{/* <p style={{ padding: "10px 5px" }}>{description}</p> */}
+		<div className="note-card" style={{ marginBottom: "10px" }} onClick={() => navigate(`/post/${note.postID}`)}>
+			<img className="profile-note-card-thumbnail" src={note.content?.resources?.[0] || 'https://placehold.co/800x500'} alt="Note Thumbnail" />
+			<h3 id="note-title">{note.title.length > 25 ? `${note.title.slice(0, 25)}...` : note.title}</h3>
 		</div>
 	)
 }
-export default function PostsSection({ user }: { user: any }) {
+export default function PostsSection({ user }: { user: UserProfileType }) {
 	enum TabSection { MY_POSTS, SAVED_POSTS }
 	const [tab, setTab] = useState<TabSection>(TabSection.MY_POSTS)
-	const { savedNotes: [savedNotes,] } = useAppData()
+	const { savedNotes: [savedNotes,] } = useAppData()!
 
 	const NoNotesMessage = () => {
 		return (
@@ -51,17 +52,17 @@ export default function PostsSection({ user }: { user: any }) {
 				{
 					tab === TabSection.MY_POSTS ?
 						<>
-							{user.owned_posts && user.owned_posts.length !== 0 ? 
+							{user.owned_posts && user.owned_posts.length !== 0 ?
 								user.owned_posts?.map((post: any, index: number) => {
-									return <NoteCard note={post} key={"owned-" + post.noteID} />
+									return <NoteCard note={post} key={"owned-" + post.postID} />
 								}) : <NoNotesMessage />
 							}
 						</>
 						:
 						<>
-							{savedNotes.length !== 0 ? 
+							{savedNotes.length !== 0 ?
 								savedNotes.map((post: any, index: number) => {
-									return <NoteCard note={post} key={"saved-" + post.noteID}/>
+									return <NoteCard note={post} key={"saved-" + post.postID} />
 								}) : <NoNotesMessage />
 							}
 						</>

@@ -1,6 +1,6 @@
 import "../../public/css/settings.css"
 import "../../public/css/header-footer.css"
-import { useUserAuth } from "../../context/UserAuthContext";
+import { useUserAuth } from "../../context/userauth.context";
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 export default function Settings() {
