@@ -28,8 +28,12 @@ export default function UserProfile() {
 		variables: { username: username },
 		skip: isCurrentUser,
 		onCompleted: (data) => {
-			setUser(data.user)
-			setLoading(false)
+			if (data && data.user) {
+				setUser(data.user)
+				setLoading(false)
+			} else {
+				navigate("/not-found", { replace: true, state: { type: "user", username: username } })
+			}
 		},
 		onError: (error) => {
 			setLoading(false)
