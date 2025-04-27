@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { RequestModal } from "../../partials"
 import AvatarImage from "../../assets/avatars/avatar-1.png"
+import { UserProfileType } from "../../../../types/user.types"
 
-export default function BasicInformation({ user }: { user: any }) {
+export default function BasicInformation({ user }: { user: UserProfileType }) {
 	const [reqModalShow, setReqModalShow] = useState<boolean>(false)
 	let badge = user?.badges ? user.badges[0] : { badgeID: 0, badgeLogo: 'no_badge.png', badgeText: 'No Badge' }
 

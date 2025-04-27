@@ -1,9 +1,9 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import AppDataProvider from "./AppDataContext";
-import FeedNotesProvider from "./FeedNoteContext";
-import WebSocketProvider from "./WebSocketContext";
+import AppDataProvider from "./appdata.context";
+import FeedNotesProvider from "./feed.context";
+import WebSocketProvider from "./websocket.context";
 
-type AuthValue = {
+export type AuthValue = {
     loading: boolean,
     userAuth: {
         studentID: string,
@@ -12,7 +12,7 @@ type AuthValue = {
     setUserAuth: any,
 }
 
-let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
+const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const UserAuthContext = createContext<AuthValue | null>(null)
 export default function UserAuthProvider({ children }: { children: ReactNode | ReactNode[] }) {
     const [userAuth, setUserAuth] = useState<any>(null)

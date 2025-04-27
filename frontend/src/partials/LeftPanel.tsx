@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
-import { SavedNoteObject } from "../types/types";
 import { Link, useNavigate } from "react-router-dom";
-import { useAppData } from "../context/AppDataContext";
+import { useAppData } from "../context/appdata.context";
 import ngLogo from "../assets/ng_logo.png"
+import { UserProfilePost } from "../../../types/post.types";
 
-function SavedNote({ note }: { note: SavedNoteObject }) {
+function SavedNote({ note }: { note: UserProfilePost }) {
     return <div className="saved-note">
         <span className="sv-note-title">
-            <Link className="sv-n-link" to={"/post/" + note.noteID}><b>{note.noteTitle.slice(0, 30) + "..."}</b></Link>
+            <Link className="sv-n-link" to={"/post/" + note.postID}><b>{note.title.slice(0, 30) + "..."}</b></Link>
         </span>
     </div>
 }
@@ -15,7 +15,7 @@ function SavedNote({ note }: { note: SavedNoteObject }) {
 
 export default function LeftPanel() {
     const [showNoSavedNotesMsg, setShowSavedNotesMsg] = useState(false)
-    const { savedNotes: [savedNotes, ] } = useAppData()
+    const { savedNotes: [savedNotes,] } = useAppData()!
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -32,12 +32,12 @@ export default function LeftPanel() {
 
             <button className="btn-home" onClick={() => navigate('/')}>
                 <svg width="28" height="28" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink">
-                    <rect width="24.4687" height="24.4687" fill="url(#pattern0_3781_4874)"/>
+                    <rect width="24.4687" height="24.4687" fill="url(#pattern0_3781_4874)" />
                     <defs>
-                    <pattern id="pattern0_3781_4874" patternContentUnits="objectBoundingBox" width="1" height="1">
-                    <use xlinkHref="#image0_3781_4874" transform="scale(0.01)"/>
-                    </pattern>
-                    <image id="image0_3781_4874" width="100" height="100" xlinkHref="data:image/png;base64,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"/>
+                        <pattern id="pattern0_3781_4874" patternContentUnits="objectBoundingBox" width="1" height="1">
+                            <use xlinkHref="#image0_3781_4874" transform="scale(0.01)" />
+                        </pattern>
+                        <image id="image0_3781_4874" width="100" height="100" xlinkHref="data:image/png;base64,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" />
                     </defs>
                 </svg>
                 Home
@@ -50,21 +50,21 @@ export default function LeftPanel() {
                     </g>
                     <defs>
                         <clipPath id="clip0_1010_510">
-                        <rect width="34.182" height="34.182" fill="white" transform="translate(0.872559)" />
+                            <rect width="34.182" height="34.182" fill="white" transform="translate(0.872559)" />
                         </clipPath>
                     </defs>
-                    </svg>
+                </svg>
                 Upload
             </button>
-            
+
             <span className="sv-header">Saved Notes</span>
 
             <div className="saved-notes-container">
                 {savedNotes?.map((note: any) => {
-                    return <SavedNote note={note} key={note.noteID}></SavedNote>
+                    return <SavedNote note={note} key={note.postID}></SavedNote>
                 })}
 
-                <div className="no-saved-notes-message" style={{display: showNoSavedNotesMsg ? 'flex' : "none"}}>
+                <div className="no-saved-notes-message" style={{ display: showNoSavedNotesMsg ? 'flex' : "none" }}>
                     <p>It looks like you haven't saved any notes yet. Start saving them to read later</p>
                 </div>
             </div>

@@ -11,6 +11,7 @@ const router = Router()
 export default function postApiRouter(io: Server) {
     //TODO: vote should send notifications
 
+    //DEPRECATED
     router.get("/:postID/metadata", async (req, res) => {
         try {
             const studentID = req.session["stdid"]
@@ -28,6 +29,7 @@ export default function postApiRouter(io: Server) {
         }
     })
 
+    //DEPRECATED
     router.get("/:postID/images", async (req, res) => {
         try {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
@@ -199,6 +201,7 @@ export default function postApiRouter(io: Server) {
         }
     })
 
+    //DEPRECATED
     router.get("/saved", async (req, res) => {
         try {
             const studentID = req.session["stdid"]
