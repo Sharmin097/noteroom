@@ -1,4 +1,4 @@
-import { IONotification } from "../types/types";
+import { NotificationType } from "../../../types/notification.types"
 
 export enum NotificationEvent {
     NOTIF_COMMENT = 'notification-comment',
@@ -7,7 +7,7 @@ export enum NotificationEvent {
     NOTIF_REQUEST_DECLINE = 'notification-request-decline'
 }
 export enum NotificationActions { ADD, READ, DELETE_ALL }
-export default function notificationReducer(notifications: IONotification[], actions: { type: NotificationActions, payload?: any }) {
+export default function notificationReducer(notifications: NotificationType[], actions: { type: NotificationActions, payload?: any }) {
     switch(actions.type) {
         case NotificationActions.ADD:
             return [...notifications, ...actions.payload.notifications]

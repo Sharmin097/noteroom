@@ -1,23 +1,24 @@
 import { DashBoard } from "./pages/dashboard/index";
 import { LeftPanel, NoteSearchBar, NotificationModal, RightPanel } from "./partials/index";
 import MobileControlPanel from "./partials/MobileControlPanel";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PostView from "./pages/post-view/PostView";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import SearchProfile from "./pages/search-profile/SearchProfile";
 import Settings from "./pages/settings/Settings";	
 import UserProfile from "./pages/user-profile/UserProfile";
-import SignUp from "./pages/signup-login/SignUp";
+import SignUp from "./pages/sign-up/SignUp";
 import { useUserAuth } from "./context/UserAuthContext";
-import Login from "./pages/signup-login/Login";
+import Login from "./pages/login/Login";
 import nrLogo from "./assets/ng_logo.png"
 import UploadNote from "./pages/upload-note/UploadNote";
 import NotFound from "./pages/error-pages/NotFound";
-import ProfessionSelection from "./pages/signup-login/ProfessionSelection";
-import Checkout from "./pages/checkout/SelectPlan"
-import Payment from "./pages/checkout/Payment";
+import { useGlobalComponentController } from "./context/GlobalComponentContext";
+import { CustomToast } from "./partials/Toast";
 
 //TODO: A reddit like logo when the feed loads or the user auth loads
+
+const gaTrackingID = import.meta.env.VITE_GOOGLE_ANALYTICS_DEVELOPMENT_TRACKING_KEY
 
 function PublicRoute() {
 	const { userAuth, loading } = useUserAuth()!
@@ -68,6 +69,7 @@ function MainLayout({ userAuth }: { userAuth: any }) {
 function App() {	
 	const { userAuth } = useUserAuth()!;
 	const { pathname } = useLocation()
+	const { toast: [toast, setToast] } = useGlobalComponentController()
 
 	return (
 		<Routes>
@@ -90,9 +92,11 @@ function App() {
 				</Route>
 			</Route>
 
-			<Route path="*" element={<Navigate to="/not-found" state={{ type: "page", route: pathname }} replace={true} />} />
-			<Route path="/not-found" element={<NotFound />} />
-		</Routes> 
+				<Route path="*" element={<Navigate to="/not-found" state={{ type: "page", route: pathname }} replace={true} />} />
+				<Route path="/not-found" element={<NotFound />} />
+			</Routes>
+			{ toast?.show && <CustomToast message={toast?.data.message} toast={[toast, setToast]} /> }
+		</>
 	);
 }
 

@@ -52,15 +52,15 @@ export async function deletePost(postID: string, postType: PostType) {
     }
 }
 
-async function isSaved(userDocID: string, postDocID: string) {
-    let document = await Students.find({
+export async function isSaved(userDocID: string, postDocID: string) {
+    let document = await Students.findOne({
         $and:
             [
                 { _id: userDocID },
                 { saved_notes: { $in: [postDocID] } }
             ]
     })
-    return document.length !== 0 ? true : false
+    return document ? true : false
 }
 export async function getPosts(studentDocID: string, options?: any) {
     /*
@@ -186,10 +186,10 @@ export async function getSinglePost(postID: string, studentID: string) {
 
         const postDocID = post[0]._id.toString()
         const userDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
-        const isPostSaved = await isSaved(userDocID, postDocID)
+        // const isPostSaved = await isSaved(userDocID, postDocID)
         const isPostUpvoted = await isUpvoted(postDocID, userDocID)
 
-        return { ok: true, post: { ...post[0], isSaved: isPostSaved, isUpvoted: isPostUpvoted } }
+        return { ok: true, post: { ...post[0], isSaved: true, isUpvoted: isPostUpvoted } }
     } catch (error) {
         return { ok: false, error: error }
     }

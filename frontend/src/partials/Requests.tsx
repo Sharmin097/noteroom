@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react"
-import { useAppData } from "../context/AppDataContext"
-import { RequestsActions } from "../reducers/requestReducer"
+import { useAppData } from "../context/appdata.context"
+import { RequestsActions } from "../reducers/request.reducer"
 import TextEditor from "./PopupTextEditor"
 import withReactContent from "sweetalert2-react-content"
 import Swal from "sweetalert2"
@@ -19,12 +19,12 @@ function fireToast(title: string, icon: any) {
     })
 }
 
-function Request({ 
-    request: [request, dispatchRequest], 
-    showEditor: [showEditor, setShowEditor], 
-    recID: [recID, setRecID], 
+function Request({
+    request: [request, dispatchRequest],
+    showEditor: [showEditor, setShowEditor],
+    recID: [recID, setRecID],
     senderDisplayName: [senderDisplayName, setSenderDisplayName],
-    inputOptions, 
+    inputOptions,
 }: any) {
     const [isReqExpanded, setIsReqExpanded] = useState(false)
 
@@ -149,11 +149,11 @@ export default function RequestsContainer() {
 
     return (
         <>
-            <TextEditor 
-                showState={[showEditor, setShowEditor]} 
-                text={[text, setText]} 
-                action={declineRequest} 
-                loading={[loading, setLoading]} 
+            <TextEditor
+                showState={[showEditor, setShowEditor]}
+                text={[text, setText]}
+                action={declineRequest}
+                loading={[loading, setLoading]}
                 title={"Declining Request"}
                 subTitle={""}
                 inputPlaceHolder={`Let ${senderDisplayName} know why you are unable to give the requested resource`}
@@ -166,13 +166,13 @@ export default function RequestsContainer() {
                 <div className="requests-container">
                     {requests?.map((request: any) => {
                         return (
-                            <Request 
-                                request={[request, dispatchRequest]} 
-                                inputOptions={posts} 
-                                showEditor={[showEditor, setShowEditor]} 
-                                recID={[recID, setRecID]} 
+                            <Request
+                                request={[request, dispatchRequest]}
+                                inputOptions={posts}
+                                showEditor={[showEditor, setShowEditor]}
+                                recID={[recID, setRecID]}
                                 senderDisplayName={[senderDisplayName, setSenderDisplayName]}
-                                key={request.recID} 
+                                key={request.recID}
                             />
                         )
                     })}

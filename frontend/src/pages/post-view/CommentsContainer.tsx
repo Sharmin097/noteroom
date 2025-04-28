@@ -5,10 +5,10 @@ import TextEditor from "../../partials/PopupTextEditor"
 import Swal from "sweetalert2"
 import withReactContent from "sweetalert2-react-content"
 import { Link } from "react-router-dom"
-import { useAppData } from "../../context/AppDataContext"
+import { useAppData } from "../../context/appdata.context"
 import Toki from "../../assets/toki_nocomments.png"
-import { useUserAuth } from "../../context/UserAuthContext"
-import { useGlobalComponentController } from "../../context/GlobalComponentContext"
+import { useUserAuth } from "../../context/userauth.context"
+import { useGlobalComponentController } from "../../context/globaldata.context"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
@@ -30,8 +30,8 @@ function Comment({ feedbackData, children }: any) {
             <div className="main__cmnts-replies-wrapper">
                 <div className="main__body cmnt-body-3rows">
                     <div className="main__reply-info reply-info">
-                        <Link to={`/user/${feedbackData?.commenterDocID?.username}`} style={{textDecoration: "none", color: "black"}}>
-                            <span className="main__author-name">{feedbackData?.commenterDocID?.displayname || "[deleted]" }</span>
+                        <Link to={`/user/${feedbackData?.commenterDocID?.username}`} style={{ textDecoration: "none", color: "black" }}>
+                            <span className="main__author-name">{feedbackData?.commenterDocID?.displayname || "[deleted]"}</span>
                         </Link>
                         <span className="reply-date">{(new Date(feedbackData?.createdAt)).toDateString()}</span>
                     </div>
@@ -88,7 +88,7 @@ function Reply({ replyData, parentFeedbackDocID }: { replyData: any, parentFeedb
             />
             <div className="cmnt-body-3rows">
                 <div className="reply-info">
-                    <Link to={`/user/${replyData?.commenterDocID?.username}`} style={{textDecoration: "none", color: "black"}}>
+                    <Link to={`/user/${replyData?.commenterDocID?.username}`} style={{ textDecoration: "none", color: "black" }}>
                         <span className="main__author-name">{replyData?.commenterDocID?.displayname || "[deleted]"}</span>
                     </Link>
                     <span className="reply-date">{(new Date(replyData?.createdAt)).toDateString()}</span>
@@ -149,11 +149,11 @@ export default function CommentsContainer() {
     const [replyData, setReplyData] = useState<string>("")
     const [loading, setLoading] = useState<boolean>(false)
     const [loadingComments, setLoadingComments] = useState<boolean>(true)
-    const { userProfile: [, , currentUsername] } = useAppData()
+    const { userProfile: [, , currentUsername] } = useAppData()!
     const { toast: [toast, setToast] } = useGlobalComponentController()!
 
-    const { noteData } = useContext(PostContext)
-    const postID = noteData?.noteData.noteID
+    const { noteData } = useContext(PostContext)!
+    const postID = noteData?.postID!
     const replyToUsernameRef = useRef<string>("")
     const replyToDisplaynameRef = useRef<string>("")
 

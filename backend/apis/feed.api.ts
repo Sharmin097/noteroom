@@ -7,6 +7,7 @@ import logger from "../logger";
 const router = Router()
 
 export default function feedApiRouter(io: Server) {
+    //DEPRECATED
     router.get("/", async (req, res) => {
         try {
             const count = 7

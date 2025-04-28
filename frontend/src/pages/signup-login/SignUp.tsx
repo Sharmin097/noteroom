@@ -4,7 +4,7 @@ import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
 import SignUpImage from "../../assets/signup_image.png"
 import "../../public/css/signup-login.css"
-import { useUserAuth } from '../../context/UserAuthContext';
+import { useUserAuth } from '../../context/userauth.context';
 import slug from 'slug';
 import GoogleLogin from '../../partials/GoogleLogin';
 import MainLayout from './MainLayout';
@@ -123,47 +123,23 @@ const SignUp = () => {
             <div className="auth-form-form">
                 <div className="auth-form-google-container">
                     <GoogleLogin setUserAuth={setUserAuth} />
-                </div>
-                
-                <div className="auth-form-or-separator">
-                    <span className="auth-form-or-text">— OR —</span>
-                </div>
-
-                <div className="auth-form-input-fields">
-                    <div className="auth-form-input-label">Name</div>
-                    <input 
-                        type="text" 
-                        value={displayname} 
-                        onChange={(e) => setDisplayname(e.target.value)} 
-                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
-                        required 
-                    />
                     
-                    <div className="auth-form-input-label">Email</div>
-                    <input 
-                        type="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
-                        required 
-                    />
-                    
-                    <div className="auth-form-input-label">Set a new password</div>
-                    <div className="auth-form-password-container">
-                        <input 
-                            type={passwordVisible ? "text" : "password"} 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
-                            required 
-                        />
-                        <button 
-                            className="auth-form-password-toggle" 
-                            onClick={() => setPasswordVisible(prev => !prev)}
-                        >
-                            {passwordVisible ? "hide" : "show"}
-                        </button>
+                    <div className="separator flex-center-evenly">
+                        <span className="line"></span>
+                        <span className="txt-gray-light-bold">Or</span>
+                        <span className="line"></span>
                     </div>
+
+                    <div className="custom-form flex-column-center">
+                        <input type="text" value={displayname} onChange={(e) => setDisplayname(e.target.value)} name="displayname" placeholder="Your Name" className="custom__input-field" required />
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} name="email" placeholder="Email (required)" className="custom__input-field" required />
+
+                        <div className="password-container">
+                            <input type={passwordVisible ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} id="password" name="password" placeholder="Set a password" className="custom__input-field custom__input-field--marginless" required />
+                            <button type="button" onClick={() => setPasswordVisible(prev => !prev)} className="toggle-password">
+                                {passwordVisible ? "hide" : "show"}
+                            </button>
+                        </div>
 
                     {hasError && (
                         <div className="auth-form-error-message">

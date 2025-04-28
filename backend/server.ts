@@ -3,12 +3,13 @@ import { join } from 'path'
 import { config } from 'dotenv';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4'
 
 import cookieParser from 'cookie-parser'
 import session from 'express-session'
 import { connect } from 'mongoose'
-import _pkg from 'body-parser';
-const { urlencoded } = _pkg;
+import { urlencoded, json } from 'body-parser';
 import fileUpload from 'express-fileupload'
 import cors from 'cors'
 import pkg from 'connect-mongo';
@@ -28,12 +29,15 @@ import authApiRouter from './apis/auth.api.js';
 import uploadApiRouter from './apis/upload.api.js';
 import mcqApiRouter from './apis/mcq.api';
 import friendsApiRouter from './apis/friends.api';
+import resolvers from './graphql/resolvers/index.resolver'
+import typeDefs from './graphql/typeDefs/index.typeDef'
 
 config({ path: join(__dirname, '.env') });
 
 const app = express()
 const server = createServer(app);
 const io = new SocketIOServer(server, { cors: { origin: '*' } });
+const apolloServer = new ApolloServer({ typeDefs, resolvers })
 const url = (process.env.DEVELOPMENT && process.env.DEVELOPMENT === "true") ? process.env.MONGO_URI_DEV : process.env.MONGO_URI
 
 connect(url).then(() => {
@@ -53,7 +57,6 @@ app.use(cors({
     origin: allowedHosts,
     credentials: true
 }))
-
 app.use(express.json()); 
 app.use(express.static(staticPath))
 app.use(urlencoded({ extended: true })) 
@@ -71,7 +74,6 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 720
     }
 }));
-
 app.use(cookieParser()) 
 app.use(fileUpload()) 
 
@@ -122,6 +124,22 @@ io.on('connection', (socket) => {
     })
 })
 
-server.listen(port, () => {
-    console.log(chalk.cyan(`[-] server is listening on: ${chalk.yellow(`http://localhost:${port}`)}`));
+async function startServer() {
+    await apolloServer.start()
+
+    app.use("/api/graphql", expressMiddleware(apolloServer, {
+        context: async ({ req, res }) => ({
+            req, res
+        })
+    }))
+
+    server.listen(port, () => {
+        console.log(chalk.cyan(`[-] server is listening on: ${chalk.yellow(`http://localhost:${port}`)}`));
+    })
+}
+
+startServer().then(() => {
+    console.log(chalk.cyan(`[-] apollo server started, enpoint: ${chalk.yellow(`http://localhost:${port}/graphql`)}`));
+}).catch(error => {
+    console.log(chalk.cyan(`[-] apollo server couldn't start: ${chalk.red(error)}`));
 })

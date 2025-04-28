@@ -3,10 +3,10 @@ import FeedNoteMenu from "./NoteMenu";
 import RequestModal from "../../partials/RequestModal";
 import { Link, useNavigate } from "react-router-dom";
 import { FeedNoteEngagement } from "./NoteEngagements";
-import { FeedNoteObject } from "../../types/types";
 import UnavailableImage from "../../assets/placeholders/unavailable_content.png"
+import { PostType } from "../../../../types/post.types";
 
-function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
+function FeedNoteFirstRow({ note }: { note: PostType }) {
   const [showReqModal, setShowReqModal] = useState(false);
   const navigate = useNavigate()
 
@@ -15,7 +15,7 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
       <div className="fnc__first-row">
         <div className="fnc__fr-author-img-wrapper">
           <img
-            src={note.ownerData.profile_pic}
+            src={note?.owner?.profile_pic}
             className="fnc__fr-author-img"
           />
         </div>
@@ -23,10 +23,10 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
           <div className="note-info-wrapper--first-row">
             <div className="niw--fr-first-col">
               <div className="niw--fr-first-col-fr">
-                <a className="author-prfl-link" onClick={() => navigate(`/user/${note.ownerData.ownerUserName}`)}>
-                  {note.ownerData.ownerDisplayName}
+                <a className="author-prfl-link" onClick={() => navigate(`/user/${note?.owner?.username}`)}>
+                  {note?.owner?.displayname}
                 </a>
-                {!note.ownerData.isOwner ? (
+                {!note?.isPostOwner ? (
                   <>
                     <span className="niw--fr-first-col-fr-seperator"></span>
                     <span
@@ -41,7 +41,7 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
                 )}
               </div>
               <span className="niw--fr-first-col-note-pub-date">
-                {new Date(note.noteData.createdAt).toDateString()}
+                {new Date(parseInt(note?.createdAt)).toDateString()}
               </span>
             </div>
 
@@ -51,10 +51,10 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
           </div>
 
           <div className="note-info-wrapper--second-row">
-            <p className="fnc--note-desc">
+            <p className="fnc--note-desc" style={{overflowWrap: "break-word", wordBreak: "break-word", whiteSpace: "normal"}}>
               {(function () {
                 let body = new DOMParser()
-                  .parseFromString(note.noteData.description || note.noteData.noteTitle, "text/html")
+                  .parseFromString(note?.description || note?.title, "text/html")
                   .querySelector("body");
                 let description = body ? body.textContent?.trim() : "";
                 if (description) {
@@ -78,10 +78,10 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
           </div>
         </div>
       </div>
-      {!note.ownerData.isOwner ? (
+      {!note.isPostOwner ? (
         <RequestModal
           modalShow={[showReqModal, setShowReqModal]}
-          recipientData={{ profile_pic: note.ownerData.profile_pic, displayname: note.ownerData.ownerDisplayName, username: note.ownerData.ownerUserName }}
+          recipientData={{ profile_pic: note?.owner?.profile_pic, displayname: note?.owner?.displayname, username: note?.owner?.username }}
         ></RequestModal>
       ) : (
         ""
@@ -90,22 +90,22 @@ function FeedNoteFirstRow({ note }: { note: FeedNoteObject }) {
   );
 }
 
-function FeedNoteSecondRow({ note }: { note: FeedNoteObject }) {
-  const contentCount = note.contentData.contentCount;
+function FeedNoteSecondRow({ note }: { note: PostType }) {
+  const contentCount = note?.content.totalContentCount
 
   return (
-    <Link to={`/post/${note.noteData.noteID}`}>
+    <Link to={`/post/${note?.postID}`}>
       <div className="fnc__second-row">
         {
             contentCount !== 0 ? 
               contentCount === 1 ?
                 <div className="quickpost-thumbnail-wrapper">
-                  <img className="quickpost-thumbnail" src={note.contentData.content1 || UnavailableImage} />
+                  <img className="quickpost-thumbnail" src={note?.content?.resources?.[0] || UnavailableImage} />
                 </div> :
                 <div className="thumbnail-grid">
-                  <img className="thumbnail primary-img" src={note.contentData.content1 || UnavailableImage} />
+                  <img className="thumbnail primary-img" src={note?.content?.resources?.[0] || UnavailableImage} />
                   <div className="thumbnail-secondary-wrapper">
-                    <img className="thumbnail secondary-img" src={note.contentData.content2 || UnavailableImage} />
+                    <img className="thumbnail secondary-img" src={note?.content?.resources?.[1] || UnavailableImage} />
                     {contentCount > 2 ? <div className="thumbnail-overlay">+{contentCount - 2}</div> : ''}
                   </div>
                 </div> 
@@ -117,8 +117,8 @@ function FeedNoteSecondRow({ note }: { note: FeedNoteObject }) {
   );
 }
 
-function FeedNoteThirdRow({ note }: { note: FeedNoteObject }) {
-  const upvoteCount = note.interactionData.upvoteCount
+function FeedNoteThirdRow({ note }: { note: PostType }) {
+  const upvoteCount = note?.interactionData?.upvoteCount
 
   return (
     <div className="fnc__third-row">
@@ -157,7 +157,7 @@ function FeedNoteThirdRow({ note }: { note: FeedNoteObject }) {
 
         <div className="review-metric-wrapper">
           <span className="review-count metric-count-font cmnt-count">
-            {note.interactionData.feedbackCount} Feedbacks
+            {note?.interactionData?.feedbackCount} Feedbacks
           </span>
         </div>
       </div>
@@ -166,9 +166,9 @@ function FeedNoteThirdRow({ note }: { note: FeedNoteObject }) {
   );
 }
 
-export default function FeedNote({ note, ref }: { note: FeedNoteObject, ref?: any }) {
+export default function FeedNote({ note, ref }: { note: PostType, ref?: any }) {
   return (
-    <div className="feed-note-card" ref={ref} id={note.noteData.noteID}>
+    <div className="feed-note-card" ref={ref} id={note?.postID}>
       <FeedNoteFirstRow note={note}></FeedNoteFirstRow>
       <FeedNoteSecondRow note={note}></FeedNoteSecondRow>
       <FeedNoteThirdRow note={note}></FeedNoteThirdRow>
