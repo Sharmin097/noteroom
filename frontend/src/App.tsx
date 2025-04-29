@@ -1,7 +1,7 @@
 import { DashBoard } from "./pages/dashboard/index";
 import { LeftPanel, NoteSearchBar, NotificationModal, RightPanel } from "./partials/index";
 import MobileControlPanel from "./partials/MobileControlPanel";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PostView from "./pages/post-view/PostView";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import SearchProfile from "./pages/search-profile/SearchProfile";
@@ -15,8 +15,11 @@ import UploadNote from "./pages/upload-note/UploadNote";
 import NotFound from "./pages/error-pages/NotFound";
 import { useGlobalComponentController } from "./context/globaldata.context";
 import { CustomToast } from "./partials/Toast";
+import ReactGA from "react-ga4"
 
 //TODO: A reddit like logo when the feed loads or the user auth loads
+
+const gaTrackingID = import.meta.env.VITE_GOOGLE_ANALYTICS_DEVELOPMENT_TRACKING_KEY
 
 function PublicRoute() {
 	const { userAuth, loading } = useUserAuth()!
@@ -68,6 +71,17 @@ function App() {
 	const { userAuth } = useUserAuth()!;
 	const { pathname } = useLocation()
 	const { toast: [toast, setToast] } = useGlobalComponentController()
+
+	useEffect(() => {
+		try {
+			if (import.meta.env.VITE_ENABLE_GOOGLE_ANALYTICS === "true") {
+				ReactGA.initialize(gaTrackingID)
+				ReactGA.send("pageview")
+			} 
+		} catch (error) {
+			console.error(error)
+		}
+	}, [])
 
 	return (
 		<>

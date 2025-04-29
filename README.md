@@ -1,113 +1,162 @@
-# NoteRoom
+# Welcome to the NoteRoom Project
 
-**NoteRoom** is a social media for the curious allowing you develop yourself in a social network of the intellectuals.
-
-## Features
-
-- **Note Sharing**: Upload and share notes with classmates.
-- **Search & Discover**: Find notes by subjects, tags, or keywords.
-- **Collaboration**: Work together on shared notes.
-- **User Profiles**: Create personalized profiles showcasing your contributions.
-- **Secure & Reliable**: Built with secure authentication and data management.
-
-## Tech Stack
-
-- **Frontend**: HTML, CSS
-- **Backend**: Node.js with Express.js
-- **Programming Language**: TypeScript (compiled to JavaScript)
-- **Database**: MongoDB Atlas
-- **Templating Engine**: EJS (being migrated to React)
-- **Version Control**: Git & GitHub
-- **Package Manager**: npm
-- **Environment Variables**: dotenv
-- **Build Tools**: tsc (TypeScript Compiler)
-
-## Installation
-
-Follow these steps carefully to set up the project on your local machine:
-
-### 1. Clone the repository
-Download the project files to your computer:
-```bash
- git clone https://github.com/ju4700/noteroom.git
-```
-
-### 2. Navigate into the project directory
-Move into the newly created directory:
-```bash
- cd noteroom
-```
-
-### 3. Install dependencies
-Install all required packages listed in `package.json`:
-```bash
- npm install
-```
-
-This will download and set up all the Node.js packages needed for the project.
-
-### 4. Set up environment variables
-Create a `.env` file in the root directory to store sensitive data and configuration options. Add the following content:
-```plaintext
- MONGODB_URI=your_mongodb_connection_string
- PORT=3000
-```
-- **MONGODB_URI**: Your MongoDB Atlas connection string.
-- **PORT**: The port number where the app will run (default is 3000).
-
-Make sure you never share this file or commit it to version control.
-
-### 5. Compile TypeScript to JavaScript
-Convert the TypeScript code into JavaScript using the TypeScript compiler:
-```bash
- npx tsc
-```
-
-This will generate a `dist/` folder containing the compiled JavaScript files.
-
-### 6. Run database migrations (if any)
-Ensure your MongoDB database is up and running. If there are any migrations or initial seed data, run them accordingly.
-
-### 7. Start the development server
-Launch the server in development mode:
-```bash
- npm run dev
-```
-The server will start running, and you'll see the logs in your terminal.
-
-### 8. Access the application
-Once the server is running, open your web browser and go to:
-```plaintext
- http://localhost:3000
-```
-You should now see the NoteRoom homepage!
-
-## Usage
-
-- **Sign Up/Login** to start sharing notes.
-- **Upload Notes** by navigating to the "Add Note" page.
-- **Explore Notes** via the search bar or browse categories.
-- **Edit or Delete** your own notes anytime.
-
-## Contributing
-
-Contributions are welcome! To get started:
-1. Fork the repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Commit your changes:
-   ```bash
-   git commit -m "Add your feature"
-   ```
-4. Push the branch:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-5. Create a Pull Request.
+**NoteRoom** is the premier platform for mastering learning, streamlining organization, and fostering intellectual collaboration, all while enhancing your cognitive social experience.
 
 ---
+<br>
 
-⭐ **Star** this repo if you find NoteRoom useful!
+# Folder Structure and Conventions
 
+Our project is based on **NodeJS-Express-MongoDB (mongoose)** and **React**.
+This documentation will show you all the conventions, tools and other things we use to make things aligned acorss the team
+
+- ### Folder Structure
+   1. `backend/` - All the backend APIs, services and database models
+   
+      - `apis/` - REST APIs
+      - `graphql/` - GraphQL APIs
+         - `queries/` - The GraphQL queries used by the client
+         - `resolvers/` - Query resolvers
+         - `scalar/` - Custom GraphQL scalars
+         - `typeDefs/` - GraphQL query type definitions
+
+      - `schemas/` - Database schemas and models
+      - `services/` - Backend services and business logics
+
+   2. `frontend/` - All the frontend components (Currently React), controllers, managers and functions
+      - `src/assets` - Public images, videos and all those things
+      - `src/public` - Publicl css, js if needed
+      - `src/pages` - Components and controllers for each page. Each page will have a folder
+      - `src/partials` - Common components used across the platform
+      - `src/reducers` - React Reducers implementations
+      - `src/context` - React Context Managers implementations
+      - `src/utils` - Utility functions
+      
+
+   3. `types/` - All the globally defined types which are used by the backend and frontend to follow a fixed data structure. 
+
+- ### File naming conventions:
+   For naming files, we use *file suffix conventions* or *role-based file namings*. The role of the file is added right after its name using a dot.notation before the extension. Like API files will be like, something.api.ts, GraphQL type definition files will be like something.typeDef.ts
+
+- ### Environment Variables:
+   There are currently 2 .env files, one for backend which will be inside **backend/** directory at root level. And the other one will be for frontend which will be inside **frontend/** at root level.
+
+- ### File Organization Rules:
+   Currently we are following type-based file organization. Same type of files will go together. For say all the REST APIs will go into backend/apis folder
+
+- ### Best Practices:
+   - Try to use 4 space tabs. 
+   - We prefer not to break lines unnecessarily, specially breaking each lines of HTML attributes. Avoid using Prettier or configure it in that way.
+   - We prefer functional approach rather than OOP in JavaScript. But obviously depends on the product's complexity and developer's mindset. But for React, we have been using functional approach rather than OOP for a long time for simplicity. 
+   - For React components, we prefer defining functions by `function` keyword rather than arrow functions. This makes the component look a bit cool!! But for smaller chunks, arrow functions can be used.
+
+- ### Important Extensions We Use:  
+   <table border="1">
+      <tr>
+         <th>Extension</th>
+         <th>Extension ID</th>
+      </tr>
+      <tr>
+         <td>Better Comments</td>
+         <td>aaron-bond.better-comments</td>
+      </tr>
+      <tr>
+         <td>Error Lens</td>
+         <td>usernamehw.errorlens</td>
+      </tr>
+      <tr>
+         <td>Postman</td>
+         <td>Postman.postman-for-vscode</td>
+      </tr>
+      <tr>
+         <td>TypeLens</td>
+         <td>kisstkondoros.typelens</td>
+      </tr>
+      <tr>
+         <td>Rainbow Brackets</td>
+         <td>tal7aouy.rainbow-bracket</td>
+      </tr>
+      <tr>
+         <td>ESLint</td>
+         <td>dbaeumer.vscode-eslint</td>
+      </tr>
+      <tr>
+         <td>Apollo GraphQL</td>
+         <td>apollographql.vscode-apollo</td>
+      </tr>
+   </table>
+<br>
+
+---
+# NPM Monorepo Guide
+
+This project follows a **monorepo structure** with a root `package.json` file and separate `package.json` files for the **frontend** (`frontend/package.json`) and **backend** (`backend/package.json`).
+
+## Module Installation
+
+Since this is a **monorepo**, where both frontend and backend are managed from a single root `package.json`, module installation follows specific rules:
+
+1. **Installing all dependencies** (for both frontend and backend):
+   ```sh
+   npm install --workspaces
+   ```
+   This installs all required dependencies and distributes them into the respective workspaces.
+
+2. **Installing a shared module (used in both frontend and backend):**
+   ```sh
+   npm install <package-name> -w backend -w frontend
+   ```
+   This ensures the module is installed and accessible in both workspaces.
+
+3. **Installing a backend-only module:**
+   ```sh
+   npm install <package-name> -w backend
+   ```
+
+4. **Installing a frontend-only module:**
+   ```sh
+   npm install <package-name> -w frontend
+   ```
+
+## Scripts Overview
+
+All development and build scripts are **listed in the root `package.json`**. Scripts must be executed from the root directory.
+
+1. **Building the backend:**
+   ```sh
+   npm run build:backend
+   ```
+   - This compiles TypeScript files and generates a `dist/` folder inside `backend/`.
+
+2. **Building the frontend:**
+   ```sh
+   npm run build:frontend
+   ```
+   - This compiles React files and generates a `dist/` folder inside `frontend/`.
+
+3. **Running the backend development server:**
+   ```sh
+   npm run dev:backend
+   ```
+   - This starts the Node.js server with `nodemon` for automatic restarts on file changes.
+
+4. **Running the frontend development server:**
+   ```sh
+   npm run dev:frontend
+   ```
+   - This starts the **Vite** development server for the React frontend.
+
+
+<br><br>
+
+<hr>
+
+<p align="center" style="margin-top: 40px;">
+  <img src="https://storage.googleapis.com/noteroom-fb1a7.appspot.com/Assets/ng_logo.png" alt="Noteroom Logo" width="100" height="100" />
+</p>
+
+<p align="center" style="font-size: 16px; font-weight: 400; margin-top: 10px;">
+  Maintained by <span style="font-size: 20px; font-weight: 600">NoteRoom</span>
+</p>
+
+<hr>
