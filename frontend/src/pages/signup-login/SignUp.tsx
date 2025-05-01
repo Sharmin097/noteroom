@@ -125,53 +125,58 @@ const SignUp = () => {
             <div className="auth-form-form">
                 <div className="auth-form-google-container">
                     <GoogleLogin setUserAuth={setUserAuth} />
-                    
-                    <div className="separator flex-center-evenly">
-                        <span className="line"></span>
-                        <span className="txt-gray-light-bold">Or</span>
-                        <span className="line"></span>
-                    </div>
+                </div>
+                
+                <div className="auth-form-or-separator">
+                    <span className="auth-form-or-text">— OR —</span>
+                </div>
 
-                    <div className="custom-form flex-column-center">
+                <div className="auth-form-input-fields">
+                    <div className="auth-form-input-label">Your Name</div>
+                    <input
+                        type="text"
+                        value={displayname}
+                        onChange={(e) => setDisplayname(e.target.value)}
+                        name="displayname"
+                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                        required
+                    />
+                    
+                    <div className="auth-form-input-label">Email</div>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        name="email"
+                        className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                        required
+                    />
+                    
+                    <div className="auth-form-input-label">Password</div>
+                    <div className="auth-form-password-container">
                         <input
-                            type="text"
-                            value={displayname}
-                            onChange={(e) => setDisplayname(e.target.value)}
-                            name="displayname"
-                            placeholder="Your Name"
-                            className={`custom__input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                            type={passwordVisible ? "text" : "password"}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            id="password"
+                            name="password"
+                            className={`auth-form-input-field ${hasError ? 'auth-form-input-error' : ''}`}
                             required
                         />
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            name="email"
-                            placeholder="Email (required)"
-                            className={`custom__input-field ${hasError ? 'auth-form-input-error' : ''}`}
-                            required
-                        />
-                        <div className="password-container">
-                            <input
-                                type={passwordVisible ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                id="password"
-                                name="password"
-                                placeholder="Set a password"
-                                className={`custom__input-field custom__input-field--marginless ${hasError ? 'auth-form-input-error' : ''}`}
-                                required
-                            />
-                            <button type="button" onClick={() => setPasswordVisible(prev => !prev)} className="toggle-password">
-                                {passwordVisible ? "hide" : "show"}
-                            </button>
-                        </div>
-                        {hasError && (
-                            <div className="auth-form-error-message">
-                                {authError}
-                            </div>
-                        )}
+                        <button 
+                            type="button" 
+                            onClick={() => setPasswordVisible(prev => !prev)} 
+                            className="auth-form-password-toggle"
+                        >
+                            {passwordVisible ? "hide" : "show"}
+                        </button>
                     </div>
+                    
+                    {hasError && (
+                        <div className="auth-form-error-message">
+                            {authError}
+                        </div>
+                    )}
 
                     <button 
                         className="auth-form-button" 
@@ -184,7 +189,7 @@ const SignUp = () => {
             </div>
             
             <div className="auth-form-login-link">
-                <p>Already have an account? <a href="/login">Sign In</a></p>
+                <p>Don't have an account? <a href="/login">Sign In</a></p>
             </div>
         </MainLayout>
     );

@@ -133,7 +133,7 @@ const SelectPlan: React.FC = () => {
 
   return (
     <div className="plan-selection-container">
-      <div className="go-back-btn" onClick={handleGoBack}>
+      <div className="checkout-go-back-btn" onClick={handleGoBack}>
         <svg width="31" height="32" viewBox="0 0 31 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M6.65 18L16.7079 28.0579C17.337 28.687 17.3325 29.7084 16.6979 30.3319C15.7577 31.2556 14.2489 31.2489 13.317 30.317L0.900701 17.9007C-0.149029 16.851 -0.149026 15.149 0.900703 14.0993L13.5999 1.40005C14.3752 0.624828 15.6303 0.619276 16.4124 1.38761C17.2043 2.16562 17.2099 3.44007 16.4249 4.22506L6.65 14H29C30.1046 14 31 14.8954 31 16C31 17.1046 30.1046 18 29 18H6.65Z" fill="#1D1B20" />
         </svg>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../public/css/signup-login.css'
 import { useUserAuth } from '../../context/userauth.context';
@@ -22,6 +22,9 @@ export default function Login() {
     const [authError, setAuthError] = useState<string>("")
     const [hasError, setHasError] = useState<boolean>(false)
 
+    // Add ref for email input
+    const emailInputRef = useRef<HTMLInputElement>(null);
+
     function showSwal(text: any) {
         return ReactSwal.fire({
             title: "Unable to authenticate",
@@ -42,7 +45,6 @@ export default function Login() {
 
     async function login() {
         try {
-            // Reset any previous errors
             setHasError(false)
             setAuthError("")
             
@@ -61,17 +63,22 @@ export default function Login() {
                     setUserAuth(data.userAuth)
                     navigate("/", { replace: true })
                 } else {
-                    // Show inline error instead of alert
                     setHasError(true)
                     setAuthError(data.message || "Invalid username or password.")
+                    // Focus on email input when error occurs
+                    emailInputRef.current?.focus();
                 }
             } else {
                 setHasError(true)
                 setAuthError("Invalid username or password.")
+                // Focus on email input when error occurs
+                emailInputRef.current?.focus();
             }
         } catch (error) {
             setHasError(true)
             setAuthError("Something went wrong! Please try again later.")
+            // Focus on email input when error occurs
+            emailInputRef.current?.focus();
         }
     }
 
@@ -105,6 +112,7 @@ export default function Login() {
                 <div className="auth-form-input-fields">
                     <div className="auth-form-input-label">Email</div>
                     <input 
+                        ref={emailInputRef}
                         type="email" 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)} 
