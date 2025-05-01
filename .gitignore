@@ -5,4 +5,4 @@ node_modules
 */settings.*
 logs/
 tests
-.tours/
+.*
