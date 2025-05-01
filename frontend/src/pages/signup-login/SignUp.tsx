@@ -61,8 +61,10 @@ const SignUp = () => {
             if (response.ok) {
                 const data = await response.json()
                 if (data.ok) {
-                    setUserAuth(data.userAuth)
-                    navigate("/profession",{replace:true})
+                    navigate("/profession", { replace: true })
+                    setTimeout(() => {
+                        setUserAuth(data.userAuth)
+                    }, 100)
                 } else {
                     if (!data.displayname) {
                         setHasError(true)
@@ -131,21 +133,45 @@ const SignUp = () => {
                     </div>
 
                     <div className="custom-form flex-column-center">
-                        <input type="text" value={displayname} onChange={(e) => setDisplayname(e.target.value)} name="displayname" placeholder="Your Name" className="custom__input-field" required />
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} name="email" placeholder="Email (required)" className="custom__input-field" required />
-
+                        <input
+                            type="text"
+                            value={displayname}
+                            onChange={(e) => setDisplayname(e.target.value)}
+                            name="displayname"
+                            placeholder="Your Name"
+                            className={`custom__input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                            required
+                        />
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            name="email"
+                            placeholder="Email (required)"
+                            className={`custom__input-field ${hasError ? 'auth-form-input-error' : ''}`}
+                            required
+                        />
                         <div className="password-container">
-                            <input type={passwordVisible ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} id="password" name="password" placeholder="Set a password" className="custom__input-field custom__input-field--marginless" required />
+                            <input
+                                type={passwordVisible ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                id="password"
+                                name="password"
+                                placeholder="Set a password"
+                                className={`custom__input-field custom__input-field--marginless ${hasError ? 'auth-form-input-error' : ''}`}
+                                required
+                            />
                             <button type="button" onClick={() => setPasswordVisible(prev => !prev)} className="toggle-password">
                                 {passwordVisible ? "hide" : "show"}
                             </button>
                         </div>
-
-                    {hasError && (
-                        <div className="auth-form-error-message">
-                            {authError}
-                        </div>
-                    )}
+                        {hasError && (
+                            <div className="auth-form-error-message">
+                                {authError}
+                            </div>
+                        )}
+                    </div>
 
                     <button 
                         className="auth-form-button" 
