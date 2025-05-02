@@ -1,5 +1,6 @@
 import Posts, { PostType } from "../../schemas/notes.model"
 import Users from "../../schemas/students.model"
+import { getReplies } from "../../services/feedback.service"
 import { isSaved } from "../../services/post.service"
 import { Convert } from "../../services/user.service"
 import { isUpvoted } from "../../services/vote.service"
@@ -60,6 +61,19 @@ const PostsResolvers = {
                 const issaved = await isSaved(userDocID, post._id.toString())
                 const isupvoted = await isUpvoted(post._id.toString(), userDocID)
                 return {...post.toObject(), isSaved: issaved, isUpvoted: isupvoted}
+            } catch (error) {
+                return null
+            }
+        }
+    },
+    Comment: {
+        async replies(parent) {
+            try {
+                const parentFeedbackDocID = parent._id?.toString()
+                const response = await getReplies(parentFeedbackDocID)
+                if (response.ok) {
+                    return response.replies
+                }
             } catch (error) {
                 return null
             }
