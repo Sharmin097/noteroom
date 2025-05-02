@@ -55,7 +55,7 @@ const Bank: React.FC<BankFormProps> = ({ onSubmit }) => {
       <div className="basic-information">
         <h3>Basic Information</h3>
         <div className="basic-information-container">
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="fullName">Name</label>
             <input
               type="text"
@@ -67,14 +67,14 @@ const Bank: React.FC<BankFormProps> = ({ onSubmit }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="contactNo">Contact No</label>
             <PhoneInput 
               value={formData.phone} 
               onChange={handlePhoneChange} 
             />
           </div>
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="email">Email Address</label>
             <input
               type="email"
@@ -92,7 +92,7 @@ const Bank: React.FC<BankFormProps> = ({ onSubmit }) => {
       <div className="bank-information">
         <h3>Bank Information</h3>
         <div className="basic-information-container">
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="bankName">Bank Name</label>
             <div className="bank-select-wrapper">
               <input
@@ -118,7 +118,7 @@ const Bank: React.FC<BankFormProps> = ({ onSubmit }) => {
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="accountNumber">Account Number</label>
             <input
               type="text"
@@ -132,7 +132,7 @@ const Bank: React.FC<BankFormProps> = ({ onSubmit }) => {
         </div>
 
         <div className="basic-information-container">
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="accountHolder">Account Holder</label>
             <input
               type="text"
@@ -144,7 +144,7 @@ const Bank: React.FC<BankFormProps> = ({ onSubmit }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="checkout-form-group">
             <label htmlFor="accountType">Account Type</label>
             <div className="bank-select-wrapper">
               <select

@@ -43,7 +43,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
             <div className="basic-information">
                 <h3>Basic Information</h3>
                 <div className="basic-information-container">
-                    <div className="form-group">
+                    <div className="checkout-form-group">
                         <label htmlFor="fullName">Name</label>
                         <input
                             type="text"
@@ -55,7 +55,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
                         />
                     </div>
 
-                    <div className="form-group">
+                    <div className="checkout-form-group">
                         <label htmlFor="contactNo">Contact No</label>
                         <PhoneInput 
                             value={formData.phone} 
@@ -63,7 +63,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
                         />
                     </div>
 
-                    <div className="form-group">
+                    <div className="checkout-form-group">
                         <label htmlFor="email">Email Address</label>
                         <input
                             type="email"
@@ -79,7 +79,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
 
             <div className="card-information">
                 <h3>Card Information</h3>
-                <div className="form-group">
+                <div className="checkout-form-group">
                     <label htmlFor="cardHolderName">Name On Card</label>
                     <input
                         type="text"
@@ -92,7 +92,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
                 </div>
 
                 <div className="card-details-grid">
-                    <div className="form-group card-number-group">
+                    <div className="checkout-form-group card-number-group">
                         <label htmlFor="cardNumber">Card No</label>
                         <input
                             type="text"
@@ -104,7 +104,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
                         />
                     </div>
 
-                    <div className="form-group expiry-group">
+                    <div className="checkout-form-group expiry-group">
                         <label htmlFor="expiryDate">Expiry Date</label>
                         <input
                             type="text"
@@ -116,7 +116,7 @@ const Card: React.FC<CardFormProps> = ({ onSubmit }) => {
                         />
                     </div>
 
-                    <div className="form-group cvv-group">
+                    <div className="checkout-form-group cvv-group">
                         <label htmlFor="cvv">CVC</label>
                         <input
                             type="text"
