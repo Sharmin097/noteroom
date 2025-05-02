@@ -80,14 +80,14 @@ export default function authApiRouter(io: Server) {
                             logger.info(`(/login): NoteRoom login with email=${email || '--email--'}`)
                             res.json({ ok: true, userAuth: { studentID: student["studentID"], username: student["username"] }});
                         } else {
-                            res.json({ ok: false, message: "Wrong Password!" })
+                            res.json({ ok: false, message: "Incorrect password. Try again" })
                         }
                     } else if (student["authProvider"] === "google") {
                         res.json({ ok: false, message: "Invalid login method. Try using Google login" })
                     }
                 } else {
                     if (response.code === "NO_EMAIL") {
-                        res.json({ ok: false, message: "No student profile is associated with that email account!" })
+                        res.json({ ok: false, message: "No student account associated with this email." })
                     } else if (response.code === "SERVER") {
                         logger.error(`(/login): Login failed with email=${email || '--email--'}: ${response.error}`)
                         res.json({ ok: false, message: "Something went wrong! Please try again a bit later." })
