@@ -119,7 +119,7 @@ const UploadNote: React.FC = () => {
   const [stackPdfs, setStackPdfs] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [youtubeLinks, setYoutubeLinks] = useState<Link[]>([])
-  const [activeTab, setActiveTab] = useState<SubNav>(SubNav.LINK);
+  const [activeTab, setActiveTab] = useState<SubNav>(SubNav.TEXT_IMAGE);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [mcqs, dispatch] = useReducer(mcqReducer, []);
   const [disableButton, setDisableButton] = useState<boolean>(true)
