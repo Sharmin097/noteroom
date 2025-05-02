@@ -87,7 +87,7 @@ export default function Login() {
 
             <div className="auth-form-form">
                 <div className="auth-form-google-container">
-                    <GoogleLogin setUserAuth={setUserAuth} />
+                    <GoogleLogin setUserAuth={setUserAuth} setLoading={setLoading} />
                 </div>
                 
                 <div className="auth-form-or-separator">
