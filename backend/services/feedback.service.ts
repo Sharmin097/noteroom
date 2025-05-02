@@ -1,9 +1,13 @@
-import { feedbacksModel as Feedbacks, replyModel as Reply } from "../schemas/comments.model"
+import { feedbacksModel as Comments, replyModel as Reply } from "../schemas/comments.model"
 import { isCommentUpVoted } from "./vote.service"
 import Notes from "../schemas/notes.model"
+import mongoose from "mongoose"
+import notesModel from "../schemas/notes.model"
+
+//DEPRECATED
 export async function getComments({ noteDocID, studentDocID }) {
     try {
-        let feedbacks = await Feedbacks.find({ noteDocID: noteDocID }).populate('commenterDocID', 'displayname username studentID profile_pic').sort({ createdAt: -1 })
+        let feedbacks = await Comments.find({ noteDocID: noteDocID }).populate('commenterDocID', 'displayname username studentID profile_pic').sort({ createdAt: -1 })
         let _extentedFeedbacks = await Promise.all(
             feedbacks.map(async feedback => {
                 let isupvoted = await isCommentUpVoted({ feedbackDocID: feedback._id.toString(), voterStudentDocID: studentDocID })
@@ -19,12 +23,67 @@ export async function getComments({ noteDocID, studentDocID }) {
     }
 }
 
+export async function getComment(postID?: string, studentDocID?: string) {
+    try {
+        const postDocID = (await notesModel.findOne({ postID: postID }, { _id: 1 }))._id
+        const comments = await Comments.aggregate([
+            { $match: { noteDocID: new mongoose.Types.ObjectId(postDocID) } },
+            { $lookup: {
+              from: 'students',
+              localField: 'commenterDocID',
+              foreignField: '_id',
+              as: 'commenter'
+            } },
+            { $unwind: {
+                path: '$commenter',
+            } },
+            { $project: {
+                feedbackContents: 1,
+                commenter: 1,
+                replyCount: 1, upvoteCount: 1,
+                createdAt: 1
+            } }
+        ])
+
+        return { ok: true, comments: comments }
+    } catch (error) {
+        return { ok: false, error: error }
+    }
+}
+
+export async function getReplies(parentFeedbackDocID: string) {
+    try {
+        const replies = await Reply.aggregate([
+            { $match: { parentFeedbackDocID: new mongoose.Types.ObjectId(parentFeedbackDocID) } },
+            { $lookup: {
+                from: 'students',
+                localField: 'commenterDocID',
+                foreignField: '_id',
+                as: 'replier'
+              } },
+              { $unwind: {
+                  path: '$replier',
+              } },
+              { $project: {
+                parentFeedbackDocID: 1,
+                feedbackContents: 1,
+                replier: 1,
+                createdAt: 1
+              } }
+        ])
+
+        return { ok: true, replies }
+    } catch (error) {
+        return { ok: false, error }
+    }
+}
+
 
 export async function addFeedback(feedbackData: any) {
     try {
         await Notes.findByIdAndUpdate(feedbackData.noteDocID, { $inc: { feedbackCount: 1 } })
-        let feedback = await Feedbacks.create(feedbackData)
-        let extendedFeedback = await Feedbacks.findById(feedback._id)
+        let feedback = await Comments.create(feedbackData)
+        let extendedFeedback = await Comments.findById(feedback._id)
             .populate('commenterDocID', 'displayname username studentID profile_pic')
             .populate({
                 path: 'noteDocID',
@@ -45,7 +104,7 @@ export async function addFeedback(feedbackData: any) {
 export async function addReply(replyData: any) {
     try {
         await Notes.findByIdAndUpdate(replyData.noteDocID, { $inc: { feedbackCount: 1 } })
-        await Feedbacks.findByIdAndUpdate(replyData.parentFeedbackDocID, { $inc: { replyCount: 1 } })
+        await Comments.findByIdAndUpdate(replyData.parentFeedbackDocID, { $inc: { replyCount: 1 } })
         let reply = await Reply.create(replyData)
         let extentedReply = await Reply.findById(reply._id)
             .populate('commenterDocID', 'displayname username studentID profile_pic')

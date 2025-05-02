@@ -1,3 +1,5 @@
+import { UserProfileType } from "./user.types"
+
 export interface UserProfilePost {
     postID: string,
     title: string,
@@ -28,4 +30,23 @@ export interface PostType {
         isSaved: boolean,
         isUpvoted: boolean
     }
+}
+
+export interface CommentType {
+    _id: string,
+    feedbackContents: string,
+    commenter: UserProfileType,
+    replyCount: number,
+    upvoteCount: number
+    createdAt: string,
+    isUpVoted: boolean,
+    replies: [ReplyType]
+}
+
+export interface ReplyType {
+    _id: string,
+    replier: UserProfileType,
+    feedbackContents: string,
+    createdAt: string,
+    parentFeedbackDocID: string
 }
