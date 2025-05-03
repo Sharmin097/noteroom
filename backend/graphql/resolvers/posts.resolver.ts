@@ -1,5 +1,7 @@
+import notesModel from "../../schemas/notes.model"
 import Posts, { PostType } from "../../schemas/notes.model"
 import Users from "../../schemas/students.model"
+import { addFeedback, addReply, getReplies } from "../../services/feedback.service"
 import { isSaved } from "../../services/post.service"
 import { Convert } from "../../services/user.service"
 import { isUpvoted } from "../../services/vote.service"
@@ -60,6 +62,64 @@ const PostsResolvers = {
                 const issaved = await isSaved(userDocID, post._id.toString())
                 const isupvoted = await isUpvoted(post._id.toString(), userDocID)
                 return {...post.toObject(), isSaved: issaved, isUpvoted: isupvoted}
+            } catch (error) {
+                return null
+            }
+        }
+    },
+    Comment: {
+        async replies(parent) {
+            try {
+                const parentFeedbackDocID = parent._id?.toString()
+                const response = await getReplies(parentFeedbackDocID)
+                if (response.ok) {
+                    return response.replies
+                }
+            } catch (error) {
+                return null
+            }
+        }
+    },
+    Mutation: {
+        //TODO: trigger notification when commented or replied to relevant user
+        async postComment(_, args: { postID: string, feedbackContent: string }, context) {
+            try {
+                const { req, res } = context
+                const postDocID = (await notesModel.findOne({ postID: args.postID }, { _id: 1 }))._id
+                const commenterDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
+                const feedbackData = {
+                    noteDocID: postDocID,
+                    feedbackContents: args.feedbackContent,
+                    commenterDocID: commenterDocID
+                }
+                const response = await addFeedback(feedbackData)
+                if (response.ok) {
+                    return response.feedback
+                }
+                return null
+            } catch (error) {
+                return null
+            }
+        },
+
+        async postReply(_, args: { postID: string, feedbackContent: string, parentFeedbackDocID: string}, context ) {
+            try {
+                const { req, res } = context
+                const postDocID = (await notesModel.findOne({ postID: args.postID }, { _id: 1 }))._id
+                const commenterDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
+
+                const replyData = {
+                    noteDocID: postDocID,
+                    feedbackContents: args.feedbackContent,
+                    commenterDocID: commenterDocID,
+                    parentFeedbackDocID: args.parentFeedbackDocID
+                }
+                
+                const response = await addReply(replyData)
+                if (response.ok) {
+                    return response.reply
+                }
+                return null
             } catch (error) {
                 return null
             }

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Server } from "socket.io";
 import { getSinglePost, addSavePost, deleteSavedPost, getSavedPosts } from "../services/post.service";
-import { addFeedback, addReply, getComments } from "../services/feedback.service";
+import { addFeedback, addReply } from "../services/feedback.service";
 import { addVote, deleteVote } from "../services/vote.service";
 import { Convert } from "../services/user.service";
 import { NotificationEvent, NotificationSender } from "../services/notification.service";
@@ -44,16 +44,17 @@ export default function postApiRouter(io: Server) {
         }
     })
 
+    //DEPRECATED
     router.get("/:postID/comments", async (req, res) => {
         try {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
             const studentDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
-            const response = await getComments({ noteDocID: postDocID, studentDocID })
-            if (response.ok) {
-                res.json({ ok: true, comments: response.comments })
-            } else {
-                res.json({ ok: false })
-            }
+            // const response = await getComments({ noteDocID: postDocID, studentDocID })
+            // if (response.ok) {
+            //     res.json({ ok: true, comments: response.comments })
+            // } else {
+            //     res.json({ ok: false })
+            // }
         } catch (error) {
             res.json({ ok: false })
         }
@@ -77,6 +78,7 @@ export default function postApiRouter(io: Server) {
         }
     })
 
+    //DEPRECATED: only the notification system needs to be implemented
     router.post("/:postID/feedbacks", async (req, res) => {
         try {
             const postID = req.params.postID
@@ -136,6 +138,7 @@ export default function postApiRouter(io: Server) {
         }
     })
 
+    //DEPRECATED: only the notification system needs to be implemented
     router.post("/:postID/feedbacks/:feedbackID/replies", async (req, res) => {
         try {
             const postID = req.params.postID
