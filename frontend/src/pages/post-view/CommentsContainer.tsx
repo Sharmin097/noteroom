@@ -1,24 +1,21 @@
-import React, { createContext, ReactNode, SetStateAction, useContext, useEffect, useRef, useState } from "react"
+import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react"
 import JoinConversation from "./JoinCoversation"
 import { PostContext } from "./PostView"
 import TextEditor from "../../partials/PopupTextEditor"
-import Swal from "sweetalert2"
-import withReactContent from "sweetalert2-react-content"
 import { Link } from "react-router-dom"
 import { useAppData } from "../../context/appdata.context"
 import Toki from "../../assets/toki_nocomments.png"
-import { useUserAuth } from "../../context/userauth.context"
 import { useGlobalComponentController } from "../../context/globaldata.context"
 import { CommentType, ReplyType } from "../../../../types/post.types"
-import { useQuery } from "@apollo/client"
-import { getCommentsByPostID } from "../../../../backend/graphql/queries/posts.query"
+import { useMutation, useQuery } from "@apollo/client"
+import { getCommentsByPostID, postReplyOnComment } from "../../../../backend/graphql/queries/posts.query"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 
 function Comment({ feedbackData, children }: { feedbackData: CommentType, children: ReactNode }) {
     const { controller: [openReplyEditor, upvoteComment] } = useContext(CommentsControllerContext)
-    const [isUpVoted, setIsUpVoted] = useState<boolean>(feedbackData?.isUpVoted || true)
-    const [upvoteCount, setUpvoteCount] = useState<number>(feedbackData?.upvoteCount)
+    const [isUpVoted, setIsUpVoted] = useState<boolean>(feedbackData?.isUpVoted || false) // FIXME: remove default value 
+    const [upvoteCount, setUpvoteCount] = useState<number>(feedbackData?.upvoteCount || 0)
 
     return (
         <div className='main-cmnt-container'>
@@ -36,7 +33,7 @@ function Comment({ feedbackData, children }: { feedbackData: CommentType, childr
                         <Link to={`/user/${feedbackData?.commenter?.username}`} style={{ textDecoration: "none", color: "black" }}>
                             <span className="main__author-name">{feedbackData?.commenter?.displayname || "[deleted]"}</span>
                         </Link>
-                        <span className="reply-date">{(new Date(feedbackData?.createdAt)).toDateString()}</span>
+                        <span className="reply-date">{(new Date(parseInt(feedbackData?.createdAt))).toDateString()}</span>
                     </div>
                     <div className="main__reply-msg reply-msg" dangerouslySetInnerHTML={{ __html: feedbackData?.feedbackContents }}></div>
                     <div className="main__engagement-opts engagement-opts">
@@ -94,7 +91,7 @@ function Reply({ replyData, parentFeedbackDocID }: { replyData: ReplyType, paren
                     <Link to={`/user/${replyData?.replier?.username}`} style={{ textDecoration: "none", color: "black" }}>
                         <span className="main__author-name">{replyData?.replier?.displayname || "[deleted]"}</span>
                     </Link>
-                    <span className="reply-date">{(new Date(replyData?.createdAt)).toDateString()}</span>
+                    <span className="reply-date">{(new Date(parseInt(replyData?.createdAt))).toDateString()}</span>
                 </div>
                 <div className="reply-msg" dangerouslySetInnerHTML={{ __html: replyData?.feedbackContents }}></div>
                 <div className="main__engagement-opts engagement-opts">
@@ -160,56 +157,40 @@ export default function CommentsContainer() {
     const replyToUsernameRef = useRef<string>("")
     const replyToDisplaynameRef = useRef<string>("")
 
+    const [postReply] = useMutation(postReplyOnComment, {
+        onCompleted: (data) => {
+            try {
+                if (data && data.postReply) {
+                    const { postReply: reply }: { postReply: ReplyType } = data
+                    setComments(prev => {
+                        return prev.map(comment => {
+                            if (comment._id === openedThreadID) {
+                                return { ...comment, replies: [...comment.replies || [], reply] }
+                            }
+                            return comment
+                        })                    
+                    })
+                    setShowEditor(false)
+                    setReplyData("")
+                    setOpenedThreadID("")
+                    setReplyToText("")
+                    setLoading(false)
+                }
+            } catch (error) {
+                fireToast("Something went wrong! Couldn't reply")
+            }
+        },
+        onError: (error) => {
+            fireToast("Something went wrong! Couldn't reply")
+        }
+    })
+
     async function sendReply() {
         try {
             if (replyData.trim().length === 0) return
 
             setLoading(true)
-            const replyFormData = new FormData()
-            replyFormData.append("replyContent", replyData)
-            replyFormData.append("replyToUsername", replyToUsernameRef.current)
-
-            const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/feedbacks/${openedThreadID}/replies`, {
-                method: "post",
-                body: replyFormData,
-                credentials: "include"
-            })
-            if (response.ok) {
-                const jsonData = await response.json()
-                if (jsonData.ok) {
-                    const reply = jsonData.reply
-                    const fetchedReply = {
-                        _id: reply._id,
-                        feedbackContents: reply.feedbackContents,
-                        commenterDocID: {
-                            profile_pic: reply.commenterDocID.profile_pic,
-                            displayname: reply.commenterDocID.displayname,
-                            username: reply.commenterDocID.username
-                        },
-                        parentFeedbackDocID: reply.parentFeedbackDocID._id,
-                        createdAt: reply.createdAt
-                    }
-                    setComments((commentData: any[]) => {
-                        return commentData.map(comment => {
-                            if (comment[0]._id === openedThreadID) {
-                                return [comment[0], [...comment[1], ...[fetchedReply]]]
-                            }
-                            return comment
-                        })
-                    })
-
-                    setShowEditor(false)
-                    setReplyData("")
-                    setOpenedThreadID("")
-                    setReplyToText("")
-                } else {
-                    fireToast("Something went wrong! Couldn't reply")
-                }
-                setLoading(false)
-            } else {
-                fireToast("Something went wrong! Couldn't reply")
-            }
-            setLoading(false)
+            await postReply({ variables: { postID, feedbackContent: replyData, parentFeedbackDocID: openedThreadID } })
         } catch (error) {
             fireToast("Something went wrong! Couldn't reply")
         } finally {

@@ -72,6 +72,7 @@ const getCommentsByPostID = gql`
         comments(postID: $postID) {
             _id
             feedbackContents
+            createdAt
             commenter {
                 profile_pic
                 username
@@ -80,6 +81,7 @@ const getCommentsByPostID = gql`
             replies {
                 feedbackContents
                 parentFeedbackDocID
+                createdAt
                 replier {
                     profile_pic
                     username
@@ -90,4 +92,34 @@ const getCommentsByPostID = gql`
     }
 `
 
-export { getPostByPostID, getPostsByPage, getPostContentsByPostID, getCommentsByPostID }
+const postCommentOnPost = gql`
+    mutation PostComment($postID: String!, $feedbackContent: String!) {
+        postComment(postID: $postID, feedbackContent: $feedbackContent) {
+            _id
+            feedbackContents
+            createdAt
+            commenter {
+                profile_pic
+                username
+                displayname
+            }
+        }
+    }
+`
+
+const postReplyOnComment = gql`
+    mutation PostReplyOnComment($postID: String!, $feedbackContent: String!, $parentFeedbackDocID: String!) {
+        postReply(postID: $postID, feedbackContent: $feedbackContent, parentFeedbackDocID: $parentFeedbackDocID) {
+            _id
+            feedbackContents
+            createdAt
+            replier {
+                profile_pic
+                username
+                displayname
+            }
+        }
+    }
+`
+
+export { getPostByPostID, getPostsByPage, getPostContentsByPostID, getCommentsByPostID, postCommentOnPost, postReplyOnComment }

@@ -40,7 +40,7 @@ export interface CommentType {
     upvoteCount: number
     createdAt: string,
     isUpVoted: boolean,
-    replies: [ReplyType]
+    replies: ReplyType[]
 }
 
 export interface ReplyType {

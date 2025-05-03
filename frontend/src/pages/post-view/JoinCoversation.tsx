@@ -2,57 +2,37 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 import TextEditor from "../../partials/PopupTextEditor"
 import "../../public/css/quick-post.css"
-
-let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
+import { useMutation } from "@apollo/client"
+import { postCommentOnPost } from "../../../../backend/graphql/queries/posts.query"
 
 export default function JoinConversation({ fireToast, loading: [loading, setLoading], comments: [comments, setComments] }: any) {
 	const [commentData, setCommentData] = useState<string>("")
 	const [showEditor, setShowEditor] = useState<boolean>(false)
 	const { postID } = useParams()
+
+	const [postComment] = useMutation(postCommentOnPost, {
+		onCompleted: (data) => {
+			try {
+				if (data && data.postComment) {
+					const { postComment: commentData } = data
+					setComments(prev => [...[commentData], ...prev])
+					setShowEditor(false)
+					setCommentData("")
+				}
+			} catch (error) {
+				fireToast("Something went wrong! Couldn't reply")
+			}
+		},
+		onError: (error) => {
+			fireToast("Something went wrong! Couldn't reply")
+		}
+	})
 	async function sendComment() {
 		if (commentData.trim().length === 0) return
 
 		try {
 			setLoading(true)
-			const feedbackFormData = new FormData()
-			feedbackFormData.append("feedbackContent", commentData)
-			
-			const response = await fetch(`${API_SERVER_URL}/api/posts/${postID}/feedbacks`, {
-				method: "post",
-				body: feedbackFormData,
-				credentials: "include"
-			})
-			if (response.ok) {
-				const jsonData = await response.json()
-				if (jsonData.ok) {
-					const comment = jsonData.feedback
-					let fetchedComment = [
-						{
-							_id: comment._id,
-							feedbackContents: comment.feedbackContents,
-							commenterDocID: {
-								profile_pic: comment.commenterDocID.profile_pic,
-								displayname: comment.commenterDocID.displayname,
-								username: comment.commenterDocID.username
-							},
-							replyCount: 0,
-							upvoteCount: 0,
-							createdAt: comment.createdAt,
-							isUpVoted: false
-						},
-						[]
-					]
-					setComments((comments: any) => [...[fetchedComment], ...comments])
-					setCommentData("")
-					setShowEditor(false)
-				} else {
-					fireToast("Something went wrong! Couldn't reply")
-				}
-				setLoading(false)
-			} else {
-				fireToast("Something went wrong! Couldn't reply")
-			}
-			setLoading(false)
+			await postComment({ variables: { postID: postID, feedbackContent: commentData } })
 		} catch (error) {
 			fireToast("Something went wrong! Couldn't reply")
 		} finally {
