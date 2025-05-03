@@ -9,6 +9,7 @@ const RootQuery = `#graphql
         user(username: String!): User
         post(postID: String!): Post
         posts(page: Int!, seed: Int!): [Post]
+        comments(postID: String!): [Comment]
     }
 `
 

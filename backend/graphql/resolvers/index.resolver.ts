@@ -4,6 +4,7 @@ import UserResolver from "./users.resolver"
 import PostsResolvers from "./posts.resolver"
 import StringOrIntScalarType from "../scalars/types.scalar"
 import Posts from "../../schemas/notes.model"
+import { getComments } from "../../services/feedback.service"
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
@@ -26,6 +27,18 @@ const RootQueryResolver = {
                 //FIXME: need the shuffle
                 const posts = await Posts.find({}).skip(skip).limit(limit)
                 return posts
+            } catch (error) {
+                return null
+            }
+        },
+
+        async comments(_, args: { postID: string }) {
+            try {
+                const response = await getComments(args.postID)
+                if (response.ok) {
+                    return response.comments
+                }
+                return null
             } catch (error) {
                 return null
             }
