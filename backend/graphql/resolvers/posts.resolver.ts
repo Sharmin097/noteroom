@@ -11,7 +11,7 @@ const PostsResolvers = {
         async content(parent, args: { startIndex: number, count: number | null}) {
             try {
                 const postID = parent.postID
-                const content = (await Posts.findOne({ postID: postID, postType: PostType.CONTENT }, { content: 1 }))?.["content"]
+                const content = (await Posts.findOne({ postID: postID }, { content: 1 })).toObject()?.["content"]
                 if(content && content.length !== 0) {
                     let sliced: string[]
                     if (!args.startIndex && !args.count) {

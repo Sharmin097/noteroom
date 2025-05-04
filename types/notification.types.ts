@@ -1,3 +1,4 @@
+import { UserProfileType } from './user.types';
 import { NotificationEvent } from "../frontend/src/reducers/notification.reducer"
 
 export interface NotificationType {
@@ -8,10 +9,6 @@ export interface NotificationType {
     createdAt: string,
     isInteraction: boolean,
     notiType: NotificationEvent,
-    fromUser: {
-        profile_pic: string,
-        displayname: any,
-        username: any
-    },
+    fromUser?: UserProfileType,
     additional?: any
 }
