@@ -5,18 +5,19 @@ import PostsResolvers from "./posts.resolver"
 import StringOrIntScalarType from "../scalars/types.scalar"
 import Posts from "../../schemas/notes.model"
 import { getComments } from "../../services/feedback.service"
+import { getNotifications } from "../../services/notification.service"
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
     
     Query: {
         async user(_, args: { username: string }) {
-            const user = await Users.findOne({ username: args.username })
+            const user = (await Users.findOne({ username: args.username })).toObject()
             return user
         },
 
         async post(_, args: { postID: string }) {
-            const post = await Posts.findOne({ postID: args.postID })
+            const post = await (await Posts.findOne({ postID: args.postID })).toObject()
             return post
         },
 
@@ -37,6 +38,20 @@ const RootQueryResolver = {
                 const response = await getComments(args.postID)
                 if (response.ok) {
                     return response.comments
+                }
+                return null
+            } catch (error) {
+                return null
+            }
+        },
+
+        async notifications(parent,_ , context) {
+            try {
+                const { req, res } = context
+                const ownerStudentID = req.session?.["stdid"]
+                const response = await getNotifications(ownerStudentID)
+                if (response.ok) {
+                    return response.notifications
                 }
                 return null
             } catch (error) {
