@@ -5,6 +5,7 @@ import requestReducer, { RequestsActions } from "../reducers/request.reducer";
 import { UserProfilePost } from "../../../types/post.types";
 import { useQuery } from "@apollo/client";
 import { getSavedPostsByUsername, getUserByUsername } from "../../../backend/graphql/queries/users.query";
+import { getNotificationsUsingStudentID } from "../../../backend/graphql/queries/notification.query";
 import { UserProfileType } from "../../../types/user.types";
 import { NotificationType } from "../../../types/notification.types";
 
@@ -44,29 +45,24 @@ export default function AppDataProvider({ children }: { children: ReactNode | Re
     useQuery(getUserByUsername, {
         variables: { username: currentUsername },
         onCompleted: (data) => {
-            setProfile(data.user)
+            if (data && data.user) {
+                setProfile(data.user)
+            }
         },
         onError: (error) => {
             setProfile(null)
         }
     })
 
-    useEffect(() => {
-        async function getNotifs() {
-            try {
-                let response = await fetch(`${API_SERVER_URL}/api/notifications`, { credentials: 'include' })
-                if (response.ok) {
-                    let data = await response.json()
-                    if (data.ok && data.notifications.length !== 0) {
-                        dispatch({ type: NotificationActions.ADD, payload: { notifications: data.notifications } })
-                    }
-                }
-            } catch (error) {
-                console.error(error)
+    useQuery(getNotificationsUsingStudentID, {
+        onCompleted: (data) => {
+            if (data && data.notifications) {
+                dispatch({ type: NotificationActions.ADD, payload: { notifications: data.notifications } })
             }
         }
-        getNotifs()
+    })
 
+    useEffect(() => {
         async function getRequests() {
             try {
                 let response = await fetch(`${API_SERVER_URL}/api/requests`, { credentials: 'include' })

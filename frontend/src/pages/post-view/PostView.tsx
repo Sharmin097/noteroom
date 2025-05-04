@@ -45,12 +45,14 @@ export default function PostView() {
         onCompleted(data) {
             if (data && data.post) {
                 const { post } = data
+                console.log(post)
                 if (post) setNoteData(post)
             } else {
                 navigate('/not-found', { replace: true, state: { type: "post", postID: postID } })
             }
         },
         onError(error) {
+            console.error(error)
             setNoteData(null)
         }
     })
