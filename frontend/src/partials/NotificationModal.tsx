@@ -21,16 +21,11 @@ function Notification({ notiData, rightPanelState: [, setShowRightPanel], notiSt
         setShowNotiModal((prev: boolean) => !prev)
         readNoti(notiData.notiID)
 
-        switch (notiData.notiType) {
-            case NotificationEvent.NOTIF_REQUEST:
-                setShowRightPanel((prev: boolean) => !prev)
-                break
-            case NotificationEvent.NOTIF_COMMENT:
-                navigate(notiData.redirectTo as string)
-                break
-            case NotificationEvent.NOTIF_REQUEST_ACCEPT:
-                navigate(notiData.redirectTo as string)
-                break
+        if (notiData.notiType === NotificationEvent.NOTIF_REQUEST) {
+            setShowRightPanel((prev: boolean) => !prev)
+        } else if (notiData.redirectTo) {
+            const redirectTo = notiData.redirectTo.replace('view', 'post')
+            navigate(redirectTo as string)
         }
     }, [])
 
@@ -50,7 +45,7 @@ function Notification({ notiData, rightPanelState: [, setShowRightPanel], notiSt
                 </div>
                 <div className="noti__sc--second-row-noti-info">
                     <span className={"isRead " + notiData.isRead}></span>
-                    <span className={"noti-time secondary-" + notiData.isRead}>{(new Date(notiData.createdAt)).toDateString()}</span>
+                    <span className={"noti-time secondary-" + notiData.isRead}>{(new Date(parseInt(notiData.createdAt))).toDateString()}</span>
                 </div>
             </div>
         </div>

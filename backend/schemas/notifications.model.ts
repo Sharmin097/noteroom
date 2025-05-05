@@ -23,7 +23,7 @@ const NotifsSchema = new Schema({
     },
     redirectTo: {
         type: String,
-        default: ''
+        default: null
     },
     ownerStudentID: String
 }, baseOptions)
@@ -31,6 +31,7 @@ const NotifsModel = model('notifications', NotifsSchema)
 
 
 const interactionNotifsSchema = new Schema({
+    //FIXME: fix the spelling
     fromUserSudentDocID: {
         type: Schema.Types.ObjectId,
         ref: 'students'

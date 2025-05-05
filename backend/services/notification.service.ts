@@ -51,7 +51,7 @@ export function NotificationSender(io: Server, options?: { ownerStudentID: strin
 
 export async function getNotifications(ownerStudentID: string) {
     try {
-        let notifications = await Notifs.aggregate([
+        const notifications = await Notifs.aggregate([
             { $match: { ownerStudentID: ownerStudentID } },
             { $lookup: {
                 from: "students",
@@ -73,19 +73,19 @@ export async function getNotifications(ownerStudentID: string) {
             } },
             { $project: {
                 _id: 0,
-                notiID: "$_id", title: 1, content: 1, isRead: 1, createdAt: 1, notiType: 1, isInteraction: 1,
+                notiID: "$_id", title: 1, content: 1, isRead: 1, createdAt: 1, notiType: 1, isInteraction: 1, redirectTo: 1,
                 fromUser: {
                     $cond: {
                         if: { $eq: [ { $size: { $objectToArray: "$fromUser" } }, 0 ] },
-                        then: "$$REMOVE",
+                        then: null,
                         else: "$fromUser"
                     }
                 }
             } }
         ])
+
         return { ok: true, notifications }
     } catch (error) {
-        console.error(error)
         return { ok: false }
     }
 }
