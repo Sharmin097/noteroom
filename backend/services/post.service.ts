@@ -143,6 +143,7 @@ export async function getPosts(studentDocID: string, options?: any) {
 }
 
 
+//DEPRECATED
 export async function getSinglePost(postID: string, studentID: string) {
     try {
         let post = await Notes.aggregate([

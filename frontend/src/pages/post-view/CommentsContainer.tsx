@@ -239,10 +239,12 @@ export default function CommentsContainer() {
     useEffect(() => {
         async function getComments() {
             try {
-                setLoadingComments(true)
-                setComments([])
-                await refetchComments({ postID: postID })
-                setLoadingComments(false)
+                if (postID) {
+                    setLoadingComments(true)
+                    setComments([])
+                    await refetchComments({ postID: postID })
+                    setLoadingComments(false)
+                }
             } catch (error) {
                 console.error(error)
             } finally {
