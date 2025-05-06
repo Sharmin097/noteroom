@@ -6,6 +6,7 @@ import StringOrIntScalarType from "../scalars/types.scalar"
 import Posts from "../../schemas/notes.model"
 import { getComments } from "../../services/feedback.service"
 import { getNotifications } from "../../services/notification.service"
+import Friends from "../../schemas/friends.model"
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
@@ -52,6 +53,21 @@ const RootQueryResolver = {
                 const response = await getNotifications(ownerStudentID)
                 if (response.ok) {
                     return response.notifications
+                }
+                return null
+            } catch (error) {
+                return null
+            }
+        },
+
+        async friendRequests(_, args: { receiverDocID: string, status: string }) {
+            try {
+                const request = await Friends.find({
+                    receiverDocID: args.receiverDocID,
+                    status: args.status
+                })
+                if (request) {
+                    return request
                 }
                 return null
             } catch (error) {
