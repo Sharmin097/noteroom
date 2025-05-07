@@ -2,6 +2,7 @@ import { mergeTypeDefs } from "@graphql-tools/merge"
 import UserTypeDefs from "./users.typeDef"
 import PostTypeDefs from "./posts.typeDef"
 import NotificationTypeDefs from "./notification.typeDef"
+import FriendTypeDefs from "./friends.typeDef"
 
 const RootQuery = `#graphql
     scalar StringOrInt
@@ -12,7 +13,8 @@ const RootQuery = `#graphql
         posts(page: Int!, seed: Int!): [Post]
         comments(postID: String!): [Comment]
         notifications: [Notification]
+        friend_requests(status: FriendRequestStatus!): [FriendRequest]
     }
 `
 
-export default mergeTypeDefs([ RootQuery, UserTypeDefs, PostTypeDefs, NotificationTypeDefs ])
+export default mergeTypeDefs([RootQuery, UserTypeDefs, PostTypeDefs, NotificationTypeDefs, FriendTypeDefs])
