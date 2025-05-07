@@ -9,6 +9,7 @@
         "dev:frontend": "npm run dev --workspace=frontend -- --host",
         "dev:backend": "npm run dev --workspace=backend",
         "build:backend": "npm run build --workspace=backend",
-        "build:frontend": "npm run build --workspace=frontend"
+        "build:frontend": "npm run build --workspace=frontend",
+        "test": "npx jest --watchAll"
     }
 }

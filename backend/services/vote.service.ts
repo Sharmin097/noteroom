@@ -1,4 +1,4 @@
-import Votes, { CommentVotes } from "../schemas/votes,model"
+import Votes, { CommentVotes } from "../schemas/votes.model"
 import Notes from "../schemas/notes.model"
 import { feedbacksModel } from "../schemas/comments.model"
 export async function isUpvoted(postDocID, voterStudentDocID) {
