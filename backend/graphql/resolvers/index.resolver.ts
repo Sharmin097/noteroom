@@ -6,6 +6,8 @@ import StringOrIntScalarType from "../scalars/types.scalar"
 import Posts from "../../schemas/notes.model"
 import { getComments } from "../../services/feedback.service"
 import { getNotifications } from "../../services/notification.service"
+import { Convert } from "../../services/user.service"
+import { getFriendRequests } from '../../services/friends.service';
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
@@ -52,6 +54,20 @@ const RootQueryResolver = {
                 const response = await getNotifications(ownerStudentID)
                 if (response.ok) {
                     return response.notifications
+                }
+                return null
+            } catch (error) {
+                return null
+            }
+        },
+
+        async friend_requests(_, args: { status: "accepted" | "declined" | "pending" }, context) {
+            try {
+                const { req, res } = context
+                const receiverDocID = (await Convert.getDocumentID_studentid(req.session["stdid"]))?.toString()
+                const response = await getFriendRequests(receiverDocID, args.status)
+                if (response.ok) {
+                    return response.requests
                 }
                 return null
             } catch (error) {
