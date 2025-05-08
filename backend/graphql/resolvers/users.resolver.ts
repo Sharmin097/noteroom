@@ -1,5 +1,5 @@
-import Users from "../../schemas/students.model"
-import Posts from "../../schemas/notes.model"
+import Users from "../../schemas/users.model"
+import Posts from "../../schemas/posts.model"
 import Badges from "../../schemas/badges.model"
 import { Convert } from "../../services/user.service"
 

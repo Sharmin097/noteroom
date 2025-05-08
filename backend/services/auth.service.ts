@@ -1,4 +1,4 @@
-import Students from "../schemas/students.model"
+import Students from "../schemas/users.model"
 import { OAuth2Client } from "google-auth-library"
 
 export async function verifyToken(client_id: string, id_token: string) {

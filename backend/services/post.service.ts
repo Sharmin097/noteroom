@@ -1,8 +1,8 @@
-import Notes, { contentsModel, mcqsModel, linksModel, filesModel } from "../schemas/notes.model"
-import Students from "../schemas/students.model"
+import Notes, { contentsModel, mcqsModel, linksModel, filesModel } from "../schemas/posts.model"
+import Students from "../schemas/users.model"
 import mongoose from "mongoose"
 import { isUpvoted } from "./vote.service"
-import { PostType } from "../schemas/notes.model"
+import { PostType } from "../schemas/posts.model"
 import { deleteFile } from "./firebase.service"
 import { Convert } from "./user.service"
 
