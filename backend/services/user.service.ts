@@ -1,4 +1,4 @@
-import Students from "../schemas/students.model"
+import Students from "../schemas/users.model"
 import mongoose from "mongoose"
 
 export const Convert = {

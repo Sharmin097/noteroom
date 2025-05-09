@@ -1,9 +1,9 @@
 import { mergeResolvers } from "@graphql-tools/merge"
-import Users from "../../schemas/students.model"
+import Users from "../../schemas/users.model"
 import UserResolver from "./users.resolver"
 import PostsResolvers from "./posts.resolver"
 import StringOrIntScalarType from "../scalars/types.scalar"
-import Posts from "../../schemas/notes.model"
+import Posts from "../../schemas/posts.model"
 import { getComments } from "../../services/feedback.service"
 import { getNotifications } from "../../services/notification.service"
 import { Convert } from "../../services/user.service"
@@ -11,7 +11,7 @@ import { getFriendRequests } from '../../services/friends.service';
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
-    
+
     Query: {
         async user(_, args: { username: string }) {
             const user = (await Users.findOne({ username: args.username })).toObject()
@@ -47,7 +47,7 @@ const RootQueryResolver = {
             }
         },
 
-        async notifications(parent,_ , context) {
+        async notifications(parent, _, context) {
             try {
                 const { req, res } = context
                 const ownerStudentID = req.session?.["stdid"]

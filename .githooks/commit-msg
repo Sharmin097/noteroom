@@ -1,0 +1,24 @@
+#!/bin/bash
+
+rule_file=".githooks/.commit-tags.ini"
+taskids=$(cat $rule_file | grep -E "^taskids=")
+tags=$(cat $rule_file | grep -E "^tags=")
+
+convert_to_regex_parse() {
+    echo "$1" | cut -d "=" -f 2- | sed "s/,/|/g"
+}
+
+task_pattern=$(convert_to_regex_parse $taskids)
+tags_pattern=$(convert_to_regex_parse $tags)
+
+commit_message=$(cat "$1")
+message_pattern="^($task_pattern)\:($tags_pattern)\:(\S)"
+
+if echo "$commit_message" | grep -qE "$message_pattern"; then
+    exit 0
+else
+    echo -e "\033[0;31mCommit message format invalid!\033[0m"
+    echo -e "\033[0;33mExpected format \033[0;32m<taskid>:<tag>:<message (must not start with a whitespace)>\033[0m"
+    echo -e "\033[0;33mCheck the \033[0;32mrules.ini\033[0m \033[0;33mfile for available 'taskids' and 'tags'\033[0m"
+    exit 1
+fi

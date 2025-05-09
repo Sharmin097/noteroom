@@ -5,7 +5,7 @@ import { addFeedback, addReply } from "../services/feedback.service";
 import { addVote, deleteVote } from "../services/vote.service";
 import { Convert } from "../services/user.service";
 import { NotificationEvent, NotificationSender } from "../services/notification.service";
-import notesModel from "../schemas/notes.model";
+import notesModel from "../schemas/posts.model";
 
 const router = Router()
 export default function postApiRouter(io: Server) {

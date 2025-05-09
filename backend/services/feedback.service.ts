@@ -1,8 +1,8 @@
 import { feedbacksModel as Comments, replyModel as Reply } from "../schemas/comments.model"
 import { isCommentUpVoted } from "./vote.service"
-import Notes from "../schemas/notes.model"
+import Notes from "../schemas/posts.model"
 import mongoose from "mongoose"
-import notesModel from "../schemas/notes.model"
+import notesModel from "../schemas/posts.model"
 
 //DEPRECATED
 // export async function getComments({ noteDocID, studentDocID }) {
@@ -28,21 +28,27 @@ export async function getComments(postID?: string, studentDocID?: string) {
         const postDocID = (await notesModel.findOne({ postID: postID }, { _id: 1 }))._id
         const comments = await Comments.aggregate([
             { $match: { noteDocID: new mongoose.Types.ObjectId(postDocID) } },
-            { $lookup: {
-              from: 'students',
-              localField: 'commenterDocID',
-              foreignField: '_id',
-              as: 'commenter'
-            } },
-            { $unwind: {
-                path: '$commenter',
-            } },
-            { $project: {
-                feedbackContents: 1,
-                commenter: 1,
-                replyCount: 1, upvoteCount: 1,
-                createdAt: 1
-            } }
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'commenterDocID',
+                    foreignField: '_id',
+                    as: 'commenter'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$commenter',
+                }
+            },
+            {
+                $project: {
+                    feedbackContents: 1,
+                    commenter: 1,
+                    replyCount: 1, upvoteCount: 1,
+                    createdAt: 1
+                }
+            }
         ])
 
         return { ok: true, comments: comments }
@@ -55,21 +61,27 @@ export async function getReplies(parentFeedbackDocID: string) {
     try {
         const replies = await Reply.aggregate([
             { $match: { parentFeedbackDocID: new mongoose.Types.ObjectId(parentFeedbackDocID) } },
-            { $lookup: {
-                from: 'students',
-                localField: 'commenterDocID',
-                foreignField: '_id',
-                as: 'replier'
-            } },
-            { $unwind: {
-                path: '$replier',
-            } },
-            { $project: {
-                parentFeedbackDocID: 1,
-                feedbackContents: 1,
-                replier: 1,
-                createdAt: 1
-            } }
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'commenterDocID',
+                    foreignField: '_id',
+                    as: 'replier'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$replier',
+                }
+            },
+            {
+                $project: {
+                    parentFeedbackDocID: 1,
+                    feedbackContents: 1,
+                    replier: 1,
+                    createdAt: 1
+                }
+            }
         ])
 
         return { ok: true, replies }
@@ -93,7 +105,7 @@ export async function addFeedback(feedbackData: any) {
                     select: 'studentID username'
                 }
             })
-        
+
         if (!feedback) return { ok: false }
 
         const extendedFeedback = { ...feedback.toObject(), commenter: feedback?.["commenterDocID"] }
@@ -121,7 +133,7 @@ export async function addReply(replyData: any) {
             })
             .populate('noteDocID', 'title postType')
 
-        const extentedReply = { ...reply.toObject(), replier: reply?.["commenterDocID"]}
+        const extentedReply = { ...reply.toObject(), replier: reply?.["commenterDocID"] }
 
         return { ok: true, reply: extentedReply }
     } catch (error) {

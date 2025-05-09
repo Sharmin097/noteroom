@@ -6,7 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
 import rateLimit from 'express-rate-limit';
-import Notes, { PostType } from "../schemas/notes.model"
+import Notes, { PostType } from "../schemas/posts.model"
 import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
