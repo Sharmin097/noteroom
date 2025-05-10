@@ -1,0 +1,1 @@
+// Write the test for every friends service function except for the getRequests one
