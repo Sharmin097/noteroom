@@ -1,24 +1,18 @@
 const { exec } = require("child_process")
+const chalk = require("chalk")
 
-const shell = process.env.SHELL || process.env.ComSpec 
-
-if (shell.includes("bash")) {
-    exec("bash ./.scripts/pre-run.sh", (error, stdout, stderr) => {
-        if (error) {
-            console.error(error)
-            console.log(`Can't run pre-scripts`)
-        } else {
-            console.log(stdout)
+exec("git config --get core.hooksPath", (error, stdout, stderr) => {
+    if (!error) {
+        if (stdout !== ".githooks") {
+            exec("git config core.hooksPath .githooks", (error, stdout, stderr) => {
+                if (error) {
+                    console.log(chalk.red(`Error while setting core.hooksPath to .githooks: ${error.message}`))
+                } else {
+                    console.log(chalk.green(`Set core.hooksPath to .githooks`))
+                }
+            })
         }
-    })
-} else {
-    exec(".\\.scripts\\pre-run.bat", (error, stdout, stderr) => {
-        if (error) {
-            console.error(error)
-            console.log(`Can't run pre-scripts`)
-        } else {
-            console.log(stdout)
-        }
-    })
-}
-
+    } else {
+        console.log(chalk.red(`Error while getting core.hooksPath : ${error.message}`))
+    }
+})
