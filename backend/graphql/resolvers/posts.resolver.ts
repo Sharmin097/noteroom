@@ -1,6 +1,6 @@
-import notesModel from "../../schemas/notes.model"
-import Posts, { PostType } from "../../schemas/notes.model"
-import Users from "../../schemas/students.model"
+import notesModel from "../../schemas/posts.model"
+import Posts, { PostType } from "../../schemas/posts.model"
+import Users from "../../schemas/users.model"
 import { addFeedback, addReply, getReplies } from "../../services/feedback.service"
 import { isSaved } from "../../services/post.service"
 import { Convert } from "../../services/user.service"
@@ -8,11 +8,11 @@ import { isUpvoted } from "../../services/vote.service"
 
 const PostsResolvers = {
     Post: {
-        async content(parent, args: { startIndex: number, count: number | null}) {
+        async content(parent, args: { startIndex: number, count: number | null }) {
             try {
                 const postID = parent.postID
                 const content = (await Posts.findOne({ postID: postID }, { content: 1 })).toObject()?.["content"]
-                if(content && content.length !== 0) {
+                if (content && content.length !== 0) {
                     let sliced: string[]
                     if (!args.startIndex && !args.count) {
                         sliced = content
@@ -22,10 +22,10 @@ const PostsResolvers = {
                         sliced = content.slice(args.startIndex, args.count)
                     }
 
-                    return { 
-                        resources: sliced, 
-                        returnedContentCount: sliced.length, 
-                        totalContentCount: content.length 
+                    return {
+                        resources: sliced,
+                        returnedContentCount: sliced.length,
+                        totalContentCount: content.length
                     }
                 } else {
                     return []
@@ -56,12 +56,12 @@ const PostsResolvers = {
 
         async interactionData(parent, _, context) {
             try {
-                const { req, res }= context
+                const { req, res } = context
                 const post = await Posts.findOne({ postID: parent.postID }, { feedbackCount: 1, upvoteCount: 1 })
                 const userDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
                 const issaved = await isSaved(userDocID, post._id.toString())
                 const isupvoted = await isUpvoted(post._id.toString(), userDocID)
-                return {...post.toObject(), isSaved: issaved, isUpvoted: isupvoted}
+                return { ...post.toObject(), isSaved: issaved, isUpvoted: isupvoted }
             } catch (error) {
                 return null
             }
@@ -102,7 +102,7 @@ const PostsResolvers = {
             }
         },
 
-        async postReply(_, args: { postID: string, feedbackContent: string, parentFeedbackDocID: string}, context ) {
+        async postReply(_, args: { postID: string, feedbackContent: string, parentFeedbackDocID: string }, context) {
             try {
                 const { req, res } = context
                 const postDocID = (await notesModel.findOne({ postID: args.postID }, { _id: 1 }))._id
@@ -114,7 +114,7 @@ const PostsResolvers = {
                     commenterDocID: commenterDocID,
                     parentFeedbackDocID: args.parentFeedbackDocID
                 }
-                
+
                 const response = await addReply(replyData)
                 if (response.ok) {
                     return response.reply
