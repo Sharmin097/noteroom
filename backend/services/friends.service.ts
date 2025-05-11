@@ -71,7 +71,7 @@ export async function followUser(followID: any, follower: any, following: any) {
         });
 
         if (followInfo) {
-            return { ok: true }
+            return { ok: true, code: "EXISTING_FOLLOW" }
         }
 
         await Follow.create({
@@ -86,11 +86,10 @@ export async function followUser(followID: any, follower: any, following: any) {
     }
 }
 
-export async function unfollowUser(followerDocID: any, followingDocID: any ) {
+export async function unfollowUser(followID: any) {
     try {
-        const followInfo = await Follow.findOne({ 
-            followerDocID: followerDocID, 
-            followingDocID: followingDocID 
+        const followInfo = await Follow.findOne({
+            followID: followID
         });
         if (followInfo) {
             await Follow.deleteOne({ followID: followInfo.followID });
@@ -105,24 +104,29 @@ export async function unfollowUser(followerDocID: any, followingDocID: any ) {
     }
 }
 
-
 export async function getFriendRequests(receiverDocID: string, requestStatus: "accepted" | "declined" | "pending" = "pending") {
     try {
         const requests = await Friends.aggregate([
             { $match: { receiverDocID: new mongoose.Types.ObjectId(receiverDocID), status: requestStatus } },
-            { $lookup: {
-                from: "students",
-                localField: "senderDocID",
-                foreignField: "_id",
-                as: "sender"
-            } },
-            { $unwind: {
-                path: "$sender"
-            } },
-            { $project: {
-                _id: 0,
-                "sender._id": 0
-            } }
+            {
+                $lookup: {
+                    from: "students",
+                    localField: "senderDocID",
+                    foreignField: "_id",
+                    as: "sender"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$sender"
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    "sender._id": 0
+                }
+            }
         ])
 
         return { ok: true, requests }
