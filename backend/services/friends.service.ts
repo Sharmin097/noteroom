@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-import Follow from "../schemas/follow.model";
-import Friends from "../schemas/friends.model";
+import Friends from "../schemas/connections.model";
 
 export async function sendFriendRequest(request: any) {
     try {
@@ -36,93 +35,66 @@ export async function getFriendRequestById(requestID: string) {
     }
 }
 
-export async function updateFriendRequestStatus(requestID: string, status: 'accepted' | 'declined') {
-    try {
-        const result = await Friends.updateOne(
-            { requestID },
-            { $set: { status } }
-        );
 
-        if (result.modifiedCount > 0) {
-            return { ok: true };
-        } else {
-            return { ok: false, code: "UNMODIFIED_DOC" };
-        }
-    } catch (error: any) {
-        return { ok: false, error: error, code: "SERVER" };
-    }
-}
-
-export async function unfriendUser(requestID: string) {
+export async function acceptRequest(requestID: string) {
     try {
-        const result = await Friends.deleteOne({ requestID, status: "accepted" });
-        if (result.deletedCount > 0) return { ok: true };
-        return { ok: false, code: "DELETION_FAILURE" };
+        await Friends.updateOne({ requestID }, { $set: { receiverFollowingSender: true } })
+        return { ok: true } 
     } catch (error) {
-        return { ok: false, error: error, code: "SERVER" };
+        return { ok: false, error }
     }
 }
 
-export async function followUser(followID: any, follower: any, following: any) {
+export async function unfollowRequest(requestID: string, userDocID_of_unfollower: any) {
     try {
-        const followInfo = await Follow.findOne({
-            followerDocID: follower,
-            followingDocID: following
-        });
-
-        if (followInfo) {
-            return { ok: true }
-        }
-
-        await Follow.create({
-            followID: followID,
-            followerDocID: follower,
-            followingDocID: following
-        });
-
-        return { ok: true };
+        await Friends.updateOne({ requestID }, [
+            { $set: { 
+                senderFollowingReceiver: {
+                    $cond: [
+                        { $eq: ["$senderDocID", userDocID_of_unfollower] },
+                        false,
+                        "$senderFollowingReceiver"
+                    ]
+                },
+                receiverFollowingSender: {
+                    $cond: [
+                        { $eq: ["$receiverDocID", userDocID_of_unfollower] },
+                        false,
+                        "$receiverFollowingSender"
+                    ]
+                }
+            } }
+        ])
+        
+        return { ok: true }
     } catch (error) {
-        return { ok: false, error: error }
+        return { ok: false, error }
     }
 }
-
-export async function unfollowUser(followerDocID: any, followingDocID: any ) {
-    try {
-        const followInfo = await Follow.findOne({ 
-            followerDocID: followerDocID, 
-            followingDocID: followingDocID 
-        });
-        if (followInfo) {
-            await Follow.deleteOne({ followID: followInfo.followID });
-            return { ok: true };
-        }
-        else {
-            return { ok: false }
-        }
-
-    } catch (error) {
-        return { ok: false, error };
-    }
-}
-
 
 export async function getFriendRequests(receiverDocID: string, requestStatus: "accepted" | "declined" | "pending" = "pending") {
     try {
         const requests = await Friends.aggregate([
             { $match: { receiverDocID: new mongoose.Types.ObjectId(receiverDocID), status: requestStatus } },
-            { $lookup: {
-                from: "students",
-                localField: "senderDocID",
-                foreignField: "_id",
-                as: "sender"
-            } },
-            { $unwind: {
-                path: "$sender"
-            } },
-            { $project: {
-                _id: 0,
-                "sender._id": 0
-            } }
+            {
+                $lookup: {
+                    from: "students",
+                    localField: "senderDocID",
+                    foreignField: "_id",
+                    as: "sender"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$sender"
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    "sender._id": 0
+                }
+            }
         ])
 
         return { ok: true, requests }

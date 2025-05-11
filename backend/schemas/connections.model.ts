@@ -15,10 +15,13 @@ const friendsSchema = new Schema({
         type: String,
         required: true,
     },
-    status: {
-        type: String,
-        enum: ["pending", "accepted", "declined"],
-        default: "pending",
+    senderFollowingReceiver: {
+        type: Boolean,
+        default: true
+    },
+    receiverFollowingSender: {
+        type: Boolean,
+        default: false
     }
 });
 
