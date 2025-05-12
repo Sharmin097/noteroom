@@ -19,6 +19,6 @@ if echo "$commit_message" | grep -qE "$message_pattern"; then
 else
     echo -e "\033[0;31mCommit message format invalid!\033[0m"
     echo -e "\033[0;33mExpected format \033[0;32m<taskid>:<tag>:<message (must not start with a whitespace)>\033[0m"
-    echo -e "\033[0;33mCheck the \033[0;32mrules.ini\033[0m \033[0;33mfile for available 'taskids' and 'tags'\033[0m"
+    echo -e "\033[0;33mCheck the \033[0;32m.commit-tags.ini\033[0m \033[0;33mfile for available 'taskids' and 'tags'\033[0m"
     exit 1
 fi
