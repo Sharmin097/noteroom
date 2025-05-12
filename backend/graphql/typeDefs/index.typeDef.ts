@@ -13,7 +13,7 @@ const RootQuery = `#graphql
         posts(page: Int!, seed: Int!): [Post]
         comments(postID: String!): [Comment]
         notifications: [Notification]
-        friend_requests(status: FriendRequestStatus!): [FriendRequest]
+        connections(status: FriendRequestStatus!): [FriendRequest]
     }
 `
 
