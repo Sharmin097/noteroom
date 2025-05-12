@@ -25,5 +25,19 @@ const friendsSchema = new Schema({
     }
 });
 
+friendsSchema.post("updateOne", async function(result) {
+    try {
+        const filter = this.getFilter()
+        if (!filter.requestID) return
+    
+        const doc = await this.model.findOne({ requestID: filter.requestID })
+        if (doc && !doc.senderFollowingReceiver && !doc.receiverFollowingSender) {
+            await doc.deleteOne()
+        }
+    } catch (error) {
+        console.error(error)
+    }
+})
+
 const friendsModel = model("friends", friendsSchema);
 export default friendsModel;

@@ -29,7 +29,7 @@ export default function friendsApiRouter(io: Server) {
     };
 
     router.get("/send/:username", async (req, res) => {
-        const senderID = req.query.senderID || req.session?.["stdid"];
+        const senderID = req.session?.["stdid"];
         const receiverUsername = req.params.username;
 
         if (!senderID) return
@@ -73,7 +73,7 @@ export default function friendsApiRouter(io: Server) {
     });
 
     router.get("/requests/:requestID", async (req, res) => {
-        const studentID = req.query.studentID || req.session?.["stdid"];
+        const studentID = req.session?.["stdid"];
         const { requestID } = req.params;
         const action = req.query.action as string
 

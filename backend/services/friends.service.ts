@@ -63,19 +63,25 @@ export async function unfollowRequest(requestID: string, userDocID_of_unfollower
                         "$receiverFollowingSender"
                     ]
                 }
-            } }
+            } },
         ])
         
         return { ok: true }
     } catch (error) {
+        console.error(error)
         return { ok: false, error }
     }
 }
 
-export async function getFriendRequests(receiverDocID: string, requestStatus: "accepted" | "declined" | "pending" = "pending") {
+export async function getFriendRequests(receiverDocID: string, following: boolean) {
     try {
         const requests = await Friends.aggregate([
-            { $match: { receiverDocID: new mongoose.Types.ObjectId(receiverDocID), status: requestStatus } },
+            { 
+                $match: { 
+                    receiverDocID: new mongoose.Types.ObjectId(receiverDocID),
+                    ...(following && { receiverFollowingSender: true })
+                } 
+            },
             {
                 $lookup: {
                     from: "students",
