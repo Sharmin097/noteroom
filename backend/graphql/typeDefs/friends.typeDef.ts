@@ -1,10 +1,9 @@
 const FriendTypeDefs = `#graphql
-    enum FriendRequestStatus { pending, accepted, declined } 
+    enum FriendRequestStatus { follower, following } 
 
     type FriendRequest {
         requestID: String!
         sender: User!
-        status: String!
     }
 `
 

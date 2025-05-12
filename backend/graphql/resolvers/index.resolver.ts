@@ -61,11 +61,11 @@ const RootQueryResolver = {
             }
         },
 
-        async friend_requests(_, args: { status: "accepted" | "declined" | "pending" }, context) {
+        async connections(_, args: { status: "follower" | "following" }, context) {
             try {
                 const { req, res } = context
                 const receiverDocID = (await Convert.getDocumentID_studentid(req.session["stdid"]))?.toString()
-                const response = await getFriendRequests(receiverDocID, args.status)
+                const response = await getFriendRequests(receiverDocID, args.status === "following")
                 if (response.ok) {
                     return response.requests
                 }
