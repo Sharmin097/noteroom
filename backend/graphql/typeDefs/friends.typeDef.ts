@@ -3,7 +3,7 @@ const FriendTypeDefs = `#graphql
 
     type FriendRequest {
         requestID: String!
-        sender: User!
+        other: User!
     }
 `
 

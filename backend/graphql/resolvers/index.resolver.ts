@@ -7,7 +7,7 @@ import Posts from "../../schemas/posts.model"
 import { getComments } from "../../services/feedback.service"
 import { getNotifications } from "../../services/notification.service"
 import { Convert } from "../../services/user.service"
-import { getFriendRequests } from '../../services/friends.service';
+import { getConnections } from '../../services/friends.service';
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
@@ -64,8 +64,8 @@ const RootQueryResolver = {
         async connections(_, args: { status: "follower" | "following" }, context) {
             try {
                 const { req, res } = context
-                const receiverDocID = (await Convert.getDocumentID_studentid(req.session["stdid"]))?.toString()
-                const response = await getFriendRequests(receiverDocID, args.status === "following")
+                const receiverDocID = (await Convert.getDocumentID_studentid(req.session["mstdid"] || req.session["stdid"]))?.toString()
+                const response = await getConnections(receiverDocID, args.status)
                 if (response.ok) {
                     return response.requests
                 }

@@ -11,6 +11,10 @@ const friendsSchema = new Schema({
         required: true,
         ref: 'students'
     },
+    connectedUserDocIDs: {
+        type: [Schema.Types.ObjectId, Schema.Types.ObjectId],
+        required: true
+    },
     requestID: {
         type: String,
         required: true,
