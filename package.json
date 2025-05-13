@@ -10,14 +10,7 @@
         "dev:frontend": "npm run prepare:start && npm run dev --workspace=frontend -- --host",
         "dev:backend": "npm run prepare:start && npm run dev --workspace=backend",
         "build:backend": "npm run build --workspace=backend",
-<<<<<<< HEAD
-        "build:frontend": "npm run build --workspace=frontend"
-    },
-    "dependencies": {
-        "pdfjs-dist": "^5.1.91"
-=======
         "build:frontend": "npm run build --workspace=frontend",
         "test": "npx jest --watchAll"
->>>>>>> 37f86dd090f919ac2eec9a51f04778c532452e09
     }
 }
