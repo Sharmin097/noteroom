@@ -9,7 +9,7 @@ const studentsSchema = new Schema({
         type: String,
         validate: {
             validator: (displayname) => displayname !== "",
-            message: "Displayname is not provided" 
+            message: "Displayname is not provided"
         }
     },
     email: {
@@ -17,7 +17,7 @@ const studentsSchema = new Schema({
         validate: [
             {
                 validator: (email) => email != "",
-                message: "Email is not provided" 
+                message: "Email is not provided"
             },
             {
                 validator: (email: any) => email.includes("@"),
@@ -123,7 +123,37 @@ const studentsSchema = new Schema({
     onboarded: {
         type: Boolean,
         default: false
-    }
+    },
+    socials: {
+        type: new Schema({
+            instagram: {
+                link: { type: String, default: null }
+            },
+            facebook: {
+                link: { type: String, default: null }
+            },
+            linkedin: {
+                link: { type: String, default: null }
+            },
+            github: {
+                link: { type: String, default: null }
+            },
+            twitter: {
+                link: { type: String, default: null }
+            },
+            website: {
+                link: { type: String, default: null }
+            }
+        }, { _id: false }),
+        default: () => ({
+            instagram: { link: null },
+            facebook: { link: null },
+            linkedin: { link: null },
+            github: { link: null },
+            twitter: { link: null },
+            website: { link: null }
+        })
+    },
 })
 
 const studentsModel = model('students', studentsSchema)
