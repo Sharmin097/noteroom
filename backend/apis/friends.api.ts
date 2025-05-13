@@ -12,7 +12,7 @@ export default function friendsApiRouter(io: Server) {
     router.use(
         rateLimit({
             windowMs: 15 * 60 * 1000,
-            max: 10,
+            max: 100,
             message: "Too many friend request actions. Please try again later.",
         })
     );
@@ -29,7 +29,7 @@ export default function friendsApiRouter(io: Server) {
     };
 
     router.get("/send/:username", async (req, res) => {
-        const senderID = req.session?.["stdid"];
+        const senderID = req.session?.["mstdid"] || req.session?.["stdid"];
         const receiverUsername = req.params.username;
 
         if (!senderID) return
@@ -57,6 +57,7 @@ export default function friendsApiRouter(io: Server) {
             const result = await sendFriendRequest({
                 senderDocID: sender,
                 receiverDocID: receiver,
+                connectedUserDocIDs: [sender, receiver],
                 requestID,
             });
 
@@ -73,7 +74,7 @@ export default function friendsApiRouter(io: Server) {
     });
 
     router.get("/requests/:requestID", async (req, res) => {
-        const studentID = req.session?.["stdid"];
+        const studentID = req.session?.["mstdid"] || req.session?.["stdid"];
         const { requestID } = req.params;
         const action = req.query.action as string
 

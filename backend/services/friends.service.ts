@@ -3,17 +3,32 @@ import Friends from "../schemas/connections.model";
 
 export async function sendFriendRequest(request: any) {
     try {
-        const existingRequest = await Friends.findOne({
-            senderDocID: request.senderDocID,
-            receiverDocID: request.receiverDocID
-        });
+        const existingRequest = await Friends.findOne({connectedUserDocIDs: 
+            { $in: [
+                [request.senderDocID, request.receiverDocID], 
+                [request.receiverDocID, request.senderDocID]
+            ] } 
+        } );
 
         if (existingRequest) {
-            return { ok: false, code: "EXISTING_REQUEST" };
+            const selfDocIDIndex = existingRequest.connectedUserDocIDs?.findIndex(docID => docID?.toString() === request.senderDocID?.toString())
+
+            if (selfDocIDIndex === 0) { 
+                if (existingRequest?.senderFollowingReceiver) { 
+                    return { ok: false, code: "0:SELF_ALREADY_FOLLOWING"} 
+                }
+                return { ok: false, code: "0:RECEIVER_ALREADY_FOLLOWING"} 
+            }
+            
+            if (existingRequest?.receiverFollowingSender) { 
+                return { ok: false, code: "1:SELF_ALREADY_FOLLOWING" }
+            }
+            return { ok: false, code: "1:RECEIVER_ALREADY_FOLLOWING" } 
+        } else {
+            await Friends.create(request);
+            return { ok: true };
         }
 
-        await Friends.create(request);
-        return { ok: true };
     } catch (error) {
         return { ok: false, error, code: "SERVER" };
     }
@@ -68,39 +83,49 @@ export async function unfollowRequest(requestID: string, userDocID_of_unfollower
         
         return { ok: true }
     } catch (error) {
-        console.error(error)
         return { ok: false, error }
     }
 }
 
-export async function getFriendRequests(receiverDocID: string, following: boolean) {
+export async function getConnections(userDocID: string, status: "follower" | "following") {
     try {
         const requests = await Friends.aggregate([
-            { 
-                $match: { 
-                    receiverDocID: new mongoose.Types.ObjectId(receiverDocID),
-                    ...(following && { receiverFollowingSender: true })
-                } 
-            },
-            {
-                $lookup: {
-                    from: "students",
-                    localField: "senderDocID",
-                    foreignField: "_id",
-                    as: "sender"
+            { $match: { 
+                ...(status === "follower" && { 
+                    $or: [ 
+                        { receiverDocID: new mongoose.Types.ObjectId(userDocID), senderFollowingReceiver: true }, 
+                        { senderDocID: new mongoose.Types.ObjectId(userDocID), receiverFollowingSender: true } 
+                    ] 
+                } ),
+                ...(status === "following") && {
+                    $or: [
+                        { senderDocID: new mongoose.Types.ObjectId(userDocID), senderFollowingReceiver: true },
+                        { receiverDocID: new mongoose.Types.ObjectId(userDocID), receiverFollowingSender: true }
+                    ]
                 }
-            },
-            {
-                $unwind: {
-                    path: "$sender"
+            } },
+            { $addFields: {
+                other: {
+                    $cond: [
+                        { $eq: ["$senderDocID", new mongoose.Types.ObjectId(userDocID) ] },
+                        "$receiverDocID",
+                        "$senderDocID"
+                    ]
                 }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    "sender._id": 0
-                }
-            }
+            } },
+            { $lookup: {
+                from: "students",
+                localField: "other",
+                foreignField: "_id",
+                as: "other"
+            } },
+            { $unwind: {
+                path: "$other"
+            } },
+            { $project: {
+                _id: 0,
+                "other._id": 0
+            } }
         ])
 
         return { ok: true, requests }
