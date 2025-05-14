@@ -12,5 +12,11 @@
         "build:backend": "npm run build --workspace=backend",
         "build:frontend": "npm run build --workspace=frontend",
         "test": "npx jest --watchAll"
+    },
+    "devDependencies": {
+        "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "lucide-react": "^0.510.0"
     }
 }
