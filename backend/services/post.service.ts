@@ -150,10 +150,15 @@ export async function getPosts(studentDocID: string, options?: { skip: number, l
 }
 
 
-export async function getSinglePost(postID: string, userDocID: string) {
+export async function getSinglePost(postID: string | string[], userDocID: string) {
     try {
-        const post = await Notes.aggregate([
-            { $match: { postID: postID, completed: true } },
+        const posts = await Notes.aggregate([
+            { $match: { 
+                completed: true, 
+                ...(Array.isArray(postID) ? 
+                    { _id: { $in: postID.map(id => new mongoose.Types.ObjectId(id)) } } 
+                    : { postID: postID } ) 
+            } },
             { $lookup: {
                 from: "students",
                 localField: "ownerDocID",
@@ -201,12 +206,15 @@ export async function getSinglePost(postID: string, userDocID: string) {
             } }
         ])
         
-        if (post.length === 0) {
+        if (posts.length === 0) {
             return { ok: false, code: "NO_POST" }
         }
         
-        const isPostUpvoted = await isUpvoted(post[0]?.["_id"]?.toString(), userDocID)
-        const modifiedPost = { ...post[0], interactionData: { ...post[0]?.interactionData, isUpvoted: isPostUpvoted } }
+        const modifiedPost = await Promise.all(posts.map(async post => {
+            const isPostUpvoted = await isUpvoted(post?.["_id"]?.toString(), userDocID)
+            return { ...post, interactionData: { ...post?.interactionData, isUpvoted: isPostUpvoted } }
+        }))
+        
         return { ok: true, post: modifiedPost }
     } catch (error) {
         return { ok: false, error: error, code: "SERVER" }

@@ -39,7 +39,7 @@ const PostsResolvers = {
             } catch (error) {
                 return Contents([], [])
             }
-        },
+        }
     },
     Comment: {
         async replies(parent) {

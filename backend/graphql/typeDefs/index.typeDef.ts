@@ -3,6 +3,7 @@ import UserTypeDefs from "./users.typeDef"
 import PostTypeDefs from "./posts.typeDef"
 import NotificationTypeDefs from "./notification.typeDef"
 import FriendTypeDefs from "./friends.typeDef"
+import DecksTypeDefs from "./decks.typeDef"
 
 const RootQuery = `#graphql
     scalar StringOrInt
@@ -14,7 +15,9 @@ const RootQuery = `#graphql
         comments(postID: String!): [Comment]
         notifications: [Notification]
         connections(status: FriendRequestStatus!): [FriendRequest]
+        decks(type: DeckType): [Deck]
+        deck(deckID: String!): Deck
     }
 `
 
-export default mergeTypeDefs([RootQuery, UserTypeDefs, PostTypeDefs, NotificationTypeDefs, FriendTypeDefs])
+export default mergeTypeDefs([RootQuery, UserTypeDefs, PostTypeDefs, NotificationTypeDefs, FriendTypeDefs, DecksTypeDefs])

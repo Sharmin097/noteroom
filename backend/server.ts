@@ -30,6 +30,7 @@ import mcqApiRouter from './apis/mcq.api';
 import friendsApiRouter from './apis/friends.api';
 import resolvers from './graphql/resolvers/index.resolver'
 import typeDefs from './graphql/typeDefs/index.typeDef'
+import decksApiRouter from './apis/decks.api';
 
 config({ path: join(__dirname, '.env') });
 
@@ -53,7 +54,7 @@ const staticPath = join(__dirname, "../../frontend/dist")
 const allowedHosts = JSON.parse(process.env.ALLOWED_HOSTS)
 
 function devAuthCookie(req, res, next) {
-    const mockSessionUserID = req.headers['x-msid'] 
+    const mockSessionUserID = req.headers['x-msid']
     if (mockSessionUserID) {
         req.session.mstdid = mockSessionUserID
     } else {
@@ -68,9 +69,9 @@ app.use(cors({
     origin: allowedHosts,
     credentials: true
 }))
-app.use(express.json()); 
+app.use(express.json());
 app.use(express.static(staticPath))
-app.use(urlencoded({ extended: true })) 
+app.use(urlencoded({ extended: true }))
 app.use(session({
     secret: process.env.SECRET_KEY,
     resave: false,
@@ -80,8 +81,8 @@ app.use(session({
         ttl: 60 * 60 * 720
     }),
     cookie: {
-        httpOnly: true,   
-        secure: false,   
+        httpOnly: true,
+        secure: false,
         maxAge: 1000 * 60 * 60 * 720
     }
 }));
@@ -89,8 +90,8 @@ if (process.env.DEVELOPMENT_SESSION_COOKIE === "true") {
     console.log(chalk.cyan(`[-] using development session cookie: ${chalk.yellow('`session.mstdid`')}`))
     app.use(devAuthCookie)
 }
-app.use(cookieParser()) 
-app.use(fileUpload()) 
+app.use(cookieParser())
+app.use(fileUpload())
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/users', profileApiRouter(io))
@@ -102,6 +103,7 @@ app.use('/api/auth', authApiRouter(io))
 app.use('/api/upload', uploadApiRouter(io))
 app.use('/api/mcq/', mcqApiRouter(io))
 app.use('/api/friends', friendsApiRouter(io))
+app.use('/api/decks', decksApiRouter(io))
 
 app.get('/logout', (req, res) => {
     try {

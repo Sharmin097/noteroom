@@ -6,9 +6,17 @@ import { addVote, deleteVote } from "../services/vote.service";
 import { Convert } from "../services/user.service";
 import { NotificationEvent, NotificationSender } from "../services/notification.service";
 import notesModel from "../schemas/posts.model";
+import { getDeck, savePostToDeck } from "../services/decks.service";
+import logger from "../logger";
+import rateLimit from 'express-rate-limit';
 
 const router = Router()
 export default function postApiRouter(io: Server) {
+    router.use(rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 100,
+        message: { ok: false, message: 'Too many requests, please try again later.' }
+    }))
     //TODO: vote should send notifications
 
     //DEPRECATED
@@ -204,20 +212,56 @@ export default function postApiRouter(io: Server) {
         }
     })
 
-    //DEPRECATED
-    router.get("/saved", async (req, res) => {
+    router.get("/:postID/save", async (req, res: any) => {
         try {
-            const studentID = req.session["stdid"]
-            const response = await getSavedPosts(studentID)
-            if (response.ok) {
-                res.json({ ok: true, posts: response.posts })
+            const studentID = req.session?.["stdid"];
+            if (!studentID) return
+
+            const { postID } = req.params;
+            const { deckID } = req.query;
+
+            if (!postID) {
+                logger.warn(`Invalid postID format: ${postID}`);
+                return res.json({ ok: false, message: "Invalid post ID format" });
+            }
+
+            if (!deckID || typeof deckID !== 'string') {
+                logger.warn(`Missing or invalid deckID parameter`);
+                return res.json({ ok: false, message: "Deck ID is required and must be a string" });
+            }
+
+            const ownerDocID = await Convert.getDocumentID_studentid(studentID);
+            if (!ownerDocID) {
+                logger.error(`Failed to get owner document for studentID=${studentID}`);
+                return res.json({ ok: false, message: "Internal server error" });
+            }
+
+            const deckDoc = await getDeck(deckID, ownerDocID);
+            if (!deckDoc) {
+                logger.warn(`Unauthorized deck access attempt - deck=${deckID}, studentID=${studentID}`);
+                return res.json({ ok: false, message: "Invalid deck or unauthorized" });
+            }
+
+            const postDoc = await notesModel.findOne({ postID: postID })
+            if (postDoc) {
+                const postDocID = postDoc._id.toString()
+                const result = await savePostToDeck(deckID, ownerDocID, postDocID);
+                if (!result.ok) {
+                    logger.error(`Save operation failed for postID=${postID}, deck=${deckID}`);
+                    return res.json({ ok: false, message: "Failed to save post to deck" });
+                }
+
+                logger.info(`Saved post ${postID} to deck ${deckID} by studentID=${studentID}`);
+                return res.json({ ok: true });
             } else {
-                res.json({ ok: false })
+                logger.info(`Couldn't get postDoc=${postID} by studentID=${studentID}`);
+                return res.json({ ok: false, message: "Failed to save post to deck" });
             }
         } catch (error) {
-            res.json({ ok: false })
+            logger.error(`Error saving post to deck: ${error}`);
+            return res.json({ ok: false, message: "Failed to save post to deck" });
         }
-    })
+    });
 
     return router
 }

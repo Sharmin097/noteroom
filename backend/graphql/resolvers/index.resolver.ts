@@ -1,3 +1,4 @@
+import { DecksType } from '../../schemas/decks.model';
 import { mergeResolvers } from "@graphql-tools/merge"
 import Users from "../../schemas/users.model"
 import UserResolver from "./users.resolver"
@@ -8,6 +9,8 @@ import { getNotifications } from "../../services/notification.service"
 import { Convert } from "../../services/user.service"
 import { getConnections } from '../../services/friends.service';
 import { getPosts, getSinglePost } from "../../services/post.service"
+import { getSingleDeck, getDecks } from "../../services/decks.service"
+import DecksResolver from './decks.resolver';
 
 const RootQueryResolver = {
     StringOrInt: StringOrIntScalarType,
@@ -23,8 +26,8 @@ const RootQueryResolver = {
                 const { req, res } = context
                 const userDocID = (await Convert.getDocumentID_studentid(req.session?.["mstdid"] || req.session?.["stdid"])).toString()
                 const response = await getSinglePost(args.postID, userDocID)
-                if (response.ok) {
-                    return response.post
+                if (response.ok && response.post.length === 1) {
+                    return response.post[0]
                 }
                 return null
             } catch (error) {
@@ -86,8 +89,36 @@ const RootQueryResolver = {
             } catch (error) {
                 return null
             }
+        },
+
+        async decks(_, args: { type: DecksType | null }, context) {
+            try {
+                const { req, res } = context
+                const ownerDocID = (await Convert.getDocumentID_studentid(req.session["mstdid"] || req.session["stdid"]))?.toString()
+                const response = await getDecks(ownerDocID, args.type && args.type)
+                if (response.ok) {
+                    return response.decks
+                }
+                return null
+            } catch (error) {
+                return null
+            }
+        },
+
+        async deck(_, args: { deckID: string }, context) {
+            try {
+                const { req, res } = context
+                const ownerDocID = (await Convert.getDocumentID_studentid(req.session["mstdid"] || req.session["stdid"]))?.toString()
+                const response = await getSingleDeck(args.deckID, ownerDocID)
+                if (response.ok) {
+                    return response.deck
+                }
+                return null
+            } catch (error) {
+                return null
+            }
         }
     }
 }
 
-export default mergeResolvers([RootQueryResolver, UserResolver, PostsResolvers])
+export default mergeResolvers([RootQueryResolver, UserResolver, PostsResolvers, DecksResolver])
