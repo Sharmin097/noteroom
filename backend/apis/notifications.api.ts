@@ -5,21 +5,6 @@ import { deleteAllNoti, getNotifications, readNoti } from "../services/notificat
 const router = Router()
 
 export default function notificationApiRouter(io: Server) {
-    //DEPRECATED
-    router.get("/", async (req, res) => {
-        try {
-            let studentID = req.session["stdid"]
-            let response = await getNotifications(studentID)
-            // if (response.ok) {
-            //     res.json({ ok: true, notifications: response.notifications })
-            // } else {
-            //     res.json({ ok: false })
-            // }
-        } catch (error) {
-            res.json({ ok: false })
-        }
-    })
-
     router.delete("/", async (req, res) => {
         try {
             let studentID = req.session["stdid"]

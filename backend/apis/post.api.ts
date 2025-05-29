@@ -17,57 +17,7 @@ export default function postApiRouter(io: Server) {
         max: 100,
         message: { ok: false, message: 'Too many requests, please try again later.' }
     }))
-    //TODO: vote should send notifications
-
-    //DEPRECATED
-    router.get("/:postID/metadata", async (req, res) => {
-        try {
-            const studentID = req.session["stdid"]
-            const studentDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
-            const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            // const response: any = await getSinglePost(postDocID, studentDocID, { images: false })
-            // if (response.ok) {
-            //     res.json({ ok: true, noteData: response.noteData })
-            // } else {
-            //     res.json({ ok: false })
-            // }
-        } catch (error) {
-            console.error(error)
-            res.json({ ok: false })
-        }
-    })
-
-    //DEPRECATED
-    router.get("/:postID/images", async (req, res) => {
-        try {
-            const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            // const response: any = await getSinglePost(postDocID, null, { images: true })
-            // if (response.ok) {
-            //     res.json({ ok: true, images: response.images })
-            // } else {
-            //     res.json({ ok: false })
-            // }
-        } catch (error) {
-            res.json({ ok: false })
-        }
-    })
-
-    //DEPRECATED
-    router.get("/:postID/comments", async (req, res) => {
-        try {
-            const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            const studentDocID = (await Convert.getDocumentID_studentid(req.session["stdid"])).toString()
-            // const response = await getComments({ noteDocID: postDocID, studentDocID })
-            // if (response.ok) {
-            //     res.json({ ok: true, comments: response.comments })
-            // } else {
-            //     res.json({ ok: false })
-            // }
-        } catch (error) {
-            res.json({ ok: false })
-        }
-    })
-
+    
     router.put("/:postID/save", async (req, res) => {
         try {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()

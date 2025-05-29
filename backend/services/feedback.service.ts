@@ -6,25 +6,6 @@ import notesModel from "../schemas/posts.model"
 import { userMentionMap } from "./utils"
 import studentsModel from "../schemas/users.model"
 
-//DEPRECATED
-// export async function getComments({ noteDocID, studentDocID }) {
-//     try {
-//         let feedbacks = await Comments.find({ noteDocID: noteDocID }).populate('commenterDocID', 'displayname username studentID profile_pic').sort({ createdAt: -1 })
-//         let _extentedFeedbacks = await Promise.all(
-//             feedbacks.map(async feedback => {
-//                 let isupvoted = await isCommentUpVoted({ feedbackDocID: feedback._id.toString(), voterStudentDocID: studentDocID })
-//                 let reply = await Reply.find({ parentFeedbackDocID: feedback._id })
-//                     .populate('commenterDocID', 'username displayname profile_pic studentID')
-
-//                 return [{ ...feedback.toObject(), isUpVoted: isupvoted }, reply]
-//             })
-//         )
-//         return { ok: true, comments: _extentedFeedbacks }
-//     } catch (error) {
-//         return { ok: false }
-//     }
-// }
-
 export async function getComments(postID?: string, studentDocID?: string) {
     try {
         const postDocID = (await notesModel.findOne({ postID: postID }, { _id: 1 }))._id
