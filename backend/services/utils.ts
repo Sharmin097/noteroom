@@ -25,12 +25,13 @@ export async function compressImage(fileObject: any) {
 
 
 export async function processBulkCompressUpload(fileObjects: fileUpload.UploadedFile[], postID: string) {
+    const context = processBulkCompressUpload.name
     try {
         let compressedFiles = await Promise.all(fileObjects.map(fileObject => compressImage(fileObject)))
         let uploadedFiles = await Promise.all(compressedFiles.map(compressedFile => upload(compressedFile, `posts/${postID}/contents/${compressedFile["fileName"]}`)))
-        return { ok: true, content: uploadedFiles }
+        return { ok: true, content: uploadedFiles, context }
     } catch (error) {
-        return { ok: false, error: error }
+        return { ok: false, error: error, context }
     }
 }
 

@@ -6,7 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
 import rateLimit from 'express-rate-limit';
-import Notes, { PostType } from "../schemas/posts.model"
+import Notes, { contentsModel, filesModel, PostType } from "../schemas/posts.model"
 import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
@@ -33,9 +33,8 @@ interface PostData {
     description?: string
 }
 
-async function handleUploadError(message: string, postID: string, postType: PostType, response: any) {
+async function handleUploadError(postID: string, postType: PostType, response: any) {
     await deletePost(postID, postType)
-    logger.error(message)
     return response.json({
         ok: false,
         message: "Post cannot be uploaded. Please try again a bit later!"
@@ -113,7 +112,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                             message: `One or more files exceed the maximum allowed size of ${MAX_FILE_SIZE} MB.`
                         });
                     }
-                    
+
                     if (!file.mimetype.startsWith("image/")) {
                         logger.warn(`Tried to upload content other than images`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-file-mimetype-mismatch' }, { studentID, postID, mimetype: file.mimetype })
                         return res.json({
@@ -130,7 +129,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                             message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(', ')} are allowed.`
                         });
                     }
-                    
+
                     const sanitizedFileName = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
                     file["fileName"] = sanitizedFileName
                     fileObjects.push(file)
@@ -138,40 +137,34 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
             }
 
             try {
+                const response = await addPost(postData, PostType.CONTENT)
+                if (!response.ok) {
+                    logger.error(`Failed to add post data in database`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content', response.context]), action: 'upload-content-add-post-failure' }, { response: 'failed', error: response.error.message, studentID, postID })
+                    return await handleUploadError(postID, PostType.CONTENT, res)
+                }
+                
+                await Notes.updateOne({ _id: response.postDocID }, { completed: true })
+                logger.info(`Added post data in database`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content', response.context]), action: 'upload-content-add-post-success' }, { response: 'success', studentID, postID })
+                
                 if (fileObjects.length !== 0) {
                     const uploadResponse = await processBulkCompressUpload(fileObjects, postData.postID)
                     if (!uploadResponse.ok) {
-                        return await handleUploadError(
-                            `(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${uploadResponse.error}`,
-                            postID, PostType.CONTENT, res
-                        )
+                        logger.error(`Failed to compress and upload contents`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content', uploadResponse.context]), action: 'upload-content-compress-upload-failure' }, { response: 'failed', error: uploadResponse.error.message, studentID, postID })
+                        return await handleUploadError(postID, PostType.CONTENT, res)
                     }
 
-                    logger.info(`(/upload/content): Compressed files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}`)
-                    postData.content = uploadResponse.content
+                    await contentsModel.updateOne({ _id: response.postDocID }, { content: uploadResponse.content })
+                    logger.info(`Compressed contents and uploaded`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content', uploadResponse.context]), action: 'upload-content-compress-upload-success' }, { response: 'success', studentID, postID })
                 }
-
-                const response = await addPost(postData, PostType.CONTENT)
-                if (!response.ok) {
-                    return await handleUploadError(
-                        `(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${response.error}`,
-                        postID, PostType.CONTENT, res
-                    )
-                }
-
-                logger.info(`(/upload/content): Added post document of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}`)
-                await Notes.updateOne({ _id: response.postID }, { completed: true })
+                
                 return res.json({ ok: true, message: "Post uploaded successfully!" })
-
             } catch (error) {
-                return await handleUploadError(
-                    `(/upload/content): Couldn't compress files of post on firebase of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}: ${error}`,
-                    postID, PostType.CONTENT, res
-                )
+                logger.error(`Failed to manage post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-manage-failure' }, { error: error.message, studentID, postID })
+                return await handleUploadError(postID, PostType.CONTENT, res)
             }
-
+            
         } catch (error) {
-            logger.error(`(/upload/content): Error for studentID=${req.session?.['stdid'] || "--studentid--"}: ${error}`);
+            logger.error(`Failed to upload post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-api-failure' }, { error: error.message, postID })
             return res.json({
                 ok: false,
                 message: "An error occurred while uploading. Please try again later."
@@ -242,7 +235,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
 
             }
 
-            logger.info(`/upload/mcq: Received MCQs from studentID=${encodeURIComponent(studentID)}, title=${encodeURIComponent(sanitizedTitle)}`);
+            logger.info(`Received MCQs object`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'mcq']), action: 'upload-mcq-attempt' }, { studentID, postID })
 
             const modifiedMQCs = mcqs.map((mcq: MCQ) => {
                 const questionID = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}`
@@ -259,22 +252,23 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                 mcqs: modifiedMQCs,
                 title: sanitizedTitle
             }
-            const response = await addPost(postData, PostType.MCQ)
 
-            if (response.ok) {
-                return res.json({
-                    ok: true,
-                    message: "MCQs uploaded successfully!"
-                });
-            } else {
+            const response = await addPost(postData, PostType.MCQ)
+            if (!response.ok) {
+                logger.error(`Failed to post MCQ`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'mcq', response.context]), action: 'upload-mcq-failure' }, { response: 'failed', error: response.error.message, studentID, postID })
                 return res.json({
                     ok: false,
                     message: "MCQs couldn't be uploaded successfully! Try again a bit later"
                 });
             }
-        } catch (error) {
-            logger.error(`/upload/mcq: Error for studentID=${req.session?.['stdid']}, error=${error.message || error}`);
 
+            logger.info(`MCQ post uploaded`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'mcq', response.context]), action: 'upload-mcq-success' }, { response: 'success', studentID, postID })
+            return res.json({
+                ok: true,
+                message: "MCQs uploaded successfully!"
+            });
+        } catch (error) {
+            logger.error(`Failed to upload mcq`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'mcq']), action: 'upload-mcq-api-failure' }, { error: error.message })
             return res.json({
                 ok: false,
                 message: "An error occurred while uploading MCQs. Please try again later."
@@ -308,10 +302,9 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                 files: []
             }
 
-            logger.info(`(/upload/file): Received post data for studentID=${studentID}, postID=${postID}`)
+            logger.info(`Got post data`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-attempt' }, { studentID, postID })
 
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
-                logger.error(`(/upload/file): Invalid title from studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: `Title is required, must be a string, and less than ${MAX_TITLE_LENGTH} characters.`,
@@ -319,7 +312,6 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
             }
 
             if (sanitizedDescription.length > MAX_DESCRIPTION_LENGTH) {
-                logger.error(`(/upload/file): Description too long from studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`,
@@ -331,7 +323,6 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
             postData.title = sanitizedTitle
 
             if (!req.files || Object.keys(req.files).length === 0) {
-                logger.error(`(/upload/file): No files uploaded by studentID=${studentID}`)
                 return res.json({
                     ok: false,
                     message: "At least one file needs to be selected"
@@ -341,7 +332,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
             const uploadedFiles = Object.values(req.files).flat()
 
             if (uploadedFiles.length > MAX_FILES) {
-                logger.error(`(/upload/file): Too many files uploaded by studentID=${studentID}`)
+                logger.warn(`Tried to post ${uploadedFiles.length} files`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-limit-exceed' }, { studentID, postID, fileCount: uploadedFiles.length })
                 return res.json({
                     ok: false,
                     message: `You can only upload up to ${MAX_FILES} files at a time.`,
@@ -352,7 +343,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                 const fileExtension = path.extname(file.name).toLowerCase();
 
                 if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-                    logger.error(`(/upload/file): Invalid file extension (${fileExtension}) by studentID=${studentID}`)
+                    logger.warn(`Got file extension other than ${ALLOWED_EXTENSIONS.join(', ')}`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-extension-mismatch' }, { studentID, postID, fileExtension })
                     return res.json({
                         ok: false,
                         message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(", ")} are allowed.`,
@@ -360,7 +351,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                 }
 
                 if (file.size > MAX_FILE_SIZE) {
-                    logger.error(`(/upload/file): File too large by studentID=${studentID}`)
+                    logger.warn(`One or more files exceed the maximum allowed size of ${MAX_FILE_SIZE} MB.`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-size-exceed' }, { studentID, postID, fileSize: file.size })
                     return res.json({
                         ok: false,
                         message: "File exceeds the maximum allowed size of 5GB.",
@@ -371,43 +362,32 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                 file["fileName"] = sanitizedFileName
                 fileObjects.push(file)
 
-                logger.info(`(/upload/file): File sanitized successfully for studentID=${studentID}, fileName=${postID + " = " + sanitizedFileName}`)
             }
 
-            try {
+            try {                
+                
+                const response = await addPost(postData, PostType.FILE)
+                if (!response.ok) {
+                    logger.error(`Failed to add post data in database`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file', response.context]), action: 'upload-file-add-post-failure' }, { response: 'failed', error: response.error.message, studentID, postID })
+                    return await handleUploadError(postID, PostType.FILE, res)
+                }
+                
                 const uploadResponse = await processBuikPDFUpload(fileObjects, postID)
                 if (!uploadResponse.ok) {
-                    return await handleUploadError(
-                        `(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${uploadResponse.error}`,
-                        postID, PostType.FILE, res
-                    )
+                    logger.error(`Failed to upload files`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file', uploadResponse.context]), action: 'upload-file-upload-failure' }, { response: 'failed', error: uploadResponse.error.message, studentID, postID })
+                    return await handleUploadError(postID, PostType.FILE, res)
                 }
 
-                const files = uploadResponse.files
-                postData.files = files
-
-                logger.info(`(/upload/file): Files uploaded to storage for studentID=${studentID}, postID=${postID}`)
-
-                const response = await addPost(postData, PostType.FILE)
-                if (response.ok) {
-                    await Notes.updateOne({ _id: response.postID }, { completed: true })
-                    logger.info(`(/upload/file): Post document created for studentID=${studentID}, postID=${postID}`)
-                    return res.json({ ok: true, message: "Files posted successfully." });
-                } else {
-                    return await handleUploadError(
-                        `(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${response.error}`,
-                        postID, PostType.FILE, res
-                    )
-                }
+                await filesModel.updateOne({ _id: response.postDocID }, { $set: { completed: true, files: uploadResponse.files } })
+                logger.info(`Post uploaded`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-upload-success' }, { response: 'success', studentID, postID })
+                return res.json({ ok: true, message: "Files posted successfully." });
             } catch (error) {
-                return await handleUploadError(
-                    `(/upload/file): Failed to upload files to storage for studentID=${studentID}, postID=${postID}: ${error}`,
-                    postID, PostType.FILE, res
-                )
+                logger.error(`Failed to manage post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-manage-failure' }, { error: error.message, studentID, postID })
+                return await handleUploadError(postID, PostType.FILE, res)
             }
 
         } catch (error) {
-            logger.error(`(/upload/file): Error while uploading: ${error}`);
+            logger.error(`Failed to upload post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'file']), action: 'upload-file-api-failure' }, { error: error.message, postID })
             return res.json({
                 ok: false,
                 message: "An error occurred while uploading. Please try again later.",
@@ -451,7 +431,7 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
                 });
             }
 
-            logger.info(`(/upload/link): Received post for studentID=${studentID}, postID=${postID}`);
+            logger.info(`Got post data`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'link']), action: 'upload-link-attempt' }, { studentID, postID })
 
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
                 return res.json({
@@ -476,30 +456,25 @@ export default function uploadApiRouter(io: Server, context: { rootContext: stri
             postData.links = links
 
             const response = await addPost(postData, PostType.LINK);
-            if (response.ok) {
-                logger.info(`(/upload/link): Post saved for studentID=${req.session["stdid"] || '--studentID--'}, postID=${postID}`);
-                return res.json({ ok: true, message: "Link post uploaded successfully!" });
-            } else {
-                logger.error(`(/upload/link): Failed to add post for studentID=${req.session["stdid"] || '--studentID--'}: ${response.error}`);
+            if (!response.ok) {
+                logger.error(`Failed to upload post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'link', response.context]), action: 'upload-link-failure' }, { response: 'failed', error: response.error.message, studentID, postID })
                 return res.json({
                     ok: false,
                     message: "Post couldn't be uploaded. Please try again later."
                 });
             }
 
+            logger.info(`Post uploaded`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'link', response.context]), action: 'upload-link-success' }, { response: 'success', studentID, postID })
+            return res.json({ ok: true, message: "Link post uploaded successfully!" });
+
         } catch (error) {
-            logger.error(`(/upload/link): Exception for studentID==${req.session["stdid"] || '--studentID--'}: ${error}`);
+            logger.error(`Failed to upload post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'link']), action: 'upload-link-api-failure' }, { error: error.message })
             return res.json({
                 ok: false,
                 message: "An error occurred while uploading. Please try again later."
             });
         }
     });
-
-
-
-
-
 
 
     return router
