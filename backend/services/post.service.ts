@@ -12,6 +12,7 @@ interface SavedNoteObject {
 }
 
 export async function addPost(postData: any, postType?: PostType) {
+    const context = addPost.name
     try {
         let post = null
         if (postType === PostType.CONTENT) {
@@ -30,12 +31,12 @@ export async function addPost(postData: any, postType?: PostType) {
                 { $push: { owned_notes: post._id } },
                 { upsert: true, new: true }
             )
-            return { ok: true, postID: post._id }
+            return { ok: true, postID: post._id, context }
         } else {
-            return { ok: false }
+            return { ok: false, context }
         }
     } catch (error) {
-        return { ok: false, error: error }
+        return { ok: false, error: error, context }
     }
 }
 
@@ -223,6 +224,7 @@ export async function getSinglePost(postID: string | string[], userDocID: string
 
 
 export async function addSavePost({ studentDocID, noteDocID }) {
+    const context = addSavePost.name
     try {
         await Students.updateOne(
             { _id: studentDocID },
@@ -230,9 +232,9 @@ export async function addSavePost({ studentDocID, noteDocID }) {
             { new: true }
         )
 
-        return { ok: true }
+        return { ok: true, context }
     } catch (error) {
-        return { ok: false }
+        return { ok: false, context }
     }
 }
 

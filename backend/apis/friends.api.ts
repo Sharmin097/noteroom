@@ -2,30 +2,24 @@ import { Router } from "express";
 import { Server } from "socket.io";
 import rateLimit from "express-rate-limit";
 import logger from "../logger";
-import { sendFriendRequest, getFriendRequestById, acceptRequest, unfollowRequest } from "../services/friends.service";
+import { sendFriendRequest, getFriendRequestByRequestID, acceptRequest, unfollowRequest } from "../services/friends.service";
 import { Convert } from "../services/user.service";
 import { v4 as uuidv4 } from "uuid";
+import { joinLogContexts } from "../services/utils";
 
 const router = Router();
 
-export default function friendsApiRouter(io: Server) {
-    router.use(
-        rateLimit({
-            windowMs: 15 * 60 * 1000,
-            max: 100,
-            message: "Too many friend request actions. Please try again later.",
-        })
-    );
+export default function friendsApiRouter(io: Server, context: { rootContext: string }) {
+    router.use(rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 100,
+        message: "Too many friend request actions. Please try again later.",
+    }));
 
     const getUserIDs = async (studentID: string, username: string) => {
         const sender = await Convert.getDocumentID_studentid(studentID);
         const receiver = await Convert.getDocumentID_username(username);
         return { sender, receiver };
-    };
-
-    const logAndRespond = (res, level, message, meta = {}) => {
-        logger[level](message, meta);
-        return res.json({ ok: false, message });
     };
 
     router.get("/send/:username", async (req, res) => {
@@ -37,20 +31,16 @@ export default function friendsApiRouter(io: Server) {
         try {
             const senderUsername = await Convert.getUserName_studentid(senderID);
             if (!senderUsername) {
-                return logAndRespond(res, "error", "Invalid sender username", { senderID });
+                return res.json({ ok: false, message: "Invalid sender username" })
             }
 
             if (senderUsername === receiverUsername) {
-                return logAndRespond(res, "warn", "Cannot send request to yourself");
+                return res.json({ ok: false, message: "Cannot send request to yourself" })
             }
 
             const { sender, receiver } = await getUserIDs(senderID, receiverUsername);
-
             if (!sender || !receiver) {
-                return logAndRespond(res, "error", "Invalid sender or receiver", {
-                    senderID,
-                    receiverUsername,
-                });
+                return res.json({ ok: false, message: "Invalid sender or receiver" })
             }
 
             const requestID = uuidv4();
@@ -62,72 +52,72 @@ export default function friendsApiRouter(io: Server) {
             });
 
             if (!result.ok) {
-                return logAndRespond(res, "error", `Failed to send friend request: ${result.code || "SERVER"}`, result);
+                logger.error(`Failed to send connection request`, { entity: 'api', root: joinLogContexts(context.rootContext, ['send', result.context]), action: 'connection-send-failure' }, { response: 'failed', error: result.error.message, code: result.code, sender, receiver })
+                return res.json({ ok: false, message: `Failed to send friend request` })
             }
 
-            logger.info("Friend request sent", { from: sender, to: receiverUsername });
-            return res.status(200).json({ ok: true, requestID });
-        } catch (err) {
-            console.error(err)
-            return logAndRespond(res, "error", "Internal error sending friend request", { err });
+            logger.info(`Connection request sent`, { entity: 'api', root: joinLogContexts(context.rootContext, ['send', result.context]), action: 'connection-send-success' }, { response: 'success', sender, receiver })
+            return res.json({ ok: true, requestID });
+        } catch (error) {
+            logger.error(`Failed to send connection request`, { entity: 'api', root: joinLogContexts(context.rootContext, ['send']), action: 'connection-send-api-failure' }, { error: error.message })
+            res.json({ ok: false, message: "Internal error sending friend request" })
         }
     });
-
+    
     router.get("/requests/:requestID", async (req, res) => {
-        const studentID = req.session?.["mstdid"] || req.session?.["stdid"];
-        const { requestID } = req.params;
-        const action = req.query.action as string
-
-        if (!studentID) return;
-
         try {
+            const studentID = req.session?.["mstdid"] || req.session?.["stdid"];
+            const { requestID } = req.params;
+            const action = req.query.action as string
+    
+            if (!studentID) return;
+
             const currentUser = await Convert.getDocumentID_studentid(studentID);
-            if (!currentUser) return logAndRespond(res, "warn", "Student not found", { studentID });
+            
+            const result = await getFriendRequestByRequestID(requestID);
+            if (!result.ok || !result.request) {
+                logger.error("Connection request not found", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests', action, result.context]), action: 'connection-not-found' }, { response: "failed", error: result.error.message, studentID, requestID, action })
+                res.json({ ok: false, message: "Connection not found" })
+            }
 
-            const { ok, request, receiverInfo } = await getFriendRequestById(requestID);
-            if (!ok || !request) return logAndRespond(res, "warn", "Request not found", { requestID });
-
-            const isParticipant =
-                request.senderDocID._id.toString() === currentUser.toString() ||
-                request.receiverDocID._id.toString() === currentUser.toString();
+            const isParticipant = result.request.senderDocID._id.toString() === currentUser.toString() || result.request.receiverDocID._id.toString() === currentUser.toString();
 
             if (["accept", "unfollow"].includes(action)) {
                 if (!isParticipant) {
-                    return logAndRespond(res, "warn", "Unauthorized to respond to request", { studentID });
+                    logger.error("Unauthorized to respond to request", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests', action, result.context]), action: 'connection-unauthorized' }, { studentID, requestID, action })
                 }
                 
                 if (action === "accept") {
-                    if (receiverInfo !== studentID) {
-                        return logAndRespond(res, "warn", "Unauthorized to respond to request", { studentID });
+                    if (result.receiverInfo !== studentID) {
+                        res.json({ ok: false, message: "Unauthorized to respond to request" })
                     }
-
+                    
                     const response = await acceptRequest(requestID)
-
                     if (!response.ok) {
-                        logger.error(`Friend request acceptence failure`, { requestID, studentID });
-                        return res.status(200).json({ ok: false, message: "Friend request acceptence failure" });
+                        logger.error("Connection request acceptence failure", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests', action, response.context]), action: 'connection-accept-failure' }, { response: "failed", error: response.error.message, studentID, requestID, action })
+                        return res.json({ ok: false, message: "Connection request acceptence failure" });
                     }
-
-                    logger.info(`Friend request accepted`, { requestID, studentID });
-                    return res.status(200).json({ ok: true, message: `Request ${action}d` });
-                } 
-
+                    
+                    logger.info("Connection request accepted", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests', action, response.context]), action: 'connection-accept-success' }, { response: "success", studentID, requestID, action })
+                    return res.json({ ok: true, message: `Request accepted` });
+                }
+                
                 if (action === "unfollow") {
                     const response = await unfollowRequest(requestID, currentUser)
-
                     if (!response.ok) {
-                        logger.error(`Friend request decline failure`, { requestID, studentID });
-                        return res.status(200).json({ ok: false, message: "Friend request decline failure" });
+                        logger.error("Connection request unfollow failure", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests', action, response.context]), action: 'connection-unfollow-failure' }, { response: "failed", error: response.error.message, studentID, requestID, action })
+                        return res.json({ ok: false, message: "Connection request decline failure" });
                     }
-
-                    logger.info(`Friend request declined`, { requestID, studentID });
-                    return res.status(200).json({ ok: true, message: `Request ${action}d` });
+                    
+                    logger.info("Connection request unfollowed", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests', action, response.context]), action: 'connection-unfollow-success' }, { response: "success", studentID, requestID, action })
+                    return res.json({ ok: true, message: `Connection unfollowed` });
                 }
             }
 
-            return logAndRespond(res, "warn", "Invalid action parameter", { action });
-        } catch (err) {
-            return logAndRespond(res, "error", "Unexpected error", { requestID, err });
+            return res.json({ ok: false, message: "Invalid action parameter"})
+        } catch (error) {
+            logger.error("Failed to manage connection request", { entity: 'api', root: joinLogContexts(context.rootContext, ['requests']), action: 'connection-requests-api-failure' }, { error: error.message })
+            res.json({ ok: false, message: "Failed to manage connection request" })
         }
     });
 

@@ -94,16 +94,16 @@ app.use(cookieParser())
 app.use(fileUpload())
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use('/api/users', profileApiRouter(io))
-app.use('/api/posts', postApiRouter(io))
+app.use('/api/users', profileApiRouter(io, { rootContext: "ProfileAPI" }))
+app.use('/api/posts', postApiRouter(io, { rootContext: "PostAPI" }))
 app.use('/api/notifications', notificationApiRouter(io))
 app.use('/api/requests', requestsApiRouter(io))
 app.use('/api/search', seacrhApiRouter(io))
-app.use('/api/auth', authApiRouter(io))
-app.use('/api/upload', uploadApiRouter(io))
+app.use('/api/auth', authApiRouter(io, { rootContext: 'UserAuthAPI' }))
+app.use('/api/upload', uploadApiRouter(io, { rootContext: "UploadAPI" }))
 app.use('/api/mcq/', mcqApiRouter(io))
-app.use('/api/friends', friendsApiRouter(io))
-app.use('/api/decks', decksApiRouter(io))
+app.use('/api/friends', friendsApiRouter(io, { rootContext: "ConnectionsAPI" }))
+app.use('/api/decks', decksApiRouter(io, { rootContext: 'DecksAPI' }))
 
 app.get('/logout', (req, res) => {
     try {

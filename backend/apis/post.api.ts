@@ -9,9 +9,10 @@ import notesModel from "../schemas/posts.model";
 import { getDeck, savePostToDeck } from "../services/decks.service";
 import logger from "../logger";
 import rateLimit from 'express-rate-limit';
+import { joinLogContexts } from "../services/utils";
 
 const router = Router()
-export default function postApiRouter(io: Server) {
+export default function postApiRouter(io: Server, context: { rootContext: string }) {
     router.use(rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 100,
@@ -36,48 +37,6 @@ export default function postApiRouter(io: Server) {
         }
     })
 
-    //DEPRECATED: only the notification system needs to be implemented
-    router.post("/:postID/feedbacks", async (req, res) => {
-        try {
-            const postID = req.params.postID
-            const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            const studentID = req.session["stdid"]
-            const feedbackContent = req.body.feedbackContent
-            const commenterDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
-
-            const feedbackData = {
-                noteDocID: postDocID,
-                commenterDocID: commenterDocID,
-                feedbackContents: feedbackContent
-            }
-            const response = await addFeedback(feedbackData)
-            if (response.ok) {
-                const { feedback } = response
-
-                const toStudentID = feedback["noteDocID"]["ownerDocID"]["studentID"];
-                const fromStudentID = feedback["commenterDocID"]["studentID"]
-
-                if (toStudentID !== fromStudentID) {
-                    await NotificationSender(io, {
-                        ownerStudentID: toStudentID,
-                        redirectTo: `/post/${postID}`
-                    }).sendNotification({
-                        content: `gave you a comment on "${feedback["noteDocID"]["title"]}". Check it out!`,
-                        event: NotificationEvent.NOTIF_COMMENT,
-                        isInteraction: true,
-                        fromUserSudentDocID: feedback["commenterDocID"]["_id"]
-                    })
-                }
-                res.json({ ok: true, feedback: feedback })
-            } else {
-                res.json({ ok: false })
-            }
-        } catch (error) {
-            console.error(error)
-            res.json({ ok: false })
-        }
-    })
-
     router.post("/:postID/feedbacks/:feedbackID/vote", async (req, res) => {
         try {
             const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
@@ -93,51 +52,6 @@ export default function postApiRouter(io: Server) {
             }
         } catch (error) {
             res.json({ ok: false })
-        }
-    })
-
-    //DEPRECATED: only the notification system needs to be implemented
-    router.post("/:postID/feedbacks/:feedbackID/replies", async (req, res) => {
-        try {
-            const postID = req.params.postID
-            const postDocID = (await notesModel.findOne({ postID: req.params.postID }, { _id: 1 }))._id.toString()
-            const studentID = req.session["stdid"]
-            const replyContent = req.body.replyContent
-            const parentFeedbackDocID = req.params.feedbackID
-            const replyToUsername = req.body.replyToUsername
-            const replierDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
-
-            const replyData = {
-                noteDocID: postDocID,
-                feedbackContents: replyContent,
-                commenterDocID: replierDocID,
-                parentFeedbackDocID: parentFeedbackDocID
-            }
-            const response = await addReply(replyData)
-            if (response.ok) {
-                const { reply } = response
-
-                const toStudentID = await Convert.getStudentID_username(replyToUsername)
-                const fromStudentID = reply["commenterDocID"]["studentID"]
-
-                if (toStudentID !== fromStudentID) {
-                    await NotificationSender(io, {
-                        ownerStudentID: toStudentID,
-                        redirectTo: `/post/${postID}`
-                    }).sendNotification({
-                        content: `gave a reply on your comment on "${reply["noteDocID"]["title"]}". Check it out!`,
-                        event: NotificationEvent.NOTIF_COMMENT,
-                        isInteraction: true,
-                        fromUserSudentDocID: reply["commenterDocID"]["_id"]
-                    })
-                }
-
-                res.json({ ok: true, reply: response.reply })
-            } else {
-                res.json({ ok: false })
-            }
-        } catch (error) {
-            res.json({ ok: true })
         }
     })
 
@@ -171,44 +85,42 @@ export default function postApiRouter(io: Server) {
             const { deckID } = req.query;
 
             if (!postID) {
-                logger.warn(`Invalid postID format: ${postID}`);
                 return res.json({ ok: false, message: "Invalid post ID format" });
             }
 
             if (!deckID || typeof deckID !== 'string') {
-                logger.warn(`Missing or invalid deckID parameter`);
                 return res.json({ ok: false, message: "Deck ID is required and must be a string" });
             }
 
             const ownerDocID = await Convert.getDocumentID_studentid(studentID);
             if (!ownerDocID) {
-                logger.error(`Failed to get owner document for studentID=${studentID}`);
+                logger.error(`Failed to get owner document`, { entity: 'api', root: joinLogContexts(context.rootContext, ['save']), action: 'ownerDocID-not-found' }, { studentID })
                 return res.json({ ok: false, message: "Internal server error" });
             }
 
             const deckDoc = await getDeck(deckID, ownerDocID);
             if (!deckDoc) {
-                logger.warn(`Unauthorized deck access attempt - deck=${deckID}, studentID=${studentID}`);
+                logger.error(`Unauthorized deck access attempt, ownerDocID doesn't own this deck`, { entity: 'api', root: joinLogContexts(context.rootContext, ['save', deckDoc.context]), action: 'deck-unauthorized' }, { response: 'failed', deckID, error: deckDoc.error.message, studentID, ownerDocID })
                 return res.json({ ok: false, message: "Invalid deck or unauthorized" });
             }
-
+            
             const postDoc = await notesModel.findOne({ postID: postID })
             if (postDoc) {
                 const postDocID = postDoc._id.toString()
                 const result = await savePostToDeck(deckID, ownerDocID, postDocID);
                 if (!result.ok) {
-                    logger.error(`Save operation failed for postID=${postID}, deck=${deckID}`);
+                    logger.error(`Saving post in deck failed`, { entity: 'api', root: joinLogContexts(context.rootContext, ['save', result.context]), action: 'save-post-deck-failure' }, { response: 'failed', deckID, error: result.error.message, studentID })
                     return res.json({ ok: false, message: "Failed to save post to deck" });
                 }
-
-                logger.info(`Saved post ${postID} to deck ${deckID} by studentID=${studentID}`);
+                
+                logger.info(`Post saved in deck`, { entity: 'api', root: joinLogContexts(context.rootContext, ['save', result.context]), action: 'save-post-deck-success' }, { response: 'success', deckID, studentID })
                 return res.json({ ok: true });
             } else {
-                logger.info(`Couldn't get postDoc=${postID} by studentID=${studentID}`);
+                logger.error(`Couldn't get post`, { entity: 'api', root: joinLogContexts(context.rootContext, ['save']), action: 'post-not-found' }, { postID, studentID })
                 return res.json({ ok: false, message: "Failed to save post to deck" });
             }
         } catch (error) {
-            logger.error(`Error saving post to deck: ${error}`);
+            logger.info(`Saving post in deck failed`, { entity: 'api', root: joinLogContexts(context.rootContext, ['save']), action: 'save-post-deck-api-failure' }, { error: error.message })            
             return res.json({ ok: false, message: "Failed to save post to deck" });
         }
     });

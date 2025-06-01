@@ -11,7 +11,7 @@ import logger from "../logger";
 import { JSDOM } from "jsdom"
 import { v4 as uuidv4 } from "uuid";
 import fileUpload from "express-fileupload";
-import { processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";// Used to sanitize input to prevent XSS
+import { joinLogContexts, processBuikPDFUpload, processBulkCompressUpload } from "../services/utils";// Used to sanitize input to prevent XSS
 
 const router = Router()
 
@@ -42,7 +42,7 @@ async function handleUploadError(message: string, postID: string, postType: Post
     });
 }
 
-export default function uploadApiRouter(io: Server) {
+export default function uploadApiRouter(io: Server, context: { rootContext: string }) {
     router.use(rateLimit({
         windowMs: 60 * 1000,
         max: 5,
@@ -58,7 +58,7 @@ export default function uploadApiRouter(io: Server) {
         const postID = uuidv4()
 
         try {
-            const studentID = req.session?.['stdid'] || "--studentid--"
+            const studentID = req.session?.["mstdid"] || req.session?.['stdid']
             if (!studentID) return
 
             const { postTitle, postDescription } = req.body;
@@ -74,7 +74,7 @@ export default function uploadApiRouter(io: Server) {
                 content: []
             }
 
-            logger.info(`(/upload/content): Got post data of studentID=${req.session["stdid"] || '--studentID--'}, postID=${postData?.postID || sanitizedTitle}`)
+            logger.info(`Got post data`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-attempt' }, { studentID, postID })
             let fileObjects: fileUpload.UploadedFile[] = []
 
             if (!sanitizedTitle || typeof sanitizedTitle !== "string" || sanitizedTitle.length > MAX_TITLE_LENGTH) {
@@ -98,6 +98,7 @@ export default function uploadApiRouter(io: Server) {
                 const fileArray = Object.values(req.files).flat();
 
                 if (fileArray.length > MAX_FILE_COUNT) {
+                    logger.warn(`Tried to post ${fileArray.length} contents`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-file-limit-exceed' }, { studentID, postID, fileCount: fileArray.length })
                     return res.json({
                         ok: false,
                         message: `You can upload a maximum of ${MAX_FILE_COUNT} images.`
@@ -106,13 +107,15 @@ export default function uploadApiRouter(io: Server) {
 
                 for (const file of fileArray) {
                     if (file.size > MAX_FILE_SIZE) {
+                        logger.warn(`One or more files exceed the maximum allowed size of ${MAX_FILE_SIZE} MB.`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-file-size-exceed' }, { studentID, postID, fileSize: file.size })
                         return res.json({
                             ok: false,
-                            message: "One or more files exceed the maximum allowed size of 5MB."
+                            message: `One or more files exceed the maximum allowed size of ${MAX_FILE_SIZE} MB.`
                         });
                     }
-
+                    
                     if (!file.mimetype.startsWith("image/")) {
+                        logger.warn(`Tried to upload content other than images`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-file-mimetype-mismatch' }, { studentID, postID, mimetype: file.mimetype })
                         return res.json({
                             ok: false,
                             message: "Only image files are allowed."
@@ -121,17 +124,16 @@ export default function uploadApiRouter(io: Server) {
 
                     const fileExtension = path.extname(file.name).toLowerCase();
                     if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+                        logger.warn(`Got file extension other than ${ALLOWED_EXTENSIONS.join(', ')}`, { entity: 'api', root: joinLogContexts(context.rootContext, ['upload', 'content']), action: 'upload-content-file-extension-mismatch' }, { studentID, postID, fileExtension })
                         return res.json({
                             ok: false,
                             message: `Invalid file extension. Only ${ALLOWED_EXTENSIONS.join(', ')} are allowed.`
                         });
                     }
-
+                    
                     const sanitizedFileName = `${Date.now()}-${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
                     file["fileName"] = sanitizedFileName
                     fileObjects.push(file)
-
-                    logger.info(`(/upload/content): File sanitized and handled successfully for studentID=${studentID}, fileName=${postData.postID + " = " + sanitizedFileName}`);
                 }
             }
 
