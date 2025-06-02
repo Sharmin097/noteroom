@@ -53,18 +53,6 @@ const port = process.env.PORT
 const staticPath = join(__dirname, "../../frontend/dist")
 const allowedHosts = JSON.parse(process.env.ALLOWED_HOSTS)
 
-function devAuthCookie(req, res, next) {
-    const mockSessionUserID = req.headers['x-msid']
-    if (mockSessionUserID) {
-        req.session.mstdid = mockSessionUserID
-    } else {
-        console.log(chalk.red("DEVELOPMENT_SESSION_COOKIE is set to true but no x-msid header is found. Setting mstdid=undefined"))
-        req.session.mstdid = undefined
-    }
-
-    next()
-}
-
 app.use(cors({
     origin: allowedHosts,
     credentials: true
@@ -88,7 +76,17 @@ app.use(session({
 }));
 if (process.env.DEVELOPMENT_SESSION_COOKIE === "true") {
     console.log(chalk.cyan(`[-] using development session cookie: ${chalk.yellow('`session.mstdid`')}`))
-    app.use(devAuthCookie)
+    app.use(function(req, _, next) {
+        const mockSessionUserID = req.headers['x-msid']
+        if (mockSessionUserID) {
+            req.session["mstdid"] = mockSessionUserID
+        } else {
+            console.log(chalk.red("DEVELOPMENT_SESSION_COOKIE is set to true but no x-msid header is found. Setting mstdid=undefined"))
+            req.session["mstdid"] = undefined
+        }
+
+        next()
+    })
 }
 app.use(cookieParser())
 app.use(fileUpload())
