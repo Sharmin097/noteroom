@@ -4,6 +4,7 @@ import { Convert, getMutualCollegeStudents, getProfile, updateProfileFields } fr
 import sanitizeHtml from 'sanitize-html';
 import logger from "../logger";
 import validator from "validator";
+import { joinLogContexts } from "../services/utils";
 
 const FeatureFlags = {
 	ACCEPT_USERNAME_CHANGE_VIA_API: false
@@ -31,7 +32,7 @@ function isValidUsername(username: string): boolean {
 }
 
 
-export default function profileApiRouter(io: Server) {
+export default function profileApiRouter(io: Server, context: { rootContext: string }) {
 	router.get("/mutual-college", async (req, res) => {
 		try {
 			let studentID = req.session["stdid"]
@@ -57,10 +58,8 @@ export default function profileApiRouter(io: Server) {
 			const group = req.body.group?.trim();
 			if (group) {
 				if (!["Science", "Commerce", "Arts"].includes(group)) {
-					logger.warn(`Invalid or missing group for student ${studentID}: ${group}`);
 					return res.json({ ok: false, message: "Invalid or missing group." });
 				}
-
 			}
 
 			const updates: Record<string, string> = {};
@@ -70,24 +69,19 @@ export default function profileApiRouter(io: Server) {
 				const value = sanitizeHtml(rawValue || "").trim();
 
 				if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
-					logger.warn(`Unauthorized change attempt on field: ${key} by student ${studentID}`);
 					return res.json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
 				}
 
 				if (!value) {
-					logger.warn(`Empty value submitted for "${key}" by student ${studentID}`);
 					return res.json({ ok: false, message: `Value for "${key}" cannot be empty.` });
 				}
 
 				if (FeatureFlags.ACCEPT_USERNAME_CHANGE_VIA_API && key === "username" && !isValidUsername(value)) {
-					logger.warn(`Invalid username attempt by student ${studentID}: "${value}"`);
 					return res.json({
 						ok: false,
-						message:
-							"Invalid username. Use only letters, numbers, dot (.), underscore (_) or dash (-). It must be at least 4 characters long and cannot start or end with punctuation."
+						message: "Invalid username. Use only letters, numbers, dot (.), underscore (_) or dash (-). It must be at least 4 characters long and cannot start or end with punctuation."
 					});
 				}
-
 
 				updates[key] = value;
 			}
@@ -99,17 +93,19 @@ export default function profileApiRouter(io: Server) {
 			const response = await updateProfileFields(studentID, updates);
 
 			if (response.ok) {
-				logger.info(`Profile updated successfully for student ${studentID}`);
+                logger.info(`Profile updated successfully`, { entity: 'api', root: joinLogContexts(context.rootContext, ['change', response.context]), action: 'profile-change-success' }, { response: 'success', studentID })
+				
 				res.json({ ok: true });
 			} else {
-				logger.error(`Update failed for student ${studentID}`);
 				if (response.error.code && response.error.code === 11000) {
 					return res.json({ ok: false, message: "Username is not available" });
 				}
+
+				logger.error(`Profile update failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['change', response.context]), action: 'profile-change-failure' }, { response: 'failed', error: response.error.message, studentID })
 				res.json({ ok: false, message: "Can't change your profile details now! Please try again a bit later" });
 			}
 		} catch (error) {
-			logger.error(`Exception occurred during profile change: ${error}`);
+			logger.error(`Profile update failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['change']), action: 'profile-change-api-failure' }, { error: error.message })
 			res.json({ ok: false, message: "An error occurred while updating profile." });
 		}
 	});

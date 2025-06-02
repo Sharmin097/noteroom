@@ -53,18 +53,6 @@ const port = process.env.PORT
 const staticPath = join(__dirname, "../../frontend/dist")
 const allowedHosts = JSON.parse(process.env.ALLOWED_HOSTS)
 
-function devAuthCookie(req, res, next) {
-    const mockSessionUserID = req.headers['x-msid']
-    if (mockSessionUserID) {
-        req.session.mstdid = mockSessionUserID
-    } else {
-        console.log(chalk.red("DEVELOPMENT_SESSION_COOKIE is set to true but no x-msid header is found. Setting mstdid=undefined"))
-        req.session.mstdid = undefined
-    }
-
-    next()
-}
-
 app.use(cors({
     origin: allowedHosts,
     credentials: true
@@ -88,22 +76,32 @@ app.use(session({
 }));
 if (process.env.DEVELOPMENT_SESSION_COOKIE === "true") {
     console.log(chalk.cyan(`[-] using development session cookie: ${chalk.yellow('`session.mstdid`')}`))
-    app.use(devAuthCookie)
+    app.use(function(req, _, next) {
+        const mockSessionUserID = req.headers['x-msid']
+        if (mockSessionUserID) {
+            req.session["mstdid"] = mockSessionUserID
+        } else {
+            console.log(chalk.red("DEVELOPMENT_SESSION_COOKIE is set to true but no x-msid header is found. Setting mstdid=undefined"))
+            req.session["mstdid"] = undefined
+        }
+
+        next()
+    })
 }
 app.use(cookieParser())
 app.use(fileUpload())
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use('/api/users', profileApiRouter(io))
-app.use('/api/posts', postApiRouter(io))
+app.use('/api/users', profileApiRouter(io, { rootContext: "ProfileAPI" }))
+app.use('/api/posts', postApiRouter(io, { rootContext: "PostAPI" }))
 app.use('/api/notifications', notificationApiRouter(io))
 app.use('/api/requests', requestsApiRouter(io))
 app.use('/api/search', seacrhApiRouter(io))
-app.use('/api/auth', authApiRouter(io))
-app.use('/api/upload', uploadApiRouter(io))
+app.use('/api/auth', authApiRouter(io, { rootContext: 'UserAuthAPI' }))
+app.use('/api/upload', uploadApiRouter(io, { rootContext: "UploadAPI" }))
 app.use('/api/mcq/', mcqApiRouter(io))
-app.use('/api/friends', friendsApiRouter(io))
-app.use('/api/decks', decksApiRouter(io))
+app.use('/api/friends', friendsApiRouter(io, { rootContext: "ConnectionsAPI" }))
+app.use('/api/decks', decksApiRouter(io, { rootContext: 'DecksAPI' }))
 
 app.get('/logout', (req, res) => {
     try {

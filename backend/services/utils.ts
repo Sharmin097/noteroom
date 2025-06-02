@@ -3,7 +3,8 @@ import sharp from "sharp"
 import { upload } from "./firebase.service"
 import slugify from "slugify"
 import { v4 as uuidv4 } from "uuid"
-import studentsModel from "../schemas/users.model"
+
+export const joinLogContexts = (rootContext: string, childContexts: string[]) => `${rootContext}.${childContexts.join(".")}`
 
 export async function compressImage(fileObject: any) {
     try {
@@ -24,16 +25,18 @@ export async function compressImage(fileObject: any) {
 
 
 export async function processBulkCompressUpload(fileObjects: fileUpload.UploadedFile[], postID: string) {
+    const context = processBulkCompressUpload.name
     try {
         let compressedFiles = await Promise.all(fileObjects.map(fileObject => compressImage(fileObject)))
         let uploadedFiles = await Promise.all(compressedFiles.map(compressedFile => upload(compressedFile, `posts/${postID}/contents/${compressedFile["fileName"]}`)))
-        return { ok: true, content: uploadedFiles }
+        return { ok: true, content: uploadedFiles, context }
     } catch (error) {
-        return { ok: false, error: error }
+        return { ok: false, error: error, context }
     }
 }
 
 export async function processBuikPDFUpload(fileObjects: fileUpload.UploadedFile[], postID: string) {
+    const context = processBuikPDFUpload.name
     try {
         let files: { name: string, storageUrl: string }[] = []
         let failedUploads = []
@@ -48,15 +51,15 @@ export async function processBuikPDFUpload(fileObjects: fileUpload.UploadedFile[
             }
         }))
 
-        return { ok: true, files: files, failedUploads: failedUploads }
+        return { ok: true, files: files, failedUploads: failedUploads, context }
     } catch (error) {
-        return { ok: false, error: error }
+        return { ok: false, error: error, context }
     }
 }
 
 
 type UserInfo = { userID?: string, username?: string }
-export function generateRandomUsername(displayname: string, onlyTextPortion: boolean = false): UserInfo  {
+export function generateRandomUsername(displayname: string, onlyTextPortion: boolean = false): UserInfo {
     const uuid = uuidv4()
     const suffix = uuid.split("-")[0]
 
@@ -98,17 +101,17 @@ export const userMentionMap = {
             const usernames: string[] = this.parseUsernamesFromText(normal_text)
             const users = usernames.length !== 0 && await usersModel.find({ username: { $in: usernames } }, { _id: 0, username: 1, displayname: 1, studentID: 1 })
             let tokanized = ""
-        
+
             for (const text of normal_text.split(this.mentionRegex)) {
                 if (text.match(this.mentionRegex)) {
                     const username = text.match(this.usernameRegex)[1]
-                    const user = users.find(user => user.username === username) 
+                    const user = users.find(user => user.username === username)
                     tokanized += (user ? `[[mention:${user.studentID}]]` : text)
                 } else {
                     tokanized += text
                 }
             }
-        
+
             return tokanized
         } catch (error) {
             return normal_text
@@ -119,11 +122,11 @@ export const userMentionMap = {
         try {
             const mentionRegex = /\[\[mention\:([\w+\-]+)\]\]/g
             const userIDs = []
-    
+
             for (const matches of tokenized.matchAll(mentionRegex)) {
                 userIDs.push(matches[1])
             }
-    
+
             const users = userIDs.length !== 0 ? await usersModel.find({ studentID: { $in: userIDs } }, { _id: 0, studentID: 1, username: 1, displayname: 1 }) : []
             return tokenized.replace(mentionRegex, (_, userID) => {
                 const user = users.find(user => user.studentID === userID)

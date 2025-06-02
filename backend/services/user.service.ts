@@ -163,6 +163,7 @@ export async function searchStudent(searchTerm: string, options?: any) {
 
 export async function updateProfileFields(studentID: string, updates: Record<string, string>) {
     //TODO: add profile picture change logic
+    const context = updateProfileFields.name
 
     try {
         if (Object.keys(updates).includes("displayname")) {
@@ -173,8 +174,8 @@ export async function updateProfileFields(studentID: string, updates: Record<str
             updates.username = username
         }
         await Students.updateOne({ studentID: studentID }, updates);
-        return { ok: true }
+        return { ok: true, context }
     } catch (error) {
-        return { ok: false, error: error }
+        return { ok: false, error: error, context }
     }
 };

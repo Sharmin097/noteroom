@@ -2,9 +2,9 @@ import { Router } from 'express';
 import { Server } from 'socket.io';
 import { OAuth2Client } from 'google-auth-library';
 import { addUserProfile, getUserAuth, getUserVarification } from '../services/auth.service';
-import { generateRandomUsername } from '../services/utils';
+import { generateRandomUsername, joinLogContexts } from '../services/utils';
 import { capitalize, sample } from "lodash"
-import logger from '../logger';
+import logger, { ContextType } from '../logger';
 
 
 
@@ -12,7 +12,7 @@ const router = Router()
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
-export default function authApiRouter(io: Server) {
+export default function authApiRouter(io: Server, context: { rootContext: string }) {
     router.post("/signup", async (req, res) => {
         try {
             const displayname = req.body.displayname
@@ -33,33 +33,31 @@ export default function authApiRouter(io: Server) {
                     authProvider: null,
                     onboarded: false
                 }
-                logger.info(`(/signup): Got user data of username=${studentData.username || '--username--'}`)
+                logger.info(`Got user data for signup`, { entity: 'api', root: joinLogContexts(context.rootContext, ['signup']), action: 'noteroom-signup-attempt' }, { email })
+
                 const response = await addUserProfile(studentData)
                 if (response.ok) {
-                    logger.info(`(/signup): Signed up user of username=${studentData.username || '--username--'}`)
                     const { data: user } = response
                     req.session["stdid"] = user["studentID"]
-                    logger.info(`(/signup): Set session of username=${studentData.username || '--username--'}`)
-                    res.json({ ok: true, userAuth: { studentID: user["studentID"], username: user["username" ]} })
+                    logger.info(`Signed up user and set session`, { entity: 'api', root: joinLogContexts(context.rootContext, ['signup', response.context]), action: 'noteroom-signup-success' }, { response: 'success', email })
+                    res.json({ ok: true, userAuth: { studentID: user["studentID"], username: user["username"] } })
                 } else {
-                    if(response.error.code === 11000) {
+                    if (response.error.code === 11000) {
                         const { keyPattern, keyValue } = response.error
                         const fieldName = Object.keys(keyPattern)[0] as string
                         if (fieldName !== "username") {
-                            logger.error(`(/signup): Duplicate field=${fieldName} with ${fieldName}=${keyValue[fieldName]}`)
                             res.json({ ok: false, message: `${capitalize(fieldName)} is already registered` })
                         } else {
-                            logger.error(`(/signup): Duplicate field=username with username=${studentData.username || '--username--'}`)
                             res.json({ ok: false, message: "Your username is already in use. We want you write a unique username", displayname })
                         }
                     } else {
-                        logger.error(`(/signup): Signup failed, error for username=${studentData.username || '--username--'}: ${response.error}`)
+                        logger.error(`Signup failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['signup', response.context]), action: 'noteroom-signup-failure' }, { response: 'failed', error: response.error.message, email })
                         res.json({ ok: false, message: "Something went wrong! Please try again a bit later." })
                     }
                 }
             }
         } catch (error) {
-            logger.error(`(/signup): Sign failed, unknown error: ${error}`)
+            logger.error(`Signup failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['signup']), action: 'noteroom-signup-api-failure' }, { error: error.message })
             res.json({ ok: false, message: "Something went wrong! Please try again a bit later." })
         }
     })
@@ -70,15 +68,14 @@ export default function authApiRouter(io: Server) {
             let password = req.body.password
 
             if (email && password && email.length !== 0 && password.length !== 0) {
-                logger.info(`(/login): Got user data of email=${email || '--email--'}`)
                 let response = await getUserVarification(email)
                 if (response.ok) {
                     const { data: student } = response
-                    if(student["authProvider"] === null) {
+                    if (student["authProvider"] === null) {
                         if (password === student['studentPass']) {
                             req.session["stdid"] = student["studentID"];
-                            logger.info(`(/login): NoteRoom login with email=${email || '--email--'}`)
-                            res.json({ ok: true, userAuth: { studentID: student["studentID"], username: student["username"] }});
+                            logger.info(`NoteRoom Login`, { entity: 'api', root: joinLogContexts(context.rootContext, ['login', response.context]), action: 'noteroom-login-success' }, { response: 'success', email })
+                            res.json({ ok: true, userAuth: { studentID: student["studentID"], username: student["username"] } });
                         } else {
                             res.json({ ok: false, message: "Incorrect password. Try again" })
                         }
@@ -89,13 +86,13 @@ export default function authApiRouter(io: Server) {
                     if (response.code === "NO_EMAIL") {
                         res.json({ ok: false, message: "No student account associated with this email." })
                     } else if (response.code === "SERVER") {
-                        logger.error(`(/login): Login failed with email=${email || '--email--'}: ${response.error}`)
+                        logger.error(`Login failed`, { entity: 'api', root: joinLogContexts(context.rootContext, ['login', response.context]), action: 'noteroom-login-failure' }, { response: 'failed', error: response.error, email })
                         res.json({ ok: false, message: "Something went wrong! Please try again a bit later." })
                     }
                 }
             }
         } catch (error) {
-            logger.error(`(/login): Login failed, unknown error: ${error}`)
+            logger.error('Login failed', { entity: 'api', root: joinLogContexts(context.rootContext, ['login']), action: 'noteroom-login-api-failure' }, { error: error.message })
             res.json({ ok: false, message: "Something went wrong! Please try again a bit later." })
         }
     })
@@ -103,54 +100,57 @@ export default function authApiRouter(io: Server) {
     router.get("/session", async (req, res) => {
         try {
             if (req.session && req.session["stdid"]) {
-                const response = await getUserAuth(req.session["stdid"])
+                const studentID = req.session["stdid"]
+                const response = await getUserAuth(studentID)
                 if (response.ok) {
-                    logger.info(`(/session): Got user auth of studentID=${req.session["stdid"] || '--studentID--'}`)
+                    logger.info(`Got user auth`, { entity: 'api', root: joinLogContexts(context.rootContext, ['session', response.context]), action: 'session-success' }, { response: 'success', studentID })
                     res.json({ ok: true, userAuth: response.userAuth });
                 } else {
-                    logger.error(`(/session): Failed to get user auth of studentID=${req.session["stdid"] || '--studentID--'}: ${response.error}`)
+                    logger.error(`Failed to get user auth`, { entity: 'api', root: joinLogContexts(context.rootContext, ['session', response.context]), action: 'session-failure' }, { response: 'failed', error: response.error.message , studentID })
                     res.json({ ok: false })
                 }
             } else {
-                logger.error(`(/session): Failed to get user auth of studentID=${req.session["stdid"] || '--studentID--'}: req.session || req.session[stdid] was not found`)
+                logger.error(`Failed to get user auth, req.session or req.session.stdid was not found`, { entity: 'api', root: joinLogContexts(context.rootContext, ['session']), action: 'session-object-not-found' })
                 res.json({ ok: false });
             }
         } catch (error) {
-            logger.error(`(/session): Failed to get user auth of studentID=${req.session["stdid"] || '--studentID--'}: ${error}`)
+            logger.error(`Failed to get user auth`, { entity: 'api', root: joinLogContexts(context.rootContext, ['session']), action: 'session-api-failure' }, { error: error.message })
             res.json({ ok: false });
         }
     })
-    
-    router.post('/google', async (req, res:any) => {
+
+    router.post('/google', async (req, res: any) => {
         try {
-            const { credential } = req.body; 
+            const { credential } = req.body;
             if (!credential) return
-    
+
             const ticket = await googleClient.verifyIdToken({
                 idToken: credential,
                 audience: GOOGLE_CLIENT_ID,
             });
-    
+
             const payload = ticket.getPayload();
             const email = payload.email;
             const displayName = payload.name;
-    
-            logger.info(`(/auth/google): Google login attempt - email=${email}`);
-    
+
+            logger.info(`Google login attempt`, { entity: 'api', root: joinLogContexts(context.rootContext, ['google']), action: 'google-login-attempt' }, { email })
+
             const existingUser = await getUserVarification(email);
-    
+
             if (existingUser.ok) {
                 const student = existingUser.data;
-    
+
                 if (student.authProvider !== "google") {
                     return res.json({
                         ok: false,
                         message: "This email is registered with another method. Try NoteRoom login",
                     });
                 }
-    
+
+
                 req.session.regenerate(() => {
                     req.session["stdid"] = student["studentID"];
+                    logger.info(`Google login success`, { entity: 'api', root: joinLogContexts(context.rootContext, ['google', 'login', existingUser.context]), action: 'google-login-success' }, { response: 'success', email })
                     return res.json({
                         ok: true,
                         userAuth: {
@@ -162,7 +162,8 @@ export default function authApiRouter(io: Server) {
 
                 return;
             }
-    
+
+            logger.info(`Attempting to signup via google`, { entity: 'api', root: joinLogContexts(context.rootContext, ['google', 'signup']), action: 'google-signup-attempt' }, { email })
             const identifier = generateRandomUsername(displayName.trim());
             const newUser = {
                 displayname: displayName,
@@ -173,16 +174,16 @@ export default function authApiRouter(io: Server) {
                 authProvider: "google",
                 onboarded: false,
             };
-    
+
             const response = await addUserProfile(newUser);
-    
+
             if (response.ok) {
                 const user = response.data;
-    
+
                 req.session.regenerate(() => {
                     req.session["stdid"] = user["studentID"];
-                    logger.info(`(/auth/google): Created & logged in user: ${email}`);
-    
+                    logger.info(`Google signup success`, { entity: 'api', root: joinLogContexts(context.rootContext, ['google', 'signup', response.context]), action: 'google-signup-success' }, { response: 'success', email })
+
                     res.json({
                         ok: true,
                         userAuth: {
@@ -192,20 +193,20 @@ export default function authApiRouter(io: Server) {
                     });
                 });
             } else {
-                logger.error(`(/auth/google): Failed to create user ${email}: ${response.error}`);
+                logger.error(`Google signup failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['google', 'signup', response.context]), action: 'google-signup-failure' }, { response: 'failed', error: response.error.message, email })
                 res.json({
                     ok: false,
                     message: "Something went wrong while creating your account.",
                 });
             }
         } catch (error) {
-            logger.error(`(/auth/google): Login failed: ${error}`);
+            logger.error(`Google auth api failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['google', 'auth']), action: 'google-auth-api-failure' }, { error: error.message })
             res.json({
                 ok: false,
                 message: "Google authentication failed. Please try again.",
             });
         }
     });
-    
+
     return router
 }
