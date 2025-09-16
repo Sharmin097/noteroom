@@ -3,12 +3,13 @@ import { join } from 'path'
 import { config } from 'dotenv';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4'
 
 import cookieParser from 'cookie-parser'
 import session from 'express-session'
 import { connect } from 'mongoose'
-import _pkg from 'body-parser';
-const { urlencoded } = _pkg;
+import { urlencoded, json } from 'body-parser';
 import fileUpload from 'express-fileupload'
 import cors from 'cors'
 import pkg from 'connect-mongo';
@@ -18,20 +19,25 @@ import chalk from 'chalk';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swaggers/swaggerOptions';
 
-import postApiRouter from './services/apis/post.js';
-import feedApiRouter from './services/apis/feed.js';
-import seacrhApiRouter from './services/apis/search.js';
-import profileApiRouter from './services/apis/profile.js';
-import notificationApiRouter from './services/apis/notifications.js';
-import requestsApiRouter from './services/apis/requests.js';
-import authApiRouter from './services/apis/auth.js';
-import uploadApiRouter from './services/apis/upload.js';
+import postApiRouter from './apis/post.api.js';
+import seacrhApiRouter from './apis/search.api.js';
+import profileApiRouter from './apis/profile.api.js';
+import notificationApiRouter from './apis/notifications.api.js';
+import requestsApiRouter from './apis/requests.api.js';
+import authApiRouter from './apis/auth.api.js';
+import uploadApiRouter from './apis/upload.api.js';
+import mcqApiRouter from './apis/mcq.api';
+import friendsApiRouter from './apis/friends.api';
+import resolvers from './graphql/resolvers/index.resolver'
+import typeDefs from './graphql/typeDefs/index.typeDef'
+import decksApiRouter from './apis/decks.api';
 
 config({ path: join(__dirname, '.env') });
 
 const app = express()
 const server = createServer(app);
 const io = new SocketIOServer(server, { cors: { origin: '*' } });
+const apolloServer = new ApolloServer({ typeDefs, resolvers })
 const url = (process.env.DEVELOPMENT && process.env.DEVELOPMENT === "true") ? process.env.MONGO_URI_DEV : process.env.MONGO_URI
 
 connect(url).then(() => {
@@ -51,10 +57,9 @@ app.use(cors({
     origin: allowedHosts,
     credentials: true
 }))
-
-app.use(express.json()); 
+app.use(express.json());
 app.use(express.static(staticPath))
-app.use(urlencoded({ extended: true })) 
+app.use(urlencoded({ extended: true }))
 app.use(session({
     secret: process.env.SECRET_KEY,
     resave: false,
@@ -64,24 +69,39 @@ app.use(session({
         ttl: 60 * 60 * 720
     }),
     cookie: {
-        httpOnly: true,   
-        secure: false,   
+        httpOnly: true,
+        secure: false,
         maxAge: 1000 * 60 * 60 * 720
     }
 }));
+if (process.env.DEVELOPMENT_SESSION_COOKIE === "true") {
+    console.log(chalk.cyan(`[-] using development session cookie: ${chalk.yellow('`session.mstdid`')}`))
+    app.use(function(req, _, next) {
+        const mockSessionUserID = req.headers['x-msid']
+        if (mockSessionUserID) {
+            req.session["mstdid"] = mockSessionUserID
+        } else {
+            console.log(chalk.red("DEVELOPMENT_SESSION_COOKIE is set to true but no x-msid header is found. Setting mstdid=undefined"))
+            req.session["mstdid"] = undefined
+        }
 
-app.use(cookieParser()) 
-app.use(fileUpload()) 
+        next()
+    })
+}
+app.use(cookieParser())
+app.use(fileUpload())
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use('/api/users', profileApiRouter(io))
-app.use('/api/posts', postApiRouter(io))
+app.use('/api/users', profileApiRouter(io, { rootContext: "ProfileAPI" }))
+app.use('/api/posts', postApiRouter(io, { rootContext: "PostAPI" }))
 app.use('/api/notifications', notificationApiRouter(io))
 app.use('/api/requests', requestsApiRouter(io))
-app.use('/api/feed', feedApiRouter(io))
 app.use('/api/search', seacrhApiRouter(io))
-app.use('/api/auth', authApiRouter(io))
-app.use('/api/upload', uploadApiRouter(io))
+app.use('/api/auth', authApiRouter(io, { rootContext: 'UserAuthAPI' }))
+app.use('/api/upload', uploadApiRouter(io, { rootContext: "UploadAPI" }))
+app.use('/api/mcq/', mcqApiRouter(io))
+app.use('/api/friends', friendsApiRouter(io, { rootContext: "ConnectionsAPI" }))
+app.use('/api/decks', decksApiRouter(io, { rootContext: 'DecksAPI' }))
 
 app.get('/logout', (req, res) => {
     try {
@@ -118,6 +138,22 @@ io.on('connection', (socket) => {
     })
 })
 
-server.listen(port, () => {
-    console.log(chalk.cyan(`[-] server is listening on: ${chalk.yellow(`http://localhost:${port}`)}`));
+async function startServer() {
+    await apolloServer.start()
+
+    app.use("/api/graphql", expressMiddleware(apolloServer, {
+        context: async ({ req, res }) => ({
+            req, res
+        })
+    }))
+
+    server.listen(port, () => {
+        console.log(chalk.cyan(`[-] server is listening on: ${chalk.yellow(`http://localhost:${port}`)}`));
+    })
+}
+
+startServer().then(() => {
+    console.log(chalk.cyan(`[-] apollo server started, enpoint: ${chalk.yellow(`http://localhost:${port}/graphql`)}`));
+}).catch(error => {
+    console.log(chalk.cyan(`[-] apollo server couldn't start: ${chalk.red(error)}`));
 })

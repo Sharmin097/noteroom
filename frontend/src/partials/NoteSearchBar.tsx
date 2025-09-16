@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAppData } from '../context/AppDataContext';
-import { IONotification } from '../types/types';
+import { useAppData } from '../context/appdata.context';
 import { Link, useNavigate } from 'react-router-dom';
+import { NotificationType } from "../../../types/notification.types"
 import AvatarImage from "../assets/avatars/avatar-1.png"
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
@@ -11,7 +11,7 @@ interface Post {
   title: string;
 }
 export default function NoteSearchBar({ notiModalState }: { notiModalState: [any, any] }) {
-  const { notification: [notifs,], userProfile: [, , currentUsername] } = useAppData()
+  const { notification: [notifs,], userProfile: [, , currentUsername] } = useAppData()!
   const [unreadNotiCount, setUnreadNotiCount] = useState<number>(0)
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [query, setQuery] = useState('');
@@ -19,6 +19,7 @@ export default function NoteSearchBar({ notiModalState }: { notiModalState: [any
   const [isLoading, setIsLoading] = useState(false);
   const [debounceQuery, setDebounceQuery] = useState<string>("")
   const navigate = useNavigate()
+  const { userProfile: [profile] } = useAppData()!
 
   function handleClick() {
     setIsSearchFocused(true)
@@ -32,7 +33,7 @@ export default function NoteSearchBar({ notiModalState }: { notiModalState: [any
   }, [])
 
   useEffect(() => {
-    const unreadNoti = notifs.filter((noti: IONotification) => noti.isRead === false)
+    const unreadNoti = notifs.filter((noti: NotificationType) => noti.isRead === false)
     setUnreadNotiCount(unreadNoti.length)
   }, [notifs])
 
@@ -119,7 +120,7 @@ export default function NoteSearchBar({ notiModalState }: { notiModalState: [any
             {unreadNotiCount}
           </span> : null}
         </div>
-        <img src={AvatarImage} className="profile-avatar" alt="Profile" onClick={() => navigate(`/user/${currentUsername}`)} />
+        <img src={profile?.profile_pic || AvatarImage} className="profile-avatar" alt="Profile" onClick={() => navigate(`/user/${currentUsername}`)} />
       </div>
       <div className={`search-results-container ${isSearchFocused ? 'visible' : ''} no-hide`} >
         <div className="search-results-list no-hide">

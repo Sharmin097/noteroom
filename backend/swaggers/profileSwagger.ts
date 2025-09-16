@@ -54,3 +54,47 @@
  *       200:
  *         description: Successfully fetched owned posts
  */
+
+
+/**
+ * @swagger
+ * /api/users/change:
+ *   post:
+ *     summary: Change student profile fields
+ *     tags:
+ *       - Profile
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - group
+ *             properties:
+ *               displayname:
+ *                 type: string
+ *                 description: Display name of the student
+ *               bio:
+ *                 type: string
+ *                 description: Short bio or introduction
+ *               rollnumber:
+ *                 type: string
+ *                 description: Student's roll number
+ *               favouritesubject:
+ *                 type: string
+ *                 description: Student's favorite subject
+ *               notfavsubject:
+ *                 type: string
+ *                 description: Student's least favorite subject
+ *               group:
+ *                 type: string
+ *                 enum: [Science, Commerce, Arts]
+ *                 description: Academic group of the student
+ *               collegeyear:
+ *                 type: string
+ *                 description: Current academic year of the student
+ *     responses:
+ *       200:
+ *         description: Profile update success or failure message
+ */

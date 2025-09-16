@@ -32,7 +32,7 @@ const handlePreviewPdf = async (file: File) => {
       }).promise;
 
       ReactSwal.fire({
-        title: file.name,
+        title: <span style={{ fontSize: '0.8rem', marginTop: "10px" }}>{file.name}</span>,
         html: `<canvas id="pdf-preview-canvas" width="${canvas.width}" height="${canvas.height}"></canvas>`,
         // width: `${canvas.width + 50}px`,
         width: `450px`,

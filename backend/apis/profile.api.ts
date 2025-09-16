@@ -1,0 +1,116 @@
+import { Router } from "express";
+import { Server } from "socket.io";
+import { Convert, getMutualCollegeStudents, getProfile, updateProfileFields } from "../services/user.service";
+import sanitizeHtml from 'sanitize-html';
+import logger from "../logger";
+import validator from "validator";
+import { joinLogContexts } from "../services/utils";
+
+const FeatureFlags = {
+	ACCEPT_USERNAME_CHANGE_VIA_API: false
+}
+
+const router = Router()
+export const ALLOWED_CHANGEABLE_FIELDS = [
+	"displayname",
+	"bio",
+	"rollnumber",
+	"favouritesubject",
+	"notfavsubject",
+	"group",
+	"collegeyear",
+	...[FeatureFlags.ACCEPT_USERNAME_CHANGE_VIA_API && "username"]
+]
+
+function isValidUsername(username: string): boolean {
+	if (username.length < 4) return false;
+
+	if (!validator.isAscii(username)) return false;
+
+	const regex = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
+	return regex.test(username);
+}
+
+
+export default function profileApiRouter(io: Server, context: { rootContext: string }) {
+	router.get("/mutual-college", async (req, res) => {
+		try {
+			let studentID = req.session["stdid"]
+			let studentDocID = (await Convert.getDocumentID_studentid(studentID)).toString()
+			let countDoc = req.query.countdoc ? true : false
+
+			let batch = Number(req.query.batch || "1")
+			let count = 15
+			let skip = (batch - 1) * count
+
+			let profiles = await getMutualCollegeStudents(studentDocID, { count: count, skip: skip, countDoc })
+			res.json(profiles)
+		} catch (error) {
+			res.json([])
+		}
+	})
+
+	router.post("/change", async (req, res: any) => {
+		try {
+			const studentID = req.session["stdid"];
+			if (!studentID) return;
+
+			const group = req.body.group?.trim();
+			if (group) {
+				if (!["Science", "Commerce", "Arts"].includes(group)) {
+					return res.json({ ok: false, message: "Invalid or missing group." });
+				}
+			}
+
+			const updates: Record<string, string> = {};
+
+			for (const key in req.body) {
+				const rawValue = req.body[key];
+				const value = sanitizeHtml(rawValue || "").trim();
+
+				if (!ALLOWED_CHANGEABLE_FIELDS.includes(key)) {
+					return res.json({ ok: false, message: `Field "${key}" is not allowed to be changed.` });
+				}
+
+				if (!value) {
+					return res.json({ ok: false, message: `Value for "${key}" cannot be empty.` });
+				}
+
+				if (FeatureFlags.ACCEPT_USERNAME_CHANGE_VIA_API && key === "username" && !isValidUsername(value)) {
+					return res.json({
+						ok: false,
+						message: "Invalid username. Use only letters, numbers, dot (.), underscore (_) or dash (-). It must be at least 4 characters long and cannot start or end with punctuation."
+					});
+				}
+
+				updates[key] = value;
+			}
+
+			if (Object.keys(updates).length === 0) {
+				return res.json({ ok: false, message: "No valid changes provided." });
+			}
+
+			const response = await updateProfileFields(studentID, updates);
+
+			if (response.ok) {
+                logger.info(`Profile updated successfully`, { entity: 'api', root: joinLogContexts(context.rootContext, ['change', response.context]), action: 'profile-change-success' }, { response: 'success', studentID })
+				
+				res.json({ ok: true });
+			} else {
+				if (response.error.code && response.error.code === 11000) {
+					return res.json({ ok: false, message: "Username is not available" });
+				}
+
+				logger.error(`Profile update failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['change', response.context]), action: 'profile-change-failure' }, { response: 'failed', error: response.error.message, studentID })
+				res.json({ ok: false, message: "Can't change your profile details now! Please try again a bit later" });
+			}
+		} catch (error) {
+			logger.error(`Profile update failure`, { entity: 'api', root: joinLogContexts(context.rootContext, ['change']), action: 'profile-change-api-failure' }, { error: error.message })
+			res.json({ ok: false, message: "An error occurred while updating profile." });
+		}
+	});
+
+
+
+	return router
+}

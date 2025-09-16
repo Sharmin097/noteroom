@@ -5,7 +5,7 @@ import withReactContent from "sweetalert2-react-content";
 
 let API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
 const ReactSwal = withReactContent(Swal)
-export default function GoogleLogin({ setUserAuth }) {
+export default function GoogleLogin({ setUserAuth, setLoading }) {
     const navigate = useNavigate()
     const GOOGLE_CLIENT_ID = "325870811550-0c3n1c09gb0mncb0h4s5ocvuacdd935k.apps.googleusercontent.com"
 
@@ -38,12 +38,14 @@ export default function GoogleLogin({ setUserAuth }) {
   
     const handleCredentialResponse = async (gresponse: any) => {
         try {
+            setLoading(true)
             const response = await fetch(`${API_SERVER_URL}/api/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({ credential: gresponse.credential }),
             });
+            setLoading(false)
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.ok) {

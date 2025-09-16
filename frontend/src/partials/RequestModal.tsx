@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import withReactContent from "sweetalert2-react-content";
-import Swal from "sweetalert2";
+import { useGlobalComponentController } from "../context/globaldata.context";
 
 
 const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL
@@ -10,17 +9,10 @@ export default function RequestModal({ modalShow, recipientData }: any) {
   const [reqMsg, setReqMsg] = useState("");
   const [charCounter, setCharCounter] = useState(0);
   const [isDisabled, setIsDisabled] = useState(true);
+  const { toast: [, setToast] } = useGlobalComponentController()!
 
-  function fireToast(title: string, icon: any) {
-    return withReactContent(Swal).fire({
-      toast: true,
-      icon: icon,
-      position: "bottom-right",
-      title: title,
-      showConfirmButton: true,
-      timer: 3000,
-      timerProgressBar: true
-    })
+  function fireToast(title: string) {
+    setToast({ show: true, data: { message: title } })
   }
   async function sendRequest() {
     try {
@@ -36,16 +28,16 @@ export default function RequestModal({ modalShow, recipientData }: any) {
       if (response.ok) {
         const data = await response.json()
         if (data.ok) {
-          fireToast('Request sent successfully!', 'success')
+          fireToast('Request sent successfully!')
           modalShow[1](false)
         } else {
-          fireToast(data.message || "Something went wrong! Please try again a bit later", 'error')
+          fireToast(data.message || "Something went wrong! Please try again a bit later")
         }
       } else {
-        fireToast("Something went wrong! Please try again a bit later", 'error')
+        fireToast("Something went wrong! Please try again a bit later")
       }
     } catch (error) {
-      fireToast("Something went wrong! Please try again a bit later", 'error')
+      fireToast("Something went wrong! Please try again a bit later")
       console.error(error)
     }
   }

@@ -28,8 +28,8 @@ export default function NotFound() {
           setContent({
             title: "User Not Found",
             message: `No one in NoteRoom goes by "${state?.username}".`,
-            btnText: "Search Users",
-            btnRedirect: "/search-profile",
+            btnText: "Go Home",
+            btnRedirect: "/",
           });
           break;
         case "post":

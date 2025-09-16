@@ -41,7 +41,7 @@ export default function TextEditor({
 
 				<div className="qpec-body">
 					{ subTitle && <div className="qpec-body-row-user-preview">
-						<span className="qpec-username">{subTitle}</span>
+						<span className="qpec-username" dangerouslySetInnerHTML={{__html: subTitle}}></span>
 					</div> }
 					{ subTitle && <hr style={{width: "100%"}} /> }
 					<div className="qpec-body-row-text-input">

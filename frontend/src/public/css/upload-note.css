@@ -21,6 +21,12 @@ body {
   min-height: 100vh;
   overflow-y: auto;
   -ms-overflow-style: none;
+  
+}
+.swal2-backdrop-show{
+  background-color: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
 }
 
 body::-webkit-scrollbar{
@@ -420,7 +426,7 @@ body::-webkit-scrollbar{
   }
 }
 
-.delete-btn {
+.delete-btn, .edit-btn {
   background: rgb(255, 255, 255);
   border: none;
   width: 30px;
@@ -430,10 +436,16 @@ body::-webkit-scrollbar{
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  border-radius: 10px;
 }
 
 .delete-btn:hover {
   background: rgba(255, 220, 220, 0.9);
+  transform: scale(1.1);
+}
+
+.edit-btn:hover {
+  background: rgba(134, 234, 134, 0.9);
   transform: scale(1.1);
 }
 
@@ -455,123 +467,9 @@ body::-webkit-scrollbar{
   color: #fff;
 }
 
-/* start css youtube link */
+/* start youtube link */
 
-
-.youtube-link-container {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  font-family: Arial, sans-serif;
-}
-
-.youtube-link-input-wrapper {
-  margin-bottom: 20px;
-}
-
-.youtube-link-input {
-  width: 630px;
-  height: 55px;
-  padding: 12px 15px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  font-size: 16px;
-  box-sizing: border-box;
-  margin-left: 10px;
-}
-
-.youtube-link-input::placeholder {
-  color: #999;
-}
-
-.youtube-preview-container {
-  margin-top: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  background-color: #f9f9f9;
-}
-
-.video-controls-top {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-}
-
-.add-btn {
-  /* background-color: #4285f4;
-  color: white; */
-  border: none;
-  border-radius: 4px;
-  /* padding: 8px 16px; */
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-/* .add-btn:hover {
-  background-color: #3367d6;
-} */
-
-.delete-btn {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  padding: 5px;
-}
-
-.delete-btn:hover {
-  color: #333;
-}
-
-.video-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.carousel-btn-link {
-  background-color: rgba(255, 255, 255, 0.7);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: absolute;
-  z-index: 10;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* .carousel-btn:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-} */
-
-.carousel-btn-link.left {
-  left: 10px;
-}
-
-.carousel-btn-link.right {
-  right: 10px;
-}
-
-.youtube-preview {
-  width: 100%;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.youtube-preview iframe {
-  border: none;
-  border-radius: 4px;
-}
-
-/* end css youtube link */
+/* end youtube link */
 
 .pdf-preview-container {
   width: 100%;

@@ -1,6 +1,6 @@
 import FeedSection from "./FeedSection";
-import { useContext, useEffect, useRef } from "react";
-import { ScrollPositionContext } from "../../context/ScrollPosition";
+import { useEffect, useRef } from "react";
+import { useGlobalComponentController } from "../../context/globaldata.context";
 import "../../public/css/dashboard.css";
 import '../../public/css/quick-post.css';
 import "../../public/css/main-pages.css";
@@ -8,7 +8,7 @@ import "../../public/css/share-note.css";
 
 export default function DashBoard() {
     const middleSection = useRef<HTMLDivElement | null>(null)
-    const [position, setPosition] = useContext(ScrollPositionContext)
+    const { scrollPosition: [position, setPosition] } = useGlobalComponentController()!
 
     useEffect(() => {
         if (window.history.scrollRestoration) {
@@ -22,7 +22,7 @@ export default function DashBoard() {
         });
 
         const handleScroll = () => {
-            setPosition(middleSection.current?.scrollTop)
+            setPosition(middleSection.current?.scrollTop!)
         };
 
         let rafId: number;
